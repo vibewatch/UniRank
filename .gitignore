@@ -1,5 +1,6 @@
 *.csv
 !data/*.csv
+!data/historical/*.csv
 .venv/
 .tmp-smoke/
 dist/
