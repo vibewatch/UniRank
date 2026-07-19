@@ -9,11 +9,19 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from html import unescape
 from typing import Any, Iterable
+from urllib.parse import quote
 
 import httpx
 import pandas as pd
 
-from .constant import HEADERS, LATEST_THE_YEAR, SUBJECTS
+from .constant import (
+    HEADERS,
+    LATEST_QS_YEAR,
+    LATEST_THE_YEAR,
+    QS_OVERALL_NIDS,
+    QS_SUBJECT_NIDS,
+    SUBJECTS,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +35,9 @@ THE_PAGE_URL = (
     "{year}/subject-ranking/{subject}"
 )
 QS_PAGE_URL = "https://www.topuniversities.com/university-subject-rankings/{subject}"
+QS_WORLD_PAGE_URL = "https://www.topuniversities.com/world-university-rankings/{year}"
 QS_API_URL = "https://www.topuniversities.com/rankings/endpoint"
+READER_PROXY_URL = "https://r.jina.ai/"
 
 
 class ScraperError(RuntimeError):
@@ -59,7 +69,8 @@ def _request(
             if response.status_code == 403 and provider == "qs":
                 raise ProviderBlockedError(
                     "QS returned HTTP 403 from its Cloudflare-protected site. "
-                    "Use an authorized QS export or API credential."
+                    "Retry with the explicit reader-proxy option, or use an "
+                    "authorized QS export or API credential."
                 )
             response.raise_for_status()
             return response
@@ -94,21 +105,50 @@ def _request_json(
     max_retries: int,
     base_delay: float,
 ) -> dict[str, Any]:
-    response = _request(
-        client,
-        url,
-        params=params,
-        provider=provider,
-        max_retries=max_retries,
-        base_delay=base_delay,
-    )
-    try:
-        payload = response.json()
-    except ValueError as exc:
-        raise ScraperError(f"{provider} returned invalid JSON from {response.url}") from exc
-    if not isinstance(payload, dict):
-        raise ScraperError(f"{provider} returned a non-object JSON response")
-    return payload
+    last_error: Exception | None = None
+    response: httpx.Response | None = None
+
+    for attempt in range(max_retries):
+        response = _request(
+            client,
+            url,
+            params=params,
+            provider=provider,
+            max_retries=max_retries,
+            base_delay=base_delay,
+        )
+        try:
+            payload = response.json()
+        except ValueError as exc:
+            last_error = exc
+            reason = "invalid JSON"
+        else:
+            if isinstance(payload, dict):
+                return payload
+            last_error = ScraperError(
+                f"{provider} returned a non-object JSON response"
+            )
+            reason = "a non-object JSON response"
+
+        if attempt == max_retries - 1:
+            break
+        if provider == "qs-reader":
+            client.headers["X-No-Cache"] = "true"
+        delay = _retry_delay(base_delay, attempt)
+        logger.warning(
+            "Retry %s/%s for %s after %.2fs: %s",
+            attempt + 1,
+            max_retries,
+            url,
+            delay,
+            reason,
+        )
+        time.sleep(delay)
+
+    response_url = response.url if response is not None else url
+    raise ScraperError(
+        f"{provider} returned invalid JSON from {response_url}"
+    ) from last_error
 
 
 def _list_field(payload: dict[str, Any], field: str, provider: str) -> list[dict[str, Any]]:
@@ -285,58 +325,115 @@ def scrape_qs(
     max_retries: int = 3,
     base_delay: float = 1.0,
     *,
+    year: int = LATEST_QS_YEAR,
     country: str | None = None,
     request_delay: float = 0.2,
+    reader_proxy: bool = False,
+    page_size: int = 500,
 ) -> pd.DataFrame:
-    """Scrape a QS subject ranking when the public page is accessible."""
-    page_url = QS_PAGE_URL.format(subject=subject)
-    with httpx.Client(
-        headers=HEADERS["qs"],
-        timeout=60.0,
-        follow_redirects=True,
-    ) as client:
-        response = _request(
-            client,
-            page_url,
-            params=None,
-            provider="qs",
-            max_retries=max_retries,
-            base_delay=base_delay,
+    """Scrape a QS overall or subject ranking."""
+    if page_size < 1:
+        raise ValueError("page_size must be at least 1")
+
+    node_id = (
+        QS_OVERALL_NIDS.get(year)
+        if not subject
+        else QS_SUBJECT_NIDS.get(year, {}).get(subject)
+    )
+    if node_id is None:
+        page_url = (
+            QS_PAGE_URL.format(subject=subject)
+            if subject
+            else QS_WORLD_PAGE_URL.format(year=year)
         )
+        page_headers = (
+            {
+                "X-Return-Format": "html",
+            }
+            if reader_proxy
+            else HEADERS["qs"]
+        )
+        page_target = (
+            READER_PROXY_URL + quote(page_url, safe=":/")
+            if reader_proxy
+            else page_url
+        )
+        with httpx.Client(
+            headers=page_headers,
+            timeout=120.0,
+            follow_redirects=True,
+        ) as page_client:
+            response = _request(
+                page_client,
+                page_target,
+                params=None,
+                provider="qs-reader" if reader_proxy else "qs",
+                max_retries=max_retries,
+                base_delay=base_delay,
+            )
         match = re.search(r'data-history-node-id=["\'](\d+)["\']', response.text)
         if not match:
             raise ScraperError(
-                "QS page no longer exposes a ranking node ID in its HTML"
+                f"QS page did not expose a ranking node ID for "
+                f"{subject or 'overall'} ({year})"
             )
         node_id = match.group(1)
-        params: dict[str, Any] = {
-            "nid": node_id,
-            "page": 0,
-            "items_per_page": 30,
-            "tab": "indicators",
-            "region": "",
-            "countries": "",
-            "cities": "",
-            "search": "",
-            "star": "",
-            "sort_by": "",
-            "order_by": "",
-            "program_type": "",
-            "scholarship": "",
-            "fee": "",
-            "english_score": "",
-            "academic_score": "",
-            "mix_student": "",
-            "loggedincache": "",
+
+    headers = (
+        {
+            "X-Return-Format": "text",
         }
-        first_page = _request_json(
-            client,
-            QS_API_URL,
-            params=params,
-            provider="qs",
-            max_retries=max_retries,
-            base_delay=base_delay,
-        )
+        if reader_proxy
+        else HEADERS["qs"]
+    )
+    with httpx.Client(
+        headers=headers,
+        timeout=180.0,
+        follow_redirects=True,
+    ) as client:
+        def fetch_page(page: int) -> dict[str, Any]:
+            params: dict[str, Any] = {
+                "nid": node_id,
+                "page": page,
+                "items_per_page": page_size,
+                "tab": "indicators",
+                "region": "",
+                "countries": "",
+                "cities": "",
+                "search": "",
+                "star": "",
+                "sort_by": "",
+                "order_by": "",
+                "program_type": "",
+                "scholarship": "",
+                "fee": "",
+                "english_score": "",
+                "academic_score": "",
+                "mix_student": "",
+                "loggedincache": "",
+                "study_level": "",
+                "subjects": "",
+            }
+            if reader_proxy:
+                origin_url = str(httpx.URL(QS_API_URL, params=params))
+                return _request_json(
+                    client,
+                    READER_PROXY_URL + quote(origin_url, safe=":/"),
+                    params=None,
+                    provider="qs-reader",
+                    max_retries=max_retries,
+                    base_delay=base_delay,
+                )
+            return _request_json(
+                client,
+                QS_API_URL,
+                params=params,
+                provider="qs",
+                max_retries=max_retries,
+                base_delay=base_delay,
+            )
+
+        first_page = fetch_page(0)
         results = _list_field(first_page, "score_nodes", "qs")
         try:
             total_pages = int(first_page.get("total_pages", 1))
@@ -346,14 +443,7 @@ def scrape_qs(
         for page in range(1, total_pages):
             if request_delay:
                 time.sleep(request_delay)
-            payload = _request_json(
-                client,
-                QS_API_URL,
-                params={**params, "page": page},
-                provider="qs",
-                max_retries=max_retries,
-                base_delay=base_delay,
-            )
+            payload = fetch_page(page)
             results.extend(_list_field(payload, "score_nodes", "qs"))
 
     if country:
@@ -366,7 +456,12 @@ def scrape_qs(
             ).casefold()
             == expected_country
         ]
-    logger.info("Collected %s QS records for %s", len(results), subject)
+    logger.info(
+        "Collected %s QS records for %s (%s)",
+        len(results),
+        subject or "overall",
+        year,
+    )
     return pd.DataFrame(results)
 
 
@@ -433,15 +528,31 @@ def _normalize_times(
     return normalized
 
 
+def _normalize_qs(
+    frame: pd.DataFrame,
+    scope: str,
+    year: int,
+) -> pd.DataFrame:
+    normalized = frame.drop(
+        columns=["logo", "more_info"],
+        errors="ignore",
+    ).copy()
+    normalized.insert(0, "ranking_year", year)
+    normalized.insert(0, "ranking_scope", scope)
+    normalized.insert(0, "source", "qs")
+    return normalized
+
+
 def _scope_frame(
     source: str,
     scope: str,
     *,
-    country: str,
+    country: str | None,
     year: int,
     max_retries: int,
     base_delay: float,
     request_delay: float,
+    reader_proxy: bool,
 ) -> pd.DataFrame:
     subject = "" if scope == "overall" else scope
     if source == "usnews":
@@ -465,25 +576,22 @@ def _scope_frame(
         )
         return _normalize_times(raw, scope, year)
     if source == "qs":
-        if scope == "overall":
-            raise ScraperError("QS overall rankings are not supported by this scraper")
         raw = scrape_qs(
             subject,
             max_retries=max_retries,
             base_delay=base_delay,
+            year=year,
             country=country,
             request_delay=request_delay,
+            reader_proxy=reader_proxy,
         )
-        normalized = raw.copy()
-        normalized.insert(0, "ranking_scope", scope)
-        normalized.insert(0, "source", "qs")
-        return normalized
+        return _normalize_qs(raw, scope, year)
     raise ValueError(f"Unknown source: {source}")
 
 
 def scrape_country_rankings(
     source: str,
-    country: str,
+    country: str | None,
     *,
     subjects: Iterable[str] | None = None,
     year: int = LATEST_THE_YEAR,
@@ -492,14 +600,15 @@ def scrape_country_rankings(
     max_retries: int = 3,
     base_delay: float = 1.0,
     request_delay: float = 0.2,
+    reader_proxy: bool = False,
 ) -> tuple[pd.DataFrame, list[dict[str, str]]]:
-    """Scrape all requested rankings for one country and provider."""
+    """Scrape all requested provider rankings, optionally filtered by country."""
     if source not in SUBJECTS:
         raise ValueError(f"Unknown source: {source}")
 
     selected_subjects = list(subjects if subjects is not None else SUBJECTS[source])
     scopes = selected_subjects
-    if include_overall and source in {"usnews", "times"}:
+    if include_overall:
         scopes = ["overall", *scopes]
 
     retrieved_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -515,6 +624,7 @@ def scrape_country_rankings(
             max_retries=max_retries,
             base_delay=base_delay,
             request_delay=request_delay,
+            reader_proxy=reader_proxy,
         )
         frame.insert(1, "retrieved_at", retrieved_at)
         return index, frame

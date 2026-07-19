@@ -39,10 +39,43 @@ ranking scope, retrieval time, and failures. The committed July 2026 snapshot
 contains 3,986 US News records across 52 scopes and 1,657 THE records across
 12 scopes.
 
-QS currently returns an interactive Cloudflare challenge to non-browser
-requests. The scraper reports this as an explicit provider-blocked error rather
-than attempting to bypass the site's access control. Use an authorized QS
-export or API credential when QS data is required.
+## Worldwide rankings by subject or major
+
+```bash
+.venv/bin/python -m university_ranking_scraper \
+  --website usnews --worldwide --all-subjects --include-overall \
+  --workers 6 --output-dir data
+
+.venv/bin/python -m university_ranking_scraper \
+  --website times --worldwide --all-subjects --include-overall \
+  --year 2026 --workers 3 --output-dir data
+
+.venv/bin/python -m university_ranking_scraper \
+  --website qs --worldwide --all-subjects --include-overall \
+  --year 2026 --reader-proxy --output-dir data
+
+.venv/bin/python -m university_ranking_scraper \
+  --website qs --worldwide --overall-only \
+  --year 2027 --reader-proxy --output-dir data
+```
+
+The committed worldwide snapshot uses `ranking_scope` as the subject/major
+dimension:
+
+| Dataset | Records | Scopes | Countries |
+| --- | ---: | ---: | ---: |
+| US News (retrieved 2026-07-19) | 26,654 | 52 | 110 |
+| THE 2026 | 14,811 | 12 | 136 |
+| QS subjects 2026 | 22,844 | 61 | 111 |
+| QS overall 2027 | 1,504 | 1 | 106 |
+| **Total** | **65,813** | **126** | |
+
+QS currently returns an interactive Cloudflare challenge to direct requests.
+The explicit `--reader-proxy` option applies the fallback strategy used by the
+sibling ReadWise scraper: it sends only constructed public QS ranking URLs
+(never cookies or credentials) through `r.jina.ai`. Without that option, QS
+fails with a provider-blocked error. An authorized QS export or API remains the
+preferred source when available.
 
 ## Python API
 

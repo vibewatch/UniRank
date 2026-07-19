@@ -1,6 +1,7 @@
 # Valid sources for the university rankings scraper
 VALID_SOURCES = ['usnews', 'times', 'qs']
 LATEST_THE_YEAR = 2026
+LATEST_QS_YEAR = 2026
 
 # Valid regions for each source
 REGIONS = {
@@ -39,7 +40,78 @@ SUBJECTS = {
            'geography', 'geology', 'geophysics', 'materials-sciences', 'mathematics', 'physics-astronomy', 'social-sciences-management',
            'accounting-finance', 'anthropology', 'business-management-studies', 'communication-media-studies', 'development-studies',
            'economics-econometrics', 'education-training', 'hospitality-leisure-management', 'law-legal-studies','library-information-management',
-           'marketing', 'politics', 'social-policy-administration', 'sports-related-subjects', 'statistics-operational-research']
+           'marketing', 'politics', 'social-policy-administration', 'sociology', 'sports-related-subjects',
+           'statistics-operational-research']
+}
+
+QS_OVERALL_NIDS = {
+    2026: '4061771',
+    2027: '4153156',
+}
+
+QS_SUBJECT_NIDS = {
+    2026: {
+        'engineering-technology': '4114613',
+        'life-sciences-medicine': '4114614',
+        'arts-humanities': '4114615',
+        'accounting-finance': '4114616',
+        'social-sciences-management': '4114617',
+        'natural-sciences': '4114618',
+        'agriculture-forestry': '4114619',
+        'anthropology': '4114620',
+        'anatomy-physiology': '4114621',
+        'architecture-built-environment': '4114622',
+        'archaeology': '4114623',
+        'art-design': '4114624',
+        'business-management-studies': '4114625',
+        'chemistry': '4114626',
+        'biological-sciences': '4114627',
+        'communication-media-studies': '4114628',
+        'classics-ancient-history': '4114629',
+        'computer-science-information-systems': '4114630',
+        'dentistry': '4114631',
+        'development-studies': '4114632',
+        'earth-marine-sciences': '4114633',
+        'education-training': '4114634',
+        'chemical-engineering': '4114635',
+        'electrical-electronic-engineering': '4114636',
+        'civil-structural-engineering': '4114637',
+        'mechanical-aeronautical-manufacturing-engineering': '4114638',
+        'english-language-literature': '4114639',
+        'economics-econometrics': '4114640',
+        'mineral-mining-engineering': '4114641',
+        'geophysics': '4114642',
+        'geography': '4114643',
+        'engineering-petroleum': '4114644',
+        'veterinary-science': '4114645',
+        'theology-divinity-religious-studies': '4114646',
+        'history': '4114647',
+        'statistics-operational-research': '4114648',
+        'sports-related-subjects': '4114649',
+        'sociology': '4114650',
+        'social-policy-administration': '4114651',
+        'law-legal-studies': '4114652',
+        'physics-astronomy': '4114653',
+        'philosophy': '4114654',
+        'psychology': '4114655',
+        'hospitality-leisure-management': '4114656',
+        'library-information-management': '4114657',
+        'pharmacy-pharmacology': '4114658',
+        'mathematics': '4114659',
+        'performing-arts': '4114660',
+        'medicine': '4114661',
+        'materials-sciences': '4114662',
+        'modern-languages': '4114663',
+        'marketing': '4114664',
+        'data-science-artificial-intelligence': '4114665',
+        'linguistics': '4114666',
+        'politics': '4114667',
+        'music': '4114668',
+        'art-history': '4114669',
+        'nursing': '4114670',
+        'environmental-sciences': '4114671',
+        'geology': '4114672',
+    },
 }
 
 # Headers for HTTP requests

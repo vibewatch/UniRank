@@ -59,9 +59,19 @@ def build_parser() -> argparse.ArgumentParser:
         help="Country slug, for example united-states",
     )
     parser.add_argument(
+        "--worldwide",
+        action="store_true",
+        help="Collect worldwide results without a country filter",
+    )
+    parser.add_argument(
         "--all-subjects",
         action="store_true",
         help="Scrape every supported subject for the selected provider",
+    )
+    parser.add_argument(
+        "--overall-only",
+        action="store_true",
+        help="Scrape only the provider's overall ranking",
     )
     parser.add_argument(
         "--include-overall",
@@ -72,7 +82,15 @@ def build_parser() -> argparse.ArgumentParser:
         "--year",
         type=int,
         default=LATEST_THE_YEAR,
-        help=f"THE ranking year (default: {LATEST_THE_YEAR})",
+        help=f"Provider ranking year (default: {LATEST_THE_YEAR})",
+    )
+    parser.add_argument(
+        "--reader-proxy",
+        action="store_true",
+        help=(
+            "Fetch public QS URLs through r.jina.ai after Cloudflare blocks "
+            "direct access"
+        ),
     )
     parser.add_argument(
         "--workers",
@@ -98,18 +116,20 @@ def build_parser() -> argparse.ArgumentParser:
 def _write_batch(
     output_dir: Path,
     source: str,
-    country: str,
+    country: str | None,
     year: int,
     frame,
     failures: list[dict[str, str]],
+    reader_proxy: bool,
 ) -> Path:
     retrieved_at = (
         str(frame["retrieved_at"].iloc[0])
         if "retrieved_at" in frame and not frame.empty
         else datetime.now(timezone.utc).isoformat(timespec="seconds")
     )
-    edition = str(year) if source == "times" else retrieved_at[:10]
-    stem = f"{source}_{country}_all_rankings_{edition}"
+    edition = str(year) if source in {"times", "qs"} else retrieved_at[:10]
+    coverage = country or "worldwide"
+    stem = f"{source}_{coverage}_all_rankings_{edition}"
     csv_path = output_dir / f"{stem}.csv"
     prepare_for_csv(frame).to_csv(csv_path, encoding="utf-8", index=False)
 
@@ -120,7 +140,9 @@ def _write_batch(
     manifest = {
         "source": source,
         "country": country,
-        "ranking_year": year if source == "times" else None,
+        "coverage": "country" if country else "worldwide",
+        "ranking_year": year if source in {"times", "qs"} else None,
+        "retrieval_method": "reader-proxy" if reader_proxy else "direct",
         "retrieved_at": retrieved_at,
         "records": int(len(frame)),
         "records_by_scope": counts,
@@ -135,16 +157,21 @@ def _write_batch(
 
 
 def _run_all_subjects(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
-    if not args.country:
-        parser.error("--country is required with --all-subjects")
+    if not args.country and not args.worldwide:
+        parser.error(
+            "--country or --worldwide is required with batch ranking options"
+        )
+    country = None if args.worldwide else args.country
     frame, failures = scrape_country_rankings(
         args.website,
-        args.country,
+        country,
+        subjects=[] if args.overall_only else None,
         year=args.year,
-        include_overall=args.include_overall,
+        include_overall=True if args.overall_only else args.include_overall,
         workers=args.workers,
         max_retries=args.max_retries,
         request_delay=args.request_delay,
+        reader_proxy=args.reader_proxy,
     )
     if frame.empty:
         details = failures[0]["error"] if failures else "no ranked records returned"
@@ -155,10 +182,11 @@ def _run_all_subjects(args: argparse.Namespace, parser: argparse.ArgumentParser)
     _write_batch(
         output_dir,
         args.website,
-        args.country,
+        country,
         args.year,
         frame,
         failures,
+        args.reader_proxy,
     )
     if failures:
         logger.warning("Completed with %s failed ranking scopes", len(failures))
@@ -166,8 +194,8 @@ def _run_all_subjects(args: argparse.Namespace, parser: argparse.ArgumentParser)
 
 
 def _run_single(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
-    if args.region and args.country:
-        parser.error("--region and --country cannot be used together")
+    if args.region and (args.country or args.worldwide):
+        parser.error("--region cannot be combined with --country or --worldwide")
     if args.website in {"times", "qs"} and args.region:
         parser.error("--region is only supported by US News")
     if args.subject not in SUBJECTS[args.website]:
@@ -195,8 +223,10 @@ def _run_single(args: argparse.Namespace, parser: argparse.ArgumentParser) -> in
         frame = scrape_qs(
             args.subject,
             max_retries=args.max_retries,
+            year=args.year,
             country=args.country,
             request_delay=args.request_delay,
+            reader_proxy=args.reader_proxy,
         )
 
     if frame.empty:
@@ -204,7 +234,11 @@ def _run_single(args: argparse.Namespace, parser: argparse.ArgumentParser) -> in
 
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    country_part = f"_{args.country}" if args.country else ""
+    country_part = (
+        f"_{args.country}"
+        if args.country
+        else "_worldwide" if args.worldwide else ""
+    )
     output_path = (
         output_dir
         / f"{args.website}{country_part}_{args.subject}.csv"
@@ -222,6 +256,12 @@ def main(argv: list[str] | None = None) -> int:
     logging.getLogger("httpx").setLevel(logging.WARNING)
     parser = build_parser()
     args = parser.parse_args(argv)
+    if args.country and args.worldwide:
+        parser.error("--country and --worldwide cannot be used together")
+    if args.all_subjects and args.overall_only:
+        parser.error("--all-subjects and --overall-only cannot be used together")
+    if args.reader_proxy and args.website != "qs":
+        parser.error("--reader-proxy is only supported for QS")
     if args.workers < 1:
         parser.error("--workers must be at least 1")
     if args.request_delay < 0:
@@ -230,7 +270,7 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--max-retries must be at least 1")
 
     try:
-        if args.all_subjects:
+        if args.all_subjects or args.overall_only:
             return _run_all_subjects(args, parser)
         return _run_single(args, parser)
     except ProviderBlockedError as exc:

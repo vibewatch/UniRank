@@ -1,0 +1,13 @@
+{
+  "source": "qs",
+  "country": null,
+  "coverage": "worldwide",
+  "ranking_year": 2027,
+  "retrieval_method": "reader-proxy",
+  "retrieved_at": "2026-07-19T07:03:05+00:00",
+  "records": 1504,
+  "records_by_scope": {
+    "overall": 1504
+  },
+  "failures": []
+}

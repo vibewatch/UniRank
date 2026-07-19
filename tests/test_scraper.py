@@ -17,6 +17,8 @@ class FakeResponse:
         return None
 
     def json(self):
+        if isinstance(self._payload, Exception):
+            raise self._payload
         return self._payload
 
 
@@ -101,6 +103,66 @@ class ScraperTests(unittest.TestCase):
         with self.assertRaisesRegex(scraper.ProviderBlockedError, "HTTP 403"):
             scraper.scrape_qs("computer-science-information-systems")
 
+    @patch("university_ranking_scraper.scraper.httpx.Client")
+    def test_qs_reader_proxy_encodes_query_and_fetches_every_page(self, client_class):
+        first = {
+            "total_pages": 2,
+            "score_nodes": [{"nid": "1", "title": "First University"}],
+        }
+        second = {
+            "total_pages": 2,
+            "score_nodes": [{"nid": "2", "title": "Second University"}],
+        }
+        client = fake_client([FakeResponse(first), FakeResponse(second)])
+        client_class.return_value = client
+
+        result = scraper.scrape_qs(
+            "computer-science-information-systems",
+            reader_proxy=True,
+            request_delay=0,
+        )
+
+        self.assertEqual(["1", "2"], result["nid"].tolist())
+        first_url = client.get.call_args_list[0].args[0]
+        second_url = client.get.call_args_list[1].args[0]
+        self.assertTrue(first_url.startswith("https://r.jina.ai/https://"))
+        self.assertIn("%3Fnid%3D4114630%26page%3D0", first_url)
+        self.assertIn("%26page%3D1", second_url)
+        self.assertIsNone(client.get.call_args_list[0].kwargs["params"])
+
+    @patch("university_ranking_scraper.scraper.httpx.Client")
+    def test_qs_reader_proxy_retries_invalid_json(self, client_class):
+        valid = {
+            "total_pages": 1,
+            "score_nodes": [{"nid": "1", "title": "Recovered University"}],
+        }
+        client = fake_client(
+            [FakeResponse(ValueError("challenge HTML")), FakeResponse(valid)]
+        )
+        client_class.return_value = client
+
+        result = scraper.scrape_qs(
+            "computer-science-information-systems",
+            reader_proxy=True,
+            request_delay=0,
+            max_retries=2,
+            base_delay=0,
+        )
+
+        self.assertEqual(["Recovered University"], result["title"].tolist())
+        self.assertEqual(2, client.get.call_count)
+
+    def test_qs_2026_node_map_covers_every_configured_subject(self):
+        configured = set(scraper.SUBJECTS["qs"])
+        mapped = set(scraper.QS_SUBJECT_NIDS[2026])
+
+        self.assertEqual(configured, mapped)
+        self.assertEqual(
+            list(range(4114613, 4114673)),
+            sorted(int(node_id) for node_id in scraper.QS_SUBJECT_NIDS[2026].values()),
+        )
+        self.assertEqual("4153156", scraper.QS_OVERALL_NIDS[2027])
+
     def test_usnews_output_excludes_prose_but_preserves_ranking_facts(self):
         raw = pd.DataFrame(
             [
@@ -155,6 +217,23 @@ class ScraperTests(unittest.TestCase):
 
         self.assertEqual(["Example"], result["name"].tolist())
         self.assertEqual("chemistry", failures[0]["ranking_scope"])
+
+    @patch("university_ranking_scraper.scraper._scope_frame")
+    def test_batch_supports_worldwide_results(self, scope_frame):
+        scope_frame.return_value = pd.DataFrame(
+            [{"source": "times", "ranking_scope": "overall", "name": "Example"}]
+        )
+
+        result, failures = scraper.scrape_country_rankings(
+            "times",
+            None,
+            subjects=[],
+            include_overall=True,
+        )
+
+        self.assertEqual(["Example"], result["name"].tolist())
+        self.assertEqual([], failures)
+        self.assertIsNone(scope_frame.call_args.kwargs["country"])
 
 
 if __name__ == "__main__":
