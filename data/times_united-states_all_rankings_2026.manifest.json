@@ -1,0 +1,22 @@
+{
+  "source": "times",
+  "country": "united-states",
+  "ranking_year": 2026,
+  "retrieved_at": "2026-07-19T06:08:55+00:00",
+  "records": 1657,
+  "records_by_scope": {
+    "arts-and-humanities": 138,
+    "business-and-economics": 143,
+    "clinical-pre-clinical-health": 122,
+    "computer-science": 130,
+    "education": 130,
+    "engineering": 144,
+    "law": 73,
+    "life-sciences": 134,
+    "overall": 175,
+    "physical-sciences": 161,
+    "psychology": 150,
+    "social-sciences": 157
+  },
+  "failures": []
+}
