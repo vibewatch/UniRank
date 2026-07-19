@@ -4,25 +4,36 @@ import json
 import logging
 import random
 import re
+import tempfile
 import time
+import unicodedata
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
+from functools import lru_cache
 from html import unescape
+from io import StringIO
+from pathlib import Path
 from typing import Any, Iterable
 from urllib.parse import quote
 
 import httpx
 import pandas as pd
+import pycountry
+from pypdf import PdfReader
 
 from .constant import (
+    ARWU_SUBJECT_CODES,
     HEADERS,
+    LEIDEN_FIELD_IDS,
     LATEST_QS_YEAR,
     LATEST_THE_YEAR,
+    NTU_SCOPE_CODES,
     QS_LEGACY_URLS,
     QS_OVERALL_NIDS,
+    SCIMAGO_AREA_CODES,
+    SUBJECT_FIRST_YEAR,
     QS_SUBJECT_NIDS,
     SUBJECTS,
-    THE_SUBJECT_FIRST_YEAR,
 )
 
 logger = logging.getLogger(__name__)
@@ -40,6 +51,11 @@ QS_PAGE_URL = "https://www.topuniversities.com/university-subject-rankings/{subj
 QS_WORLD_PAGE_URL = "https://www.topuniversities.com/world-university-rankings/{year}"
 QS_API_URL = "https://www.topuniversities.com/rankings/endpoint"
 READER_PROXY_URL = "https://r.jina.ai/"
+OPENALEX_API_URL = "https://api.openalex.org"
+CWUR_BASE_URL = "https://cwur.org"
+NTU_BASE_URL = "http://nturanking.csti.tw"
+ARWU_API_URL = "https://www.shanghairanking.com/api/pub/v1"
+SCIMAGO_URL = "https://www.scimagoir.com/getdata.php"
 
 
 class ScraperError(RuntimeError):
@@ -68,13 +84,27 @@ def _request(
     for attempt in range(max_retries):
         try:
             response = client.get(url, params=params)
-            if response.status_code == 403 and provider == "qs":
+            if response.status_code == 403 and provider in {"qs", "scimago"}:
+                provider_name = "QS" if provider == "qs" else "SCImago"
                 raise ProviderBlockedError(
-                    "QS returned HTTP 403 from its Cloudflare-protected site. "
+                    f"{provider_name} returned HTTP 403 from its "
+                    "Cloudflare-protected site. "
                     "Retry with the explicit reader-proxy option, or use an "
-                    "authorized QS export or API credential."
+                    f"authorized {provider_name} export."
                 )
             response.raise_for_status()
+            if provider in {"qs", "scimago"}:
+                challenge = response.text[:2_000].casefold()
+                if (
+                    "performing security verification" in challenge
+                    or "just a moment" in challenge
+                    or "requiring captcha" in challenge
+                ):
+                    provider_name = "QS" if provider == "qs" else "SCImago"
+                    raise ProviderBlockedError(
+                        f"{provider_name} returned a Cloudflare challenge "
+                        "instead of ranking data. Use an authorized export."
+                    )
             return response
         except ProviderBlockedError:
             raise
@@ -83,6 +113,15 @@ def _request(
             if attempt == max_retries - 1:
                 break
             delay = _retry_delay(base_delay, attempt)
+            if (
+                isinstance(exc, httpx.HTTPStatusError)
+                and exc.response.status_code == 429
+            ):
+                try:
+                    retry_after = float(exc.response.headers.get("Retry-After", ""))
+                except ValueError:
+                    retry_after = 5.0
+                delay = max(delay, retry_after)
             logger.warning(
                 "Retry %s/%s for %s after %.2fs: %s",
                 attempt + 1,
@@ -252,6 +291,98 @@ def _country_name(value: Any) -> str:
 
 def _country_label(country: str) -> str:
     return country.replace("-", " ").strip().title()
+
+
+def _slug(value: Any, separator: str = "-") -> str:
+    text = _plain_text(str(value or "")).casefold()
+    return re.sub(rf"[^{re.escape(separator)}a-z0-9]+", separator, text).strip(
+        separator
+    )
+
+
+def _country_key(value: Any) -> str:
+    raw_value = _plain_text(str(value or "")).strip()
+    if not raw_value:
+        return ""
+    try:
+        return pycountry.countries.lookup(raw_value).alpha_2.casefold()
+    except LookupError:
+        pass
+
+    ascii_value = (
+        unicodedata.normalize("NFKD", raw_value)
+        .encode("ascii", "ignore")
+        .decode("ascii")
+    )
+    key = _slug(ascii_value)
+    aliases = {
+        "u-s-a": "us",
+        "usa": "us",
+        "united-states-of-america": "us",
+        "u-k": "gb",
+        "uk": "gb",
+        "uae": "ae",
+        "south-korea": "kr",
+        "republic-of-korea": "kr",
+        "korea-republic-of": "kr",
+        "north-korea": "kp",
+        "russian-federation": "ru",
+        "russia": "ru",
+        "turkey": "tr",
+        "turkiye": "tr",
+        "viet-nam": "vn",
+        "vietnam": "vn",
+        "iran-islamic-republic-of": "ir",
+        "iran": "ir",
+        "taiwan-province-of-china": "tw",
+        "taiwan": "tw",
+        "czech-republic": "cz",
+        "slovak-republic": "sk",
+        "ivory-coast": "ci",
+        "cote-d-ivoire": "ci",
+        "cote-divoire": "ci",
+        "cape-verde": "cv",
+        "swaziland": "sz",
+        "macedonia": "mk",
+        "east-timor": "tl",
+        "burma": "mm",
+        "laos": "la",
+        "moldova": "md",
+        "bolivia": "bo",
+        "venezuela": "ve",
+        "brunei": "bn",
+        "tanzania": "tz",
+        "syria": "sy",
+        "palestine": "ps",
+        "micronesia": "fm",
+        "kosovo": "xk",
+        "the-netherlands": "nl",
+        "mainland-china": "cn",
+        "china-mainland": "cn",
+    }
+    if key in aliases:
+        return aliases[key]
+    try:
+        return pycountry.countries.lookup(key.replace("-", " ")).alpha_2.casefold()
+    except LookupError:
+        return key
+
+
+def _country_matches(requested: str, *values: Any) -> bool:
+    requested_key = _country_key(requested)
+    requested_code = requested.strip().upper()
+    return any(
+        _country_key(value) == requested_key
+        or (
+            len(requested_code) in {2, 3}
+            and str(value or "").strip().upper() == requested_code
+        )
+        for value in values
+    )
+
+
+def _column_slug(value: Any) -> str:
+    return _slug(value, separator="_")
 
 
 def scrape_times(
@@ -550,6 +681,947 @@ def scrape_qs(
     return pd.DataFrame(results)
 
 
+CWUR_YEAR_PATHS = {
+    2012: "2012.php",
+    2013: "2013.php",
+    2014: "2014.php",
+    2015: "2015.php",
+    2016: "2016.php",
+    2017: "2017.php",
+    2018: "2018-19.php",
+    2019: "2019-20.php",
+    2020: "2020-21.php",
+    2021: "2021.php",
+    2022: "2022-23.php",
+    2023: "2023.php",
+    2024: "2024.php",
+    2025: "2025.php",
+    2026: "2026.php",
+}
+
+
+def scrape_cwur(
+    year: int = 2026,
+    max_retries: int = 3,
+    base_delay: float = 1.0,
+    *,
+    country: str | None = None,
+) -> pd.DataFrame:
+    """Scrape one CWUR overall ranking edition from its static HTML table."""
+    path = CWUR_YEAR_PATHS.get(year)
+    if path is None:
+        raise ValueError("CWUR editions are available from 2012 through 2026")
+
+    url = f"{CWUR_BASE_URL}/{path}"
+    with httpx.Client(
+        headers=HEADERS["cwur"],
+        timeout=60.0,
+        follow_redirects=True,
+    ) as client:
+        response = _request(
+            client,
+            url,
+            params=None,
+            provider="cwur",
+            max_retries=max_retries,
+            base_delay=base_delay,
+        )
+
+    try:
+        tables = pd.read_html(StringIO(response.text))
+    except ValueError as exc:
+        raise ScraperError(f"CWUR returned no ranking table for {year}") from exc
+    frame = next(
+        (
+            table
+            for table in tables
+            if {"World Rank", "Institution"}.issubset(
+                {str(column) for column in table.columns}
+            )
+        ),
+        None,
+    )
+    if frame is None:
+        raise ScraperError(f"CWUR returned no ranking table for {year}")
+
+    normalized = frame.copy()
+    normalized.columns = [_column_slug(column) for column in normalized.columns]
+    normalized = normalized.rename(
+        columns={
+            "world_rank": "ranking_display",
+            "institution": "name",
+            "location": "country",
+        }
+    )
+    if "country" not in normalized and "country" in frame:
+        normalized["country"] = frame["country"]
+    ranking = (
+        normalized["ranking_display"]
+        .astype(str)
+        .str.extract(r"^\s*(\d+)", expand=False)
+    )
+    normalized.insert(
+        normalized.columns.get_loc("ranking_display"),
+        "ranking",
+        pd.to_numeric(ranking, errors="coerce").astype("Int64"),
+    )
+    normalized["ranking_display"] = ranking
+    normalized.insert(0, "edition", path.removesuffix(".php"))
+    if country:
+        normalized = normalized[
+            normalized["country"].map(lambda value: _country_matches(country, value))
+        ]
+    logger.info("Collected %s CWUR records for %s", len(normalized), year)
+    return normalized.reset_index(drop=True)
+
+
+def scrape_ntu(
+    subject: str,
+    year: int = 2025,
+    max_retries: int = 3,
+    base_delay: float = 1.0,
+    *,
+    country: str | None = None,
+    ranked_only: bool = True,
+) -> pd.DataFrame:
+    """Scrape one NTU overall, field, or subject ranking."""
+    if subject:
+        try:
+            ranking_type, code = NTU_SCOPE_CODES[subject]
+        except KeyError as exc:
+            raise ValueError(f"Unsupported NTU scope: {subject}") from exc
+        endpoint = (
+            "FieldRanking_AJAX"
+            if ranking_type == "field"
+            else "SubjectRanking_AJAX"
+        )
+        url = f"{NTU_BASE_URL}/{endpoint}/{code}/{year}."
+    else:
+        url = f"{NTU_BASE_URL}/OverallRanking_AJAX/{year}."
+
+    with httpx.Client(
+        headers=HEADERS["ntu"],
+        timeout=60.0,
+        follow_redirects=True,
+    ) as client:
+        response = _request(
+            client,
+            url,
+            params=None,
+            provider="ntu",
+            max_retries=max_retries,
+            base_delay=base_delay,
+        )
+    try:
+        payload = response.json()
+    except ValueError as exc:
+        raise ScraperError(f"NTU returned invalid JSON for {year}") from exc
+    if isinstance(payload, dict):
+        records = _list_field(payload, "data", "ntu")
+    elif isinstance(payload, list) and not payload:
+        raise ScraperError(
+            f"NTU has no data for {subject or 'overall'} ({year})"
+        )
+    else:
+        raise ScraperError(f"NTU returned an unexpected response for {year}")
+
+    if ranked_only:
+        records = [
+            record
+            for record in records
+            if str(record.get("RankU") or "").strip() not in {"", "-"}
+        ]
+    if not records:
+        raise ScraperError(
+            f"NTU has no ranked data for {subject or 'overall'} ({year})"
+        )
+    if country:
+        records = [
+            record
+            for record in records
+            if _country_matches(
+                country,
+                record.get("univ__CountryName"),
+                record.get("univ__CountryName_ISO3166"),
+            )
+        ]
+
+    normalized = pd.DataFrame(records).rename(
+        columns={
+            "univ__OrgName_EN": "name",
+            "univ__CountryName": "country",
+            "univ__CountryName_ISO3166": "country_code",
+            "RankU": "ranking",
+            "Seq": "rank_order",
+            "Pub_Score": "score",
+            "Pub_11yrArticles": "score_11_year_articles",
+            "Pub_2yrArticles": "score_2_year_articles",
+            "Pub_11Citations": "score_11_year_citations",
+            "Pub_2Citations": "score_2_year_citations",
+            "Pub_AveCitations": "score_average_citations",
+            "Pub_H_Index": "score_h_index",
+            "Pub_HiCi": "score_highly_cited_papers",
+            "Pub_JCR": "score_high_impact_journal_articles",
+            "Ref_Rank": "reference_rank_order",
+            "Ref_RankU": "reference_ranking",
+        }
+    )
+    logger.info(
+        "Collected %s NTU records for %s (%s)",
+        len(normalized),
+        subject or "overall",
+        year,
+    )
+    return normalized
+
+
+def _ranking_api_records(payload: dict[str, Any], provider: str) -> pd.DataFrame:
+    if payload.get("code") != 200:
+        raise ScraperError(
+            f"{provider} returned an error: {payload.get('msg') or payload.get('code')}"
+        )
+    data = payload.get("data")
+    if not isinstance(data, dict):
+        raise ScraperError(f"{provider} response is missing ranking data")
+    rankings = _list_field(data, "rankings", provider)
+    indicators = _list_field(data, "indicators", provider)
+    if not rankings:
+        raise ScraperError(f"{provider} returned no ranked institutions")
+    indicator_names = {
+        str(indicator.get("code")): _column_slug(indicator.get("nameEn"))
+        for indicator in indicators
+        if indicator.get("code") is not None and indicator.get("nameEn")
+    }
+
+    records: list[dict[str, Any]] = []
+    for ranking in rankings:
+        record = {
+            "ranking": ranking.get("ranking"),
+            "name": ranking.get("univNameEn"),
+            "university_code": ranking.get("univCode") or None,
+            "university_slug": ranking.get("univUp"),
+            "country": ranking.get("region"),
+            "country_code": str(ranking.get("regionLogo") or "").upper() or None,
+            "country_ranking": ranking.get("regionRanking") or None,
+            "score": ranking.get("score"),
+        }
+        indicator_data = ranking.get("indData")
+        if isinstance(indicator_data, dict):
+            for code, value in indicator_data.items():
+                name = indicator_names.get(str(code), f"code_{code}")
+                record[f"indicator_{name}"] = value
+        records.append(record)
+    return pd.DataFrame(records)
+
+
+def scrape_arwu(
+    subject: str,
+    year: int = 2025,
+    max_retries: int = 3,
+    base_delay: float = 1.0,
+    *,
+    country: str | None = None,
+) -> pd.DataFrame:
+    """Scrape one ARWU overall or GRAS subject ranking."""
+    if subject:
+        if not 2017 <= year <= 2025:
+            raise ValueError("GRAS subject editions are available from 2017 through 2025")
+        try:
+            subject_code = ARWU_SUBJECT_CODES[subject]
+        except KeyError as exc:
+            raise ValueError(f"Unsupported ARWU subject: {subject}") from exc
+        url = f"{ARWU_API_URL}/gras/rank"
+        params: dict[str, Any] = {"version": year, "subj_code": subject_code}
+        provider = "ShanghaiRanking GRAS"
+    else:
+        if not 2003 <= year <= 2025:
+            raise ValueError("ARWU editions are available from 2003 through 2025")
+        if year == 2018:
+            raise ScraperError(
+                "ShanghaiRanking's public API omits the 2018 ARWU edition; "
+                "the official page exposes only its first 30 rows without a "
+                "working bulk endpoint"
+            )
+        url = f"{ARWU_API_URL}/arwu/rank"
+        params = {"version": year}
+        provider = "ShanghaiRanking ARWU"
+
+    with httpx.Client(
+        headers=HEADERS["arwu"],
+        timeout=60.0,
+        follow_redirects=True,
+    ) as client:
+        payload = _request_json(
+            client,
+            url,
+            params=params,
+            provider="arwu",
+            max_retries=max_retries,
+            base_delay=base_delay,
+        )
+    normalized = _ranking_api_records(payload, provider)
+    if country:
+        normalized = normalized[
+            normalized.apply(
+                lambda row: _country_matches(
+                    country,
+                    row.get("country"),
+                    row.get("country_code"),
+                ),
+                axis=1,
+            )
+        ]
+    logger.info(
+        "Collected %s ARWU records for %s (%s)",
+        len(normalized),
+        subject or "overall",
+        year,
+    )
+    return normalized.reset_index(drop=True)
+
+
+@lru_cache(maxsize=8)
+def _load_openalex_institutions(
+    minimum_lifetime_works: int,
+    api_key: str | None,
+    max_retries: int = 3,
+    base_delay: float = 1.0,
+    request_delay: float = 0.05,
+) -> tuple[dict[str, Any], ...]:
+    params: dict[str, Any] = {
+        "filter": f"type:education,works_count:>{minimum_lifetime_works}",
+        "sort": "works_count:desc",
+        "per_page": 100,
+        "cursor": "*",
+        "select": (
+            "id,display_name,ror,country_code,geo,works_count,cited_by_count,"
+            "summary_stats,counts_by_year"
+        ),
+    }
+    if api_key:
+        params["api_key"] = api_key
+
+    institutions: list[dict[str, Any]] = []
+    with httpx.Client(
+        headers=HEADERS["openalex"],
+        timeout=90.0,
+        follow_redirects=True,
+    ) as client:
+        while params["cursor"]:
+            payload = _request_json(
+                client,
+                f"{OPENALEX_API_URL}/institutions",
+                params=params,
+                provider="openalex",
+                max_retries=max_retries,
+                base_delay=base_delay,
+            )
+            institutions.extend(_list_field(payload, "results", "openalex"))
+            meta = payload.get("meta")
+            if not isinstance(meta, dict):
+                raise ScraperError("OpenAlex response is missing pagination metadata")
+            next_cursor = meta.get("next_cursor")
+            params["cursor"] = str(next_cursor) if next_cursor else ""
+            if params["cursor"] and request_delay:
+                time.sleep(request_delay)
+
+    return tuple(institutions)
+
+
+def scrape_openalex(
+    year: int = 2025,
+    max_retries: int = 3,
+    base_delay: float = 1.0,
+    *,
+    country: str | None = None,
+    request_delay: float = 0.05,
+    minimum_lifetime_works: int = 1000,
+    api_key: str | None = None,
+) -> pd.DataFrame:
+    """Build a CC0 research-output ranking from OpenAlex institution data."""
+    if minimum_lifetime_works < 1:
+        raise ValueError("minimum_lifetime_works must be at least 1")
+    institutions = _load_openalex_institutions(
+        minimum_lifetime_works,
+        api_key,
+        max_retries,
+        base_delay,
+        request_delay,
+    )
+
+    records: list[dict[str, Any]] = []
+    for institution in institutions:
+        yearly_counts = institution.get("counts_by_year")
+        annual = next(
+            (
+                counts
+                for counts in yearly_counts
+                if isinstance(counts, dict) and counts.get("year") == year
+            ),
+            None,
+        ) if isinstance(yearly_counts, list) else None
+        if not annual or not annual.get("works_count"):
+            continue
+        geo = institution.get("geo")
+        summary = institution.get("summary_stats")
+        record = {
+            "openalex_id": institution.get("id"),
+            "ror_id": institution.get("ror"),
+            "name": institution.get("display_name"),
+            "country": geo.get("country") if isinstance(geo, dict) else None,
+            "country_code": institution.get("country_code"),
+            "city": geo.get("city") if isinstance(geo, dict) else None,
+            "latitude": geo.get("latitude") if isinstance(geo, dict) else None,
+            "longitude": geo.get("longitude") if isinstance(geo, dict) else None,
+            "works_count": annual.get("works_count"),
+            "open_access_works_count": annual.get("oa_works_count"),
+            "citations_to_year_works": annual.get("cited_by_count"),
+            "lifetime_works_count": institution.get("works_count"),
+            "lifetime_cited_by_count": institution.get("cited_by_count"),
+            "two_year_mean_citedness": (
+                summary.get("2yr_mean_citedness")
+                if isinstance(summary, dict)
+                else None
+            ),
+            "h_index": summary.get("h_index") if isinstance(summary, dict) else None,
+            "i10_index": summary.get("i10_index") if isinstance(summary, dict) else None,
+            "ranking_metric": "annual_works_count",
+        }
+        records.append(record)
+
+    normalized = pd.DataFrame(records)
+    if normalized.empty:
+        raise ScraperError(f"OpenAlex returned no institution data for {year}")
+    normalized["ranking"] = (
+        normalized["works_count"]
+        .rank(method="min", ascending=False)
+        .astype("Int64")
+    )
+    normalized = normalized.sort_values(
+        ["ranking", "citations_to_year_works", "name"],
+        ascending=[True, False, True],
+        kind="stable",
+    ).reset_index(drop=True)
+    if country:
+        normalized = normalized[
+            normalized.apply(
+                lambda row: _country_matches(
+                    country,
+                    row.get("country"),
+                    row.get("country_code"),
+                ),
+                axis=1,
+            )
+        ].reset_index(drop=True)
+    logger.info("Collected %s OpenAlex records for %s", len(normalized), year)
+    return normalized
+
+
+LEIDEN_EDITIONS = {
+    2023: {
+        "record": "10579113",
+        "archive": "cwts_leiden_ranking_open_edition_2023.zip",
+        "prefix": "",
+        "impact": "university_main_field_period_impact_indicators.tsv",
+        "latest_period": 2018,
+    },
+    2024: {
+        "record": "13868129",
+        "archive": "cwts_leiden_ranking_open_edition_2024.zip",
+        "prefix": "",
+        "impact": "university_main_field_period_impact_indicators.tsv",
+        "latest_period": 2019,
+    },
+    2025: {
+        "record": "17471989",
+        "archive": "cwts_leiden_ranking_open_edition_2025.zip",
+        "prefix": "cwts_leiden_ranking_open_edition_2025/",
+        "impact": "university_impact_indicators.tsv",
+        "latest_period": 2020,
+    },
+}
+
+
+def _leiden_file_url(year: int, filename: str) -> str:
+    try:
+        edition = LEIDEN_EDITIONS[year]
+    except KeyError as exc:
+        raise ValueError("Leiden Open Edition is available for 2023-2025") from exc
+    return (
+        f"https://zenodo.org/api/records/{edition['record']}/files/"
+        f"{edition['archive']}/container/{edition['prefix']}{filename}"
+    )
+
+
+def _download_to_temporary_file(
+    url: str,
+    *,
+    headers: dict[str, str],
+    provider: str,
+    max_retries: int,
+    base_delay: float,
+    suffix: str = ".tsv",
+) -> Path:
+    last_error: Exception | None = None
+    for attempt in range(max_retries):
+        temporary_path: Path | None = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                prefix="university-ranking-",
+                suffix=suffix,
+                delete=False,
+            ) as temporary:
+                temporary_path = Path(temporary.name)
+                with httpx.stream(
+                    "GET",
+                    url,
+                    headers=headers,
+                    timeout=300.0,
+                    follow_redirects=True,
+                ) as response:
+                    response.raise_for_status()
+                    for chunk in response.iter_bytes():
+                        temporary.write(chunk)
+            return temporary_path
+        except (httpx.RequestError, httpx.HTTPStatusError, OSError) as exc:
+            last_error = exc
+            if temporary_path is not None:
+                temporary_path.unlink(missing_ok=True)
+            if attempt == max_retries - 1:
+                break
+            delay = _retry_delay(base_delay, attempt)
+            logger.warning(
+                "Retry %s/%s for %s after %.2fs: %s",
+                attempt + 1,
+                max_retries,
+                url,
+                delay,
+                exc,
+            )
+            time.sleep(delay)
+    raise ScraperError(f"Unable to download {provider} data from {url}") from last_error
+
+
+@lru_cache(maxsize=3)
+def _load_leiden_edition(
+    year: int,
+    max_retries: int,
+    base_delay: float,
+) -> pd.DataFrame:
+    edition = LEIDEN_EDITIONS.get(year)
+    if edition is None:
+        raise ValueError("Leiden Open Edition is available for 2023-2025")
+
+    with httpx.Client(
+        headers=HEADERS["leiden"],
+        timeout=120.0,
+        follow_redirects=True,
+    ) as client:
+        metadata_response = _request(
+            client,
+            _leiden_file_url(year, "university.tsv"),
+            params=None,
+            provider="leiden",
+            max_retries=max_retries,
+            base_delay=base_delay,
+        )
+    universities = pd.read_csv(
+        StringIO(metadata_response.text),
+        sep="\t",
+        low_memory=False,
+    )
+    universities = universities.rename(
+        columns={
+            "university": "university_short_name",
+            "university_full_name": "name",
+            "ror_id": "ror_id",
+            "ror_name": "ror_name",
+            "university_ror_id": "ror_id",
+            "university_ror_name": "ror_name",
+            "university_openalex_institution_id": "openalex_id",
+        }
+    )
+
+    indicator_path = _download_to_temporary_file(
+        _leiden_file_url(year, str(edition["impact"])),
+        headers=HEADERS["leiden"],
+        provider="Leiden Ranking",
+        max_retries=max_retries,
+        base_delay=base_delay,
+    )
+    filtered_chunks: list[pd.DataFrame] = []
+    try:
+        for chunk in pd.read_csv(
+            indicator_path,
+            sep="\t",
+            chunksize=50_000,
+            low_memory=False,
+        ):
+            fractional = (
+                chunk["fractional_counting"]
+                .astype(str)
+                .str.strip()
+                .str.casefold()
+                .isin({"1", "true"})
+            )
+            mask = (
+                fractional
+                & chunk["period_begin_year"].eq(edition["latest_period"])
+                & chunk["main_field_id"].isin(range(6))
+                & pd.to_numeric(chunk["p"], errors="coerce").ge(100)
+            )
+            if "core_pubs_only" in chunk:
+                core_only = (
+                    chunk["core_pubs_only"]
+                    .astype(str)
+                    .str.strip()
+                    .str.casefold()
+                    .isin({"1", "true"})
+                )
+                mask &= core_only
+            selected = chunk.loc[mask]
+            if not selected.empty:
+                filtered_chunks.append(selected)
+    finally:
+        indicator_path.unlink(missing_ok=True)
+
+    if not filtered_chunks:
+        raise ScraperError(f"Leiden returned no ranking indicators for {year}")
+    indicators = pd.concat(filtered_chunks, ignore_index=True, sort=False)
+    normalized = indicators.merge(
+        universities,
+        on="university_id",
+        how="left",
+        validate="many_to_one",
+    )
+    normalized["period_end_year"] = normalized["period_begin_year"] + 3
+    normalized["ranking"] = (
+        normalized.groupby("main_field_id")["p"]
+        .rank(method="min", ascending=False)
+        .astype("Int64")
+    )
+    if "mncs" in normalized:
+        normalized["mncs_ranking"] = (
+            normalized.groupby("main_field_id")["mncs"]
+            .rank(method="min", ascending=False)
+            .astype("Int64")
+        )
+    if "pp_top_10" in normalized:
+        normalized["top_10_percent_ranking"] = (
+            normalized.groupby("main_field_id")["pp_top_10"]
+            .rank(method="min", ascending=False)
+            .astype("Int64")
+        )
+    normalized["ranking_metric"] = "fractional_publication_count"
+    return normalized
+
+
+def scrape_leiden(
+    subject: str,
+    year: int = 2025,
+    max_retries: int = 3,
+    base_delay: float = 1.0,
+    *,
+    country: str | None = None,
+) -> pd.DataFrame:
+    """Load one CC0 Leiden Open Edition field using the website defaults."""
+    field_id = 0 if not subject else LEIDEN_FIELD_IDS.get(subject)
+    if field_id is None:
+        raise ValueError(f"Unsupported Leiden field: {subject}")
+    edition = _load_leiden_edition(year, max_retries, base_delay)
+    selected = edition[edition["main_field_id"].eq(field_id)].copy()
+    if country:
+        selected = selected[
+            selected["country_code"].map(
+                lambda value: _country_matches(country, value)
+            )
+        ]
+    logger.info(
+        "Collected %s Leiden records for %s (%s)",
+        len(selected),
+        subject or "overall",
+        year,
+    )
+    return selected.sort_values(
+        ["ranking", "name"],
+        kind="stable",
+    ).reset_index(drop=True)
+
+
+WEBOMETRICS_EDITIONS = {
+    2025: {
+        "edition": "July",
+        "article_id": 29588921,
+        "file_id": 57084614,
+        "doi": "10.6084/m9.figshare.29588921.v3",
+    },
+}
+
+_ROR_URL = re.compile(r"https://ror\.org/[0-9a-z]+")
+
+
+def _webometrics_page_rows(page: Any, page_number: int) -> list[dict[str, Any]]:
+    fragments: list[tuple[float, float, str]] = []
+
+    def collect_text(
+        text: str,
+        _current_matrix: Any,
+        text_matrix: Any,
+        _font: Any,
+        _font_size: float,
+    ) -> None:
+        normalized = " ".join(text.split())
+        if normalized:
+            fragments.append(
+                (float(text_matrix[4]), float(text_matrix[5]), normalized)
+            )
+
+    page.extract_text(visitor_text=collect_text)
+    if not (
+        any(65 <= x < 100 and text == "NAME" for x, _, text in fragments)
+        and sum(text == "WR" for _, _, text in fragments) >= 2
+    ):
+        return []
+
+    rows: list[dict[str, Any]] = []
+    current: dict[str, Any] | None = None
+    for x, _y, text in fragments:
+        if x < 65 and text.isdigit():
+            if current is not None:
+                raise ScraperError(
+                    f"Webometrics PDF row is missing its closing rank on page "
+                    f"{page_number}"
+                )
+            current = {
+                "ranking": int(text),
+                "name_parts": [],
+                "ror_id": pd.NA,
+            }
+            continue
+        if current is None:
+            continue
+        if x > 440 and text.isdigit():
+            if int(text) != current["ranking"]:
+                raise ScraperError(
+                    f"Webometrics PDF rank columns disagree on page {page_number}"
+                )
+            name = re.sub(
+                r"\s+",
+                " ",
+                " ".join(current.pop("name_parts")),
+            ).strip()
+            if not name:
+                raise ScraperError(
+                    f"Webometrics PDF has an empty institution name on page "
+                    f"{page_number}"
+                )
+            current["name"] = name
+            current["source_page"] = page_number
+            rows.append(current)
+            current = None
+            continue
+        if _ROR_URL.fullmatch(text):
+            if not pd.isna(current["ror_id"]):
+                raise ScraperError(
+                    f"Webometrics PDF has multiple ROR IDs for one row on page "
+                    f"{page_number}"
+                )
+            current["ror_id"] = text
+        elif 65 <= x < 440 and text not in {"NAME", "ROR", "WR"}:
+            current["name_parts"].append(text)
+
+    if current is not None:
+        raise ScraperError(
+            f"Webometrics PDF row is incomplete at the end of page {page_number}"
+        )
+    return rows
+
+
+def _parse_webometrics_pdf(path: Path) -> pd.DataFrame:
+    rows: list[dict[str, Any]] = []
+    ranking_pages = 0
+
+    for page_number, page in enumerate(PdfReader(path).pages, start=1):
+        page_rows = _webometrics_page_rows(page, page_number)
+        if page_rows:
+            ranking_pages += 1
+            rows.extend(page_rows)
+    if not rows or ranking_pages == 0:
+        raise ScraperError(
+            "The Webometrics PDF does not contain institution-level ranking pages"
+        )
+
+    result = pd.DataFrame.from_records(rows)
+    result["name"] = result["name"].str.replace(r"\s+", " ", regex=True).str.strip()
+    rank_counts = result.groupby("ranking", sort=True).size()
+    rank_values = rank_counts.index.tolist()
+    for ranking, next_ranking in zip(rank_values, rank_values[1:]):
+        expected = ranking + int(rank_counts.loc[ranking])
+        if next_ranking != expected:
+            raise ScraperError(
+                "Webometrics PDF extraction produced an incomplete ranking "
+                f"between ranks {ranking} and {next_ranking}"
+            )
+    if rank_values[0] != 1 or (
+        rank_values[-1] + int(rank_counts.iloc[-1]) - 1 != len(result)
+    ):
+        raise ScraperError("Webometrics PDF extraction failed rank validation")
+    return result
+
+
+@lru_cache(maxsize=2)
+def _load_webometrics_edition(
+    year: int,
+    max_retries: int,
+    base_delay: float,
+) -> pd.DataFrame:
+    edition = WEBOMETRICS_EDITIONS.get(year)
+    if edition is None:
+        raise ValueError(
+            "Institution-level Webometrics data is currently available for "
+            "the July 2025 edition"
+        )
+    pdf_path = _download_to_temporary_file(
+        f"https://ndownloader.figshare.com/files/{edition['file_id']}",
+        headers=HEADERS["webometrics"],
+        provider="Webometrics",
+        max_retries=max_retries,
+        base_delay=base_delay,
+        suffix=".pdf",
+    )
+    try:
+        result = _parse_webometrics_pdf(pdf_path)
+    finally:
+        pdf_path.unlink(missing_ok=True)
+    result["edition"] = edition["edition"]
+    result["doi"] = edition["doi"]
+    result["source_url"] = f"https://doi.org/{edition['doi']}"
+    return result
+
+
+def scrape_webometrics(
+    subject: str = "",
+    year: int = 2025,
+    max_retries: int = 3,
+    base_delay: float = 1.0,
+    *,
+    country: str | None = None,
+) -> pd.DataFrame:
+    """Load the CC BY 4.0 institution ranking from the official Figshare PDF."""
+    if subject:
+        raise ValueError("Webometrics publishes only an overall ranking")
+    if country:
+        raise ValueError(
+            "The current Webometrics open ranking does not include institution "
+            "countries; country filtering is unavailable"
+        )
+    result = _load_webometrics_edition(year, max_retries, base_delay).copy()
+    logger.info("Collected %s Webometrics records for %s", len(result), year)
+    return result
+
+
+def scrape_scimago(
+    subject: str = "",
+    year: int = 2026,
+    max_retries: int = 3,
+    base_delay: float = 1.0,
+    *,
+    country: str | None = None,
+    reader_proxy: bool = False,
+) -> pd.DataFrame:
+    """Download one public SCImago higher-education ranking CSV."""
+    if not 2009 <= year <= 2026:
+        raise ValueError("SCImago editions are available from 2009 through 2026")
+    area_code = 0 if not subject else SCIMAGO_AREA_CODES.get(subject)
+    if area_code is None:
+        raise ValueError(f"Unsupported SCImago subject area: {subject}")
+    params = {
+        "ranking": "Overall",
+        "sector": "Higher educ.",
+        "country": "all",
+        # The exporter identifies an edition by the first year of its
+        # five-year publication window, six years before the edition label.
+        "year": year - 6,
+        "format": "csv",
+        "type": "download",
+    }
+    if area_code:
+        params["area"] = area_code
+    origin_url = str(httpx.URL(SCIMAGO_URL, params=params))
+    target_url = (
+        READER_PROXY_URL + quote(origin_url, safe=":/")
+        if reader_proxy
+        else origin_url
+    )
+    with httpx.Client(
+        headers=HEADERS["scimago"],
+        timeout=120.0,
+        follow_redirects=True,
+    ) as client:
+        response = _request(
+            client,
+            target_url,
+            params=None,
+            provider="scimago",
+            max_retries=max_retries,
+            base_delay=base_delay,
+        )
+
+    csv_text = response.text
+    if "Markdown Content:\n" in csv_text:
+        csv_text = csv_text.partition("Markdown Content:\n")[2]
+    header_match = re.search(r"(?m)^Rank;", csv_text)
+    if header_match:
+        csv_text = csv_text[header_match.start() :]
+    try:
+        result = pd.read_csv(StringIO(csv_text), sep=";", index_col=False)
+    except (pd.errors.ParserError, UnicodeError) as exc:
+        raise ScraperError("SCImago returned an invalid CSV export") from exc
+    result = result.rename(columns={column: _column_slug(column) for column in result})
+    name_column = next(
+        (
+            column
+            for column in ("institution", "institution_name", "name")
+            if column in result
+        ),
+        None,
+    )
+    rank_column = next(
+        (column for column in ("rank", "ranking", "world_rank") if column in result),
+        None,
+    )
+    if name_column is None or rank_column is None:
+        raise ScraperError(
+            "SCImago did not return the expected institution ranking CSV; "
+            "Cloudflare may still be blocking the export"
+        )
+    result = result.rename(
+        columns={name_column: "name", rank_column: "ranking"}
+    )
+    country_column = next(
+        (column for column in ("country", "location") if column in result),
+        None,
+    )
+    if country and country_column:
+        result = result[
+            result[country_column].map(
+                lambda value: _country_matches(country, value)
+            )
+        ]
+    elif country:
+        raise ScraperError("SCImago CSV does not contain a country column")
+    result["subject_area_code"] = area_code
+    result["data_period_start_year"] = year - 6
+    result["data_period_end_year"] = year - 2
+    logger.info(
+        "Collected %s SCImago records for %s (%s)",
+        len(result),
+        subject or "overall",
+        year,
+    )
+    return result.reset_index(drop=True)
+
+
 def _labelled_value(values: Any, label: str) -> Any:
     if not isinstance(values, list):
         return None
@@ -638,6 +1710,19 @@ def _normalize_qs(
     return normalized
 
 
+def _normalize_additional(
+    frame: pd.DataFrame,
+    source: str,
+    scope: str,
+    year: int,
+) -> pd.DataFrame:
+    normalized = frame.copy()
+    normalized.insert(0, "ranking_year", year)
+    normalized.insert(0, "ranking_scope", scope)
+    normalized.insert(0, "source", source)
+    return normalized
+
+
 def _scope_frame(
     source: str,
     scope: str,
@@ -681,6 +1766,73 @@ def _scope_frame(
             reader_proxy=reader_proxy,
         )
         return _normalize_qs(raw, scope, year)
+    if source == "cwur":
+        if subject:
+            raise ValueError("CWUR provides only an overall ranking")
+        raw = scrape_cwur(
+            year=year,
+            max_retries=max_retries,
+            base_delay=base_delay,
+            country=country,
+        )
+        return _normalize_additional(raw, source, scope, year)
+    if source == "ntu":
+        raw = scrape_ntu(
+            subject,
+            year=year,
+            max_retries=max_retries,
+            base_delay=base_delay,
+            country=country,
+        )
+        return _normalize_additional(raw, source, scope, year)
+    if source == "arwu":
+        raw = scrape_arwu(
+            subject,
+            year=year,
+            max_retries=max_retries,
+            base_delay=base_delay,
+            country=country,
+        )
+        return _normalize_additional(raw, source, scope, year)
+    if source == "leiden":
+        raw = scrape_leiden(
+            subject,
+            year=year,
+            max_retries=max_retries,
+            base_delay=base_delay,
+            country=country,
+        )
+        return _normalize_additional(raw, source, scope, year)
+    if source == "scimago":
+        raw = scrape_scimago(
+            subject,
+            year=year,
+            max_retries=max_retries,
+            base_delay=base_delay,
+            country=country,
+            reader_proxy=reader_proxy,
+        )
+        return _normalize_additional(raw, source, scope, year)
+    if source == "webometrics":
+        raw = scrape_webometrics(
+            subject,
+            year=year,
+            max_retries=max_retries,
+            base_delay=base_delay,
+            country=country,
+        )
+        return _normalize_additional(raw, source, scope, year)
+    if source == "openalex":
+        if subject:
+            raise ValueError("OpenAlex currently supports only overall research output")
+        raw = scrape_openalex(
+            year=year,
+            max_retries=max_retries,
+            base_delay=base_delay,
+            country=country,
+            request_delay=request_delay,
+        )
+        return _normalize_additional(raw, source, scope, year)
     raise ValueError(f"Unknown source: {source}")
 
 
@@ -702,11 +1854,12 @@ def scrape_country_rankings(
         raise ValueError(f"Unknown source: {source}")
 
     selected_subjects = list(subjects if subjects is not None else SUBJECTS[source])
-    if subjects is None and source == "times":
+    first_years = SUBJECT_FIRST_YEAR.get(source, {})
+    if first_years:
         selected_subjects = [
             subject
             for subject in selected_subjects
-            if year >= THE_SUBJECT_FIRST_YEAR.get(subject, year)
+            if year >= first_years.get(subject, year)
         ]
     scopes = selected_subjects
     if include_overall:
@@ -732,7 +1885,7 @@ def scrape_country_rankings(
         return index, frame
 
     effective_workers = max(1, min(workers, len(scopes) or 1))
-    if source == "qs":
+    if source in {"qs", "leiden", "openalex", "scimago"}:
         effective_workers = 1
 
     if effective_workers == 1:
@@ -758,6 +1911,12 @@ def scrape_country_rankings(
                         "error": str(exc),
                     }
                 )
+            if (
+                source == "scimago"
+                and reader_proxy
+                and index + 1 < len(scopes)
+            ):
+                time.sleep(max(request_delay, 2.0))
     else:
         with ThreadPoolExecutor(max_workers=effective_workers) as executor:
             future_scopes = {

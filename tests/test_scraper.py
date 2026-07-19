@@ -100,6 +100,296 @@ class ScraperTests(unittest.TestCase):
         self.assertTrue(client_class.call_args.kwargs["follow_redirects"])
 
     @patch("university_ranking_scraper.scraper.httpx.Client")
+    def test_cwur_parses_static_table_and_filters_country(self, client_class):
+        page = """
+        <table id="cwurTable">
+          <thead><tr>
+            <th>World Rank</th><th>Institution</th><th>Location</th>
+            <th>National Rank</th><th>Education Rank</th><th>Score</th>
+          </tr></thead>
+          <tbody>
+            <tr><td>1<br>Top 0.1%</td><td>US University</td><td>USA</td>
+                <td>1</td><td>2</td><td>99.5</td></tr>
+            <tr><td>2<br>Top 0.1%</td><td>Other University</td><td>Canada</td>
+                <td>1</td><td>3</td><td>98.0</td></tr>
+          </tbody>
+        </table>
+        """
+        client = fake_client([FakeResponse(text=page)])
+        client_class.return_value = client
+
+        result = scraper.scrape_cwur(2026, country="united-states")
+
+        self.assertEqual(["US University"], result["name"].tolist())
+        self.assertEqual([1], result["ranking"].tolist())
+        self.assertEqual("2026.php", client.get.call_args.args[0].rsplit("/", 1)[1])
+
+    @patch("university_ranking_scraper.scraper.httpx.Client")
+    def test_ntu_uses_public_json_and_excludes_unranked_rows(self, client_class):
+        payload = {
+            "data": [
+                {
+                    "univ__OrgName_EN": "Ranked University",
+                    "univ__CountryName": "United States of America",
+                    "univ__CountryName_ISO3166": "US",
+                    "RankU": "1",
+                    "Seq": "1",
+                    "Pub_Score": "100.0",
+                },
+                {
+                    "univ__OrgName_EN": "Candidate University",
+                    "univ__CountryName": "United States of America",
+                    "univ__CountryName_ISO3166": "US",
+                    "RankU": "-",
+                    "Seq": "1201",
+                    "Pub_Score": "-",
+                },
+            ]
+        }
+        client = fake_client([FakeResponse(payload)])
+        client_class.return_value = client
+
+        result = scraper.scrape_ntu(
+            "field-engineering",
+            year=2025,
+            country="united-states",
+        )
+
+        self.assertEqual(["Ranked University"], result["name"].tolist())
+        self.assertEqual(["1"], result["ranking"].tolist())
+        self.assertEqual(
+            "http://nturanking.csti.tw/FieldRanking_AJAX/ENG/2025.",
+            client.get.call_args.args[0],
+        )
+
+    @patch("university_ranking_scraper.scraper.httpx.Client")
+    def test_arwu_flattens_dynamic_indicator_codes(self, client_class):
+        payload = {
+            "code": 200,
+            "msg": "success",
+            "data": {
+                "rankings": [
+                    {
+                        "ranking": "1",
+                        "univNameEn": "Example University",
+                        "univCode": "RI1",
+                        "univUp": "example-university",
+                        "region": "United States",
+                        "regionLogo": "us",
+                        "regionRanking": "",
+                        "score": "100.0",
+                        "indData": {"41": 95.0},
+                    }
+                ],
+                "indicators": [
+                    {"code": 41, "nameEn": "World-Class Faculty"}
+                ],
+            },
+        }
+        client = fake_client([FakeResponse(payload)])
+        client_class.return_value = client
+
+        result = scraper.scrape_arwu(
+            "mathematics",
+            year=2025,
+            country="united-states",
+        )
+
+        self.assertEqual(["Example University"], result["name"].tolist())
+        self.assertEqual(95.0, result.loc[0, "indicator_world_class_faculty"])
+        self.assertEqual(
+            {"version": 2025, "subj_code": "AS0101"},
+            client.get.call_args.kwargs["params"],
+        )
+
+    def test_arwu_reports_missing_2018_bulk_edition(self):
+        with self.assertRaisesRegex(scraper.ScraperError, "omits the 2018"):
+            scraper.scrape_arwu("", year=2018)
+
+    @patch("university_ranking_scraper.scraper.httpx.Client")
+    def test_openalex_ranks_institutions_by_annual_output(self, client_class):
+        first = {
+            "results": [
+                {
+                    "id": "https://openalex.org/I1",
+                    "ror": "https://ror.org/1",
+                    "display_name": "First University",
+                    "country_code": "US",
+                    "geo": {"country": "United States", "city": "Boston"},
+                    "works_count": 5000,
+                    "cited_by_count": 9000,
+                    "summary_stats": {"h_index": 100},
+                    "counts_by_year": [
+                        {
+                            "year": 2025,
+                            "works_count": 200,
+                            "oa_works_count": 150,
+                            "cited_by_count": 800,
+                        }
+                    ],
+                }
+            ],
+            "meta": {"next_cursor": "next"},
+        }
+        second = {
+            "results": [
+                {
+                    "id": "https://openalex.org/I2",
+                    "display_name": "Second University",
+                    "country_code": "GB",
+                    "geo": {"country": "United Kingdom", "city": "London"},
+                    "works_count": 4000,
+                    "cited_by_count": 7000,
+                    "summary_stats": {"h_index": 90},
+                    "counts_by_year": [
+                        {
+                            "year": 2025,
+                            "works_count": 100,
+                            "oa_works_count": 80,
+                            "cited_by_count": 600,
+                        }
+                    ],
+                }
+            ],
+            "meta": {"next_cursor": None},
+        }
+        client = fake_client([FakeResponse(first), FakeResponse(second)])
+        client_class.return_value = client
+
+        result = scraper.scrape_openalex(year=2025, request_delay=0)
+
+        self.assertEqual(
+            ["First University", "Second University"],
+            result["name"].tolist(),
+        )
+        self.assertEqual([1, 2], result["ranking"].tolist())
+        self.assertEqual(2, client.get.call_count)
+
+    @patch("university_ranking_scraper.scraper._load_leiden_edition")
+    def test_leiden_selects_field_and_country(self, load_edition):
+        load_edition.return_value = pd.DataFrame(
+            [
+                {
+                    "university_id": 1,
+                    "name": "US University",
+                    "country_code": "US",
+                    "main_field_id": 3,
+                    "ranking": 1,
+                },
+                {
+                    "university_id": 2,
+                    "name": "Other University",
+                    "country_code": "GB",
+                    "main_field_id": 3,
+                    "ranking": 2,
+                },
+                {
+                    "university_id": 1,
+                    "name": "US University",
+                    "country_code": "US",
+                    "main_field_id": 0,
+                    "ranking": 1,
+                },
+            ]
+        )
+
+        result = scraper.scrape_leiden(
+            "physical-sciences-engineering",
+            year=2025,
+            country="united-states",
+        )
+
+        self.assertEqual(["US University"], result["name"].tolist())
+        load_edition.assert_called_once_with(2025, 3, 1.0)
+
+    def test_country_matching_handles_current_and_legacy_names(self):
+        self.assertTrue(scraper._country_matches("turkey", "TR", "Türkiye"))
+        self.assertTrue(
+            scraper._country_matches("cote-d-ivoire", "Côte d’Ivoire")
+        )
+
+    @patch("university_ranking_scraper.scraper.PdfReader")
+    def test_webometrics_parses_wrapped_pdf_rows(self, reader_class):
+        page = MagicMock()
+
+        def extract_text(*, visitor_text):
+            fragments = [
+                (40, 120, "WR"),
+                (71, 120, "NAME"),
+                (470, 120, "WR"),
+                (34, 100, "1"),
+                (71, 100, "First University"),
+                (321, 100, "https://ror.org/012345678"),
+                (464, 100, "1"),
+                (34, 80, "2"),
+                (71, 85, "University with a"),
+                (71, 75, "wrapped name"),
+                (464, 80, "2"),
+                (34, 60, "2"),
+                (71, 60, "Tied University"),
+                (321, 60, "https://ror.org/abcdefgh1"),
+                (464, 60, "2"),
+            ]
+            for x, y, text in fragments:
+                visitor_text(text, None, [0, 0, 0, 0, x, y], None, 11)
+            return ""
+
+        page.extract_text.side_effect = extract_text
+        reader_class.return_value.pages = [page]
+
+        result = scraper._parse_webometrics_pdf(Path("ranking.pdf"))
+
+        self.assertEqual([1, 2, 2], result["ranking"].tolist())
+        self.assertEqual("University with a wrapped name", result.loc[1, "name"])
+        self.assertEqual("https://ror.org/012345678", result.loc[0, "ror_id"])
+
+    @patch("university_ranking_scraper.scraper.httpx.Client")
+    def test_scimago_parses_csv_and_filters_country(self, client_class):
+        response = FakeResponse(
+            text=(
+                "Title:\n\nURL Source: https://example.test\n\nMarkdown Content:\n"
+                "Rank;Global Rank;Institution;Country;Sector;\n"
+                "1;4;First University;USA;Universities;\n"
+                "2;6;Other University;CAN;Universities;\n"
+            )
+        )
+        client = fake_client([response])
+        client_class.return_value = client
+
+        result = scraper.scrape_scimago(
+            "computer-science",
+            year=2025,
+            country="united-states",
+            reader_proxy=True,
+        )
+
+        self.assertEqual(["First University"], result["name"].tolist())
+        self.assertEqual([1], result["ranking"].tolist())
+        self.assertTrue(
+            client.get.call_args.args[0].startswith("https://r.jina.ai/")
+        )
+        self.assertIn("getdata.php", client.get.call_args.args[0])
+        self.assertIn("%26year%3D2019", client.get.call_args.args[0])
+        self.assertIn("%26area%3D1700", client.get.call_args.args[0])
+
+    @patch("university_ranking_scraper.scraper.httpx.Client")
+    def test_scimago_reports_proxy_cloudflare_challenge(self, client_class):
+        client_class.return_value = fake_client(
+            [FakeResponse(text="Title: Just a moment...\nPerforming security verification")]
+        )
+
+        with self.assertRaisesRegex(
+            scraper.ProviderBlockedError,
+            "Cloudflare challenge",
+        ):
+            scraper.scrape_scimago(reader_proxy=True)
+
+    def test_scimago_exposes_only_working_area_filters(self):
+        self.assertEqual(19, len(scraper.SCIMAGO_AREA_CODES))
+        self.assertNotIn("chemical-engineering", scraper.SCIMAGO_AREA_CODES)
+        self.assertNotIn("multidisciplinary", scraper.SCIMAGO_AREA_CODES)
+
+    @patch("university_ranking_scraper.scraper.httpx.Client")
     def test_qs_reports_cloudflare_block(self, client_class):
         client = fake_client([FakeResponse(status_code=403)])
         client_class.return_value = client
@@ -399,6 +689,38 @@ class ScraperTests(unittest.TestCase):
                 manifest["records_by_scope"],
             )
 
+    def test_manifest_includes_open_data_license_and_attribution(self):
+        with tempfile.TemporaryDirectory() as directory:
+            frame = pd.DataFrame(
+                [
+                    {
+                        "source": "webometrics",
+                        "retrieved_at": "2025-08-11T00:00:00+00:00",
+                        "ranking_scope": "overall",
+                        "ranking_year": 2025,
+                        "name": "Example University",
+                    }
+                ]
+            )
+
+            csv_path = cli._write_batch(
+                Path(directory),
+                "webometrics",
+                None,
+                2025,
+                frame,
+                [],
+                False,
+            )
+
+            with csv_path.with_suffix(".manifest.json").open(
+                encoding="utf-8"
+            ) as manifest_file:
+                manifest = json.load(manifest_file)
+            self.assertEqual("CC-BY-4.0", manifest["data_license"])
+            self.assertIn("Aguillo", manifest["data_attribution"])
+            self.assertEqual("figshare", manifest["retrieval_method"])
+
     @patch("university_ranking_scraper.scraper._scope_frame")
     def test_times_batch_skips_subjects_before_their_launch_year(self, scope_frame):
         scope_frame.return_value = pd.DataFrame(
@@ -422,6 +744,33 @@ class ScraperTests(unittest.TestCase):
                 "clinical-pre-clinical-health",
                 "physical-sciences",
                 "social-sciences",
+            ],
+            scopes,
+        )
+
+    @patch("university_ranking_scraper.scraper._scope_frame")
+    def test_ntu_batch_skips_scopes_before_their_launch_year(self, scope_frame):
+        scope_frame.return_value = pd.DataFrame(
+            [{"source": "ntu", "ranking_scope": "overall", "name": "Example"}]
+        )
+
+        scraper.scrape_country_rankings(
+            "ntu",
+            None,
+            year=2008,
+            include_overall=True,
+        )
+
+        scopes = [call.args[1] for call in scope_frame.call_args_list]
+        self.assertEqual(
+            [
+                "overall",
+                "field-agriculture",
+                "field-engineering",
+                "field-life-sciences",
+                "field-medicine",
+                "field-natural-sciences",
+                "field-social-sciences",
             ],
             scopes,
         )

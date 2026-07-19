@@ -1,3 +1,5 @@
 httpx
 pandas
 lxml
+pypdf>=5.0
+pycountry>=24.6.1

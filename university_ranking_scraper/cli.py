@@ -9,7 +9,14 @@ from pathlib import Path
 import httpx
 import pandas as pd
 
-from .constant import LATEST_THE_YEAR, SUBJECTS, VALID_SOURCES
+from .constant import (
+    LATEST_YEARS,
+    SOURCE_ATTRIBUTIONS,
+    SOURCE_LICENSES,
+    SUBJECTS,
+    VALID_SOURCES,
+    YEARLY_SOURCES,
+)
 from .scraper import (
     ProviderBlockedError,
     ScraperError,
@@ -27,20 +34,19 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
             "Scrape university rankings from US News, Times Higher Education, "
-            "and QS"
+            "QS, and additional worldwide research-ranking providers"
         )
     )
     parser.add_argument(
         "-r",
         "--region",
         default="",
-        help="US News region slug; ignored by THE and QS",
+        help="US News region slug",
     )
     parser.add_argument(
         "-sub",
         "--subject",
-        default="agricultural-sciences",
-        help="Subject slug to scrape",
+        help="Subject or field slug to scrape; defaults to the provider's first scope",
     )
     parser.add_argument(
         "-w",
@@ -86,8 +92,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--year",
         type=int,
-        default=LATEST_THE_YEAR,
-        help=f"Provider ranking year (default: {LATEST_THE_YEAR})",
+        help="Provider ranking year (default: latest available for the provider)",
     )
     parser.add_argument(
         "--start-year",
@@ -103,8 +108,8 @@ def build_parser() -> argparse.ArgumentParser:
         "--reader-proxy",
         action="store_true",
         help=(
-            "Fetch public QS URLs through r.jina.ai after Cloudflare blocks "
-            "direct access"
+            "Fetch public QS or SCImago URLs through r.jina.ai after "
+            "Cloudflare blocks direct access"
         ),
     )
     parser.add_argument(
@@ -117,7 +122,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--request-delay",
         type=float,
         default=0.2,
-        help="Delay between paginated requests in seconds (default: 0.2)",
+        help="Delay between provider requests in seconds (default: 0.2)",
     )
     parser.add_argument(
         "--max-retries",
@@ -142,7 +147,7 @@ def _write_batch(
         if "retrieved_at" in frame and not frame.empty
         else datetime.now(timezone.utc).isoformat(timespec="seconds")
     )
-    edition = str(year) if source in {"times", "qs"} else retrieved_at[:10]
+    edition = str(year) if source in YEARLY_SOURCES else retrieved_at[:10]
     coverage = country or "worldwide"
     stem = f"{source}_{coverage}_all_rankings_{edition}"
     csv_path = output_dir / f"{stem}.csv"
@@ -197,8 +202,21 @@ def _write_batch(
         "source": source,
         "country": country,
         "coverage": "country" if country else "worldwide",
-        "ranking_year": year if source in {"times", "qs"} else None,
-        "retrieval_method": "reader-proxy" if reader_proxy else "direct",
+        "ranking_year": year if source in YEARLY_SOURCES else None,
+        "retrieval_method": (
+            "reader-proxy"
+            if reader_proxy
+            else {
+                "leiden": "zenodo-container",
+                "openalex": "openalex-api",
+                "cwur": "static-html",
+                "ntu": "public-json",
+                "arwu": "public-json",
+                "webometrics": "figshare",
+            }.get(source, "direct")
+        ),
+        "data_license": SOURCE_LICENSES[source],
+        "data_attribution": SOURCE_ATTRIBUTIONS.get(source),
         "retrieved_at": retrieved_at,
         "records": int(len(frame)),
         "records_by_scope": counts,
@@ -238,7 +256,11 @@ def _run_all_subjects(args: argparse.Namespace, parser: argparse.ArgumentParser)
         country,
         subjects=[] if args.overall_only else subjects,
         year=args.year,
-        include_overall=True if args.overall_only else args.include_overall,
+        include_overall=(
+            True
+            if args.overall_only or (args.all_subjects and not SUBJECTS[args.website])
+            else args.include_overall
+        ),
         workers=args.workers,
         max_retries=args.max_retries,
         request_delay=args.request_delay,
@@ -295,38 +317,56 @@ def _run_year_range(
 def _run_single(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
     if args.region and (args.country or args.worldwide):
         parser.error("--region cannot be combined with --country or --worldwide")
-    if args.website in {"times", "qs"} and args.region:
+    if args.website != "usnews" and args.region:
         parser.error("--region is only supported by US News")
-    if args.subject not in SUBJECTS[args.website]:
+    subject = args.subject
+    if subject is None:
+        subject = SUBJECTS[args.website][0] if SUBJECTS[args.website] else ""
+    if subject and subject not in SUBJECTS[args.website]:
         parser.error(
-            f"Unsupported {args.website} subject '{args.subject}'. "
+            f"Unsupported {args.website} subject '{subject}'. "
             f"Valid subjects: {', '.join(SUBJECTS[args.website])}"
         )
 
     if args.website == "usnews":
         frame = scrape_usnews(
             args.region,
-            args.subject,
+            subject,
             max_retries=args.max_retries,
             country=args.country,
             request_delay=args.request_delay,
         )
     elif args.website == "times":
         frame = scrape_times(
-            args.subject,
+            subject,
             max_retries=args.max_retries,
             year=args.year,
             country=args.country,
         )
-    else:
+    elif args.website == "qs":
         frame = scrape_qs(
-            args.subject,
+            subject,
             max_retries=args.max_retries,
             year=args.year,
             country=args.country,
             request_delay=args.request_delay,
             reader_proxy=args.reader_proxy,
         )
+    else:
+        scope = subject or "overall"
+        frame, failures = scrape_country_rankings(
+            args.website,
+            args.country,
+            subjects=[] if scope == "overall" else [scope],
+            year=args.year,
+            include_overall=scope == "overall",
+            workers=1,
+            max_retries=args.max_retries,
+            request_delay=args.request_delay,
+            reader_proxy=args.reader_proxy,
+        )
+        if failures:
+            raise ScraperError(failures[0]["error"])
 
     if frame.empty:
         raise ScraperError("No ranked records returned")
@@ -340,7 +380,7 @@ def _run_single(args: argparse.Namespace, parser: argparse.ArgumentParser) -> in
     )
     output_path = (
         output_dir
-        / f"{args.website}{country_part}_{args.subject}.csv"
+        / f"{args.website}{country_part}_{subject or 'overall'}.csv"
     )
     prepare_for_csv(frame).to_csv(output_path, encoding="utf-8", index=False)
     logger.info("Saved %s records to %s", len(frame), output_path)
@@ -355,6 +395,8 @@ def main(argv: list[str] | None = None) -> int:
     logging.getLogger("httpx").setLevel(logging.WARNING)
     parser = build_parser()
     args = parser.parse_args(argv)
+    if args.year is None:
+        args.year = LATEST_YEARS[args.website]
     if args.country and args.worldwide:
         parser.error("--country and --worldwide cannot be used together")
     if args.all_subjects and args.overall_only:
@@ -363,8 +405,8 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--all-subjects and --subjects cannot be used together")
     if args.overall_only and args.subjects:
         parser.error("--overall-only and --subjects cannot be used together")
-    if args.reader_proxy and args.website != "qs":
-        parser.error("--reader-proxy is only supported for QS")
+    if args.reader_proxy and args.website not in {"qs", "scimago"}:
+        parser.error("--reader-proxy is only supported for QS and SCImago")
     if args.workers < 1:
         parser.error("--workers must be at least 1")
     if args.request_delay < 0:

@@ -1,7 +1,31 @@
 # Valid sources for the university rankings scraper
-VALID_SOURCES = ['usnews', 'times', 'qs']
+VALID_SOURCES = [
+    'usnews',
+    'times',
+    'qs',
+    'leiden',
+    'openalex',
+    'cwur',
+    'ntu',
+    'arwu',
+    'scimago',
+    'webometrics',
+]
 LATEST_THE_YEAR = 2026
 LATEST_QS_YEAR = 2026
+LATEST_YEARS = {
+    'usnews': 2026,
+    'times': LATEST_THE_YEAR,
+    'qs': LATEST_QS_YEAR,
+    'leiden': 2025,
+    'openalex': 2025,
+    'cwur': 2026,
+    'ntu': 2025,
+    'arwu': 2025,
+    'scimago': 2026,
+    'webometrics': 2025,
+}
+YEARLY_SOURCES = set(VALID_SOURCES) - {'usnews'}
 
 THE_SUBJECT_FIRST_YEAR = {
     'arts-and-humanities': 2011,
@@ -15,6 +39,219 @@ THE_SUBJECT_FIRST_YEAR = {
     'physical-sciences': 2011,
     'psychology': 2018,
     'social-sciences': 2011,
+}
+
+LEIDEN_FIELD_IDS = {
+    'social-sciences-humanities': 1,
+    'biomedical-health-sciences': 2,
+    'physical-sciences-engineering': 3,
+    'life-earth-sciences': 4,
+    'mathematics-computer-science': 5,
+}
+
+NTU_SCOPE_CODES = {
+    'field-agriculture': ('field', 'AGR'),
+    'field-engineering': ('field', 'ENG'),
+    'field-life-sciences': ('field', 'LIFE'),
+    'field-medicine': ('field', 'MED'),
+    'field-natural-sciences': ('field', 'SCI'),
+    'field-social-sciences': ('field', 'SOC'),
+    'agricultural-sciences': ('subject', 'Agr'),
+    'chemistry': ('subject', 'Chem'),
+    'chemical-engineering': ('subject', 'ChemEng'),
+    'civil-engineering': ('subject', 'CivilEng'),
+    'computer-science': ('subject', 'ComputerSci'),
+    'electrical-engineering': ('subject', 'ElectEng'),
+    'environment-ecology': ('subject', 'EnvEco'),
+    'geoscience': ('subject', 'Geo'),
+    'materials-science': ('subject', 'MaterialsSci'),
+    'mathematics': ('subject', 'Math'),
+    'mechanical-engineering': ('subject', 'MechEng'),
+    'physics': ('subject', 'Phy'),
+    'plant-animal-science': ('subject', 'PlantAnimSci'),
+    'pharmacology-toxicology': ('subject', 'PharmTox'),
+    'biology-biochemistry': ('subject', 'BioBiochem'),
+    'economics-business': ('subject', 'Econ'),
+    'immunology': ('subject', 'Immunol'),
+    'clinical-medicine': ('subject', 'Med'),
+    'microbiology': ('subject', 'Microbio'),
+    'molecular-biology-genetics': ('subject', 'MolBio'),
+    'neuroscience-behavior': ('subject', 'NeurBeh'),
+    'psychiatry-psychology': ('subject', 'Psych'),
+    'social-sciences-general': ('subject', 'SocialSci'),
+    'space-science': ('subject', 'SpaceSci'),
+    'biomedical-engineering': ('subject', 'BioE'),
+    'energy-science-engineering': ('subject', 'EngS'),
+    'environmental-science-engineering': ('subject', 'EnvS'),
+}
+
+NTU_SCOPE_FIRST_YEAR = {
+    **{
+        scope: 2008
+        for scope, (ranking_type, _) in NTU_SCOPE_CODES.items()
+        if ranking_type == 'field'
+    },
+    **{
+        scope: 2011
+        for scope in [
+            'agricultural-sciences',
+            'chemistry',
+            'chemical-engineering',
+            'civil-engineering',
+            'computer-science',
+            'electrical-engineering',
+            'environment-ecology',
+            'geoscience',
+            'materials-science',
+            'mathematics',
+            'mechanical-engineering',
+            'physics',
+            'plant-animal-science',
+        ]
+    },
+    'pharmacology-toxicology': 2012,
+    **{
+        scope: 2019
+        for scope in [
+            'biology-biochemistry',
+            'economics-business',
+            'immunology',
+            'clinical-medicine',
+            'microbiology',
+            'molecular-biology-genetics',
+            'neuroscience-behavior',
+            'psychiatry-psychology',
+            'social-sciences-general',
+            'space-science',
+        ]
+    },
+    'biomedical-engineering': 2021,
+    'energy-science-engineering': 2021,
+    'environmental-science-engineering': 2021,
+}
+
+ARWU_SUBJECT_CODES = {
+    'mathematics': 'AS0101',
+    'physics': 'AS0102',
+    'chemistry': 'AS0103',
+    'earth-sciences': 'AS0104',
+    'geography': 'AS0105',
+    'ecology': 'AS0106',
+    'oceanography': 'AS0107',
+    'atmospheric-science': 'AS0108',
+    'mechanical-engineering': 'AS0201',
+    'electrical-electronic-engineering': 'AS0202',
+    'automation-control': 'AS0205',
+    'telecommunication-engineering': 'AS0206',
+    'instruments-science-technology': 'AS0207',
+    'biomedical-engineering': 'AS0208',
+    'computer-science-engineering': 'AS0210',
+    'civil-engineering': 'AS0211',
+    'chemical-engineering': 'AS0212',
+    'materials-science-engineering': 'AS0213',
+    'nanoscience-nanotechnology': 'AS0214',
+    'energy-science-engineering': 'AS0215',
+    'environmental-science-engineering': 'AS0216',
+    'water-resources': 'AS0217',
+    'food-science-technology': 'AS0219',
+    'biotechnology': 'AS0220',
+    'aerospace-engineering': 'AS0221',
+    'marine-ocean-engineering': 'AS0222',
+    'transportation-science-technology': 'AS0223',
+    'remote-sensing': 'AS0224',
+    'mining-mineral-engineering': 'AS0226',
+    'metallurgical-engineering': 'AS0227',
+    'textile-science-engineering': 'AS0228',
+    'artificial-intelligence': 'AS0229',
+    'robotic-science-engineering': 'AS0230',
+    'biological-sciences': 'AS0301',
+    'human-biological-sciences': 'AS0302',
+    'agricultural-sciences': 'AS0303',
+    'veterinary-sciences': 'AS0304',
+    'clinical-medicine': 'AS0401',
+    'public-health': 'AS0402',
+    'dentistry-oral-sciences': 'AS0403',
+    'nursing': 'AS0404',
+    'medical-technology': 'AS0405',
+    'pharmacy-pharmaceutical-sciences': 'AS0406',
+    'economics': 'AS0501',
+    'statistics': 'AS0502',
+    'law': 'AS0503',
+    'political-sciences': 'AS0504',
+    'sociology': 'AS0505',
+    'education': 'AS0506',
+    'communication': 'AS0507',
+    'psychology': 'AS0508',
+    'business-administration': 'AS0509',
+    'finance': 'AS0510',
+    'management': 'AS0511',
+    'public-administration': 'AS0512',
+    'hospitality-tourism-management': 'AS0513',
+    'library-information-science': 'AS0515',
+}
+
+ARWU_SUBJECT_FIRST_YEAR = {
+    subject: 2017 for subject in ARWU_SUBJECT_CODES
+}
+ARWU_SUBJECT_FIRST_YEAR.update(
+    {
+        'oceanography': 2018,
+        'atmospheric-science': 2018,
+        'textile-science-engineering': 2023,
+        'artificial-intelligence': 2025,
+        'robotic-science-engineering': 2025,
+    }
+)
+
+SCIMAGO_AREA_CODES = {
+    'agricultural-biological-sciences': 1100,
+    'arts-humanities': 1200,
+    'biochemistry-genetics-molecular-biology': 1300,
+    'business-management-accounting': 1400,
+    'chemistry': 1600,
+    'computer-science': 1700,
+    'earth-planetary-sciences': 1900,
+    'economics-econometrics-finance': 2000,
+    'energy': 2100,
+    'engineering': 2200,
+    'environmental-science': 2300,
+    'mathematics': 2600,
+    'medicine': 2700,
+    'pharmacology-toxicology-pharmaceutics': 3000,
+    'physics-astronomy': 3100,
+    'psychology': 3200,
+    'social-sciences': 3300,
+    'veterinary': 3400,
+    'dentistry': 3500,
+}
+
+SUBJECT_FIRST_YEAR = {
+    'times': THE_SUBJECT_FIRST_YEAR,
+    'leiden': {subject: 2023 for subject in LEIDEN_FIELD_IDS},
+    'ntu': NTU_SCOPE_FIRST_YEAR,
+    'arwu': ARWU_SUBJECT_FIRST_YEAR,
+    'scimago': {subject: 2009 for subject in SCIMAGO_AREA_CODES},
+}
+
+SOURCE_LICENSES = {
+    'usnews': 'Provider terms apply',
+    'times': 'Provider terms apply',
+    'qs': 'Provider terms apply',
+    'leiden': 'CC0-1.0',
+    'openalex': 'CC0-1.0',
+    'cwur': 'Copyright CWUR; no open redistribution license',
+    'ntu': 'Copyright NTU Ranking; no open redistribution license',
+    'arwu': 'Copyright ShanghaiRanking Consultancy',
+    'scimago': 'Provider-controlled; no explicit redistribution license',
+    'webometrics': 'CC-BY-4.0',
+}
+SOURCE_ATTRIBUTIONS = {
+    'scimago': 'SCImago Institutions Rankings (SIR), scimagoir.com',
+    'webometrics': (
+        'Aguillo, Isidro F. (2025). Ranking Web of Universities '
+        '(webometrics.info), July 2025 edition. figshare. '
+        'https://doi.org/10.6084/m9.figshare.29588921.v3'
+    ),
 }
 
 # Valid regions for each source
@@ -55,7 +292,14 @@ SUBJECTS = {
            'accounting-finance', 'anthropology', 'business-management-studies', 'communication-media-studies', 'development-studies',
            'economics-econometrics', 'education-training', 'hospitality-leisure-management', 'law-legal-studies','library-information-management',
            'marketing', 'politics', 'social-policy-administration', 'sociology', 'sports-related-subjects',
-           'statistics-operational-research']
+           'statistics-operational-research'],
+    'leiden': list(LEIDEN_FIELD_IDS),
+    'openalex': [],
+    'cwur': [],
+    'ntu': list(NTU_SCOPE_CODES),
+    'arwu': list(ARWU_SUBJECT_CODES),
+    'scimago': list(SCIMAGO_AREA_CODES),
+    'webometrics': [],
 }
 
 QS_OVERALL_NIDS = {
@@ -225,5 +469,34 @@ HEADERS = {
       'sec-fetch-site': 'same-origin',
       'upgrade-insecure-requests': '1',
       'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36',
-  }
+    },
+    'cwur': {
+       'Accept': 'text/html,application/xhtml+xml',
+       'User-Agent': 'Mozilla/5.0 (compatible; university-ranking-scraper/0.0.7)',
+    },
+    'ntu': {
+       'Accept': 'application/json',
+       'User-Agent': 'Mozilla/5.0 (compatible; university-ranking-scraper/0.0.7)',
+    },
+    'arwu': {
+       'Accept': 'application/json',
+       'Referer': 'https://www.shanghairanking.com/rankings',
+       'User-Agent': 'Mozilla/5.0 (compatible; university-ranking-scraper/0.0.7)',
+    },
+    'openalex': {
+       'Accept': 'application/json',
+       'User-Agent': 'university-ranking-scraper/0.0.7',
+    },
+    'leiden': {
+       'Accept': '*/*',
+       'User-Agent': 'university-ranking-scraper/0.0.7',
+    },
+    'scimago': {
+       'Accept': 'text/csv,text/plain',
+       'User-Agent': 'Mozilla/5.0 (compatible; university-ranking-scraper/0.0.7)',
+    },
+    'webometrics': {
+       'Accept': '*/*',
+       'User-Agent': 'university-ranking-scraper/0.0.7',
+    },
 }
