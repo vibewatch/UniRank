@@ -18,9 +18,11 @@ from .constant import (
     HEADERS,
     LATEST_QS_YEAR,
     LATEST_THE_YEAR,
+    QS_LEGACY_URLS,
     QS_OVERALL_NIDS,
     QS_SUBJECT_NIDS,
     SUBJECTS,
+    THE_SUBJECT_FIRST_YEAR,
 )
 
 logger = logging.getLogger(__name__)
@@ -231,11 +233,18 @@ def scrape_usnews(
     return pd.DataFrame(results)
 
 
+def _plain_text(value: Any) -> Any:
+    if not isinstance(value, str):
+        return value
+    text = unescape(re.sub(r"<[^>]+>", " ", value))
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+
+
 def _country_name(value: Any) -> str:
     if value is None:
         return ""
-    text = unescape(re.sub(r"<[^>]+>", " ", str(value)))
-    text = re.sub(r"\s+", " ", text).strip()
+    text = _plain_text(str(value))
     if "," in text:
         return text.rsplit(",", 1)[-1].strip()
     return text
@@ -257,7 +266,11 @@ def scrape_times(
     """Scrape a Times Higher Education global or subject ranking."""
     url = f"{THE_BASE_URL}/{year}"
 
-    with httpx.Client(headers=HEADERS["times"], timeout=90.0) as client:
+    with httpx.Client(
+        headers=HEADERS["times"],
+        timeout=90.0,
+        follow_redirects=True,
+    ) as client:
         if subject:
             page_url = THE_PAGE_URL.format(year=year, subject=subject)
             page_response = _request(
@@ -320,6 +333,18 @@ def scrape_times(
     return pd.DataFrame(records)
 
 
+def _qs_record_is_ranked(record: dict[str, Any]) -> bool:
+    if "rank_display" in record:
+        rank_value = record["rank_display"]
+    else:
+        rank_value = record.get("rank")
+    return (
+        rank_value is not None
+        and str(rank_value).strip().casefold()
+        not in {"", "n/a", "na", "not ranked", "-"}
+    )
+
+
 def scrape_qs(
     subject: str,
     max_retries: int = 3,
@@ -330,10 +355,62 @@ def scrape_qs(
     request_delay: float = 0.2,
     reader_proxy: bool = False,
     page_size: int = 500,
+    ranked_only: bool = True,
 ) -> pd.DataFrame:
     """Scrape a QS overall or subject ranking."""
     if page_size < 1:
         raise ValueError("page_size must be at least 1")
+
+    scope = subject or "overall"
+    legacy_url = QS_LEGACY_URLS.get(year, {}).get(scope)
+    if legacy_url:
+        headers = (
+            {"X-Return-Format": "text"}
+            if reader_proxy
+            else HEADERS["qs"]
+        )
+        target = (
+            READER_PROXY_URL + quote(legacy_url, safe=":/")
+            if reader_proxy
+            else legacy_url
+        )
+        with httpx.Client(
+            headers=headers,
+            timeout=180.0,
+            follow_redirects=True,
+        ) as client:
+            payload = _request_json(
+                client,
+                target,
+                params=None,
+                provider="qs-reader" if reader_proxy else "qs",
+                max_retries=max_retries,
+                base_delay=base_delay,
+            )
+        results = _list_field(payload, "data", "qs")
+        if ranked_only:
+            results = [
+                record
+                for record in results
+                if _qs_record_is_ranked(record)
+            ]
+        if country:
+            expected_country = _country_label(country).casefold()
+            results = [
+                record
+                for record in results
+                if _country_name(
+                    record.get("country") or record.get("country_name")
+                ).casefold()
+                == expected_country
+            ]
+        logger.info(
+            "Collected %s legacy QS records for %s (%s)",
+            len(results),
+            scope,
+            year,
+        )
+        return pd.DataFrame(results)
 
     node_id = (
         QS_OVERALL_NIDS.get(year)
@@ -346,6 +423,8 @@ def scrape_qs(
             if subject
             else QS_WORLD_PAGE_URL.format(year=year)
         )
+        if subject and year != LATEST_QS_YEAR:
+            page_url = f"{page_url}/{year}"
         page_headers = (
             {
                 "X-Return-Format": "html",
@@ -446,6 +525,12 @@ def scrape_qs(
             payload = fetch_page(page)
             results.extend(_list_field(payload, "score_nodes", "qs"))
 
+    if ranked_only:
+        results = [
+            record
+            for record in results
+            if _qs_record_is_ranked(record)
+        ]
     if country:
         expected_country = _country_label(country).casefold()
         results = [
@@ -459,7 +544,7 @@ def scrape_qs(
     logger.info(
         "Collected %s QS records for %s (%s)",
         len(results),
-        subject or "overall",
+        scope,
         year,
     )
     return pd.DataFrame(results)
@@ -540,6 +625,16 @@ def _normalize_qs(
     normalized.insert(0, "ranking_year", year)
     normalized.insert(0, "ranking_scope", scope)
     normalized.insert(0, "source", "qs")
+    if "title" in normalized:
+        normalized["title"] = normalized["title"].map(_plain_text)
+    if "rank_display" in normalized and "rank" in normalized:
+        missing_rank_display = (
+            normalized["rank_display"].isna()
+            | normalized["rank_display"].astype(str).str.strip().eq("")
+        )
+        normalized.loc[missing_rank_display, "rank_display"] = normalized.loc[
+            missing_rank_display, "rank"
+        ]
     return normalized
 
 
@@ -607,6 +702,12 @@ def scrape_country_rankings(
         raise ValueError(f"Unknown source: {source}")
 
     selected_subjects = list(subjects if subjects is not None else SUBJECTS[source])
+    if subjects is None and source == "times":
+        selected_subjects = [
+            subject
+            for subject in selected_subjects
+            if year >= THE_SUBJECT_FIRST_YEAR.get(subject, year)
+        ]
     scopes = selected_subjects
     if include_overall:
         scopes = ["overall", *scopes]
@@ -626,6 +727,7 @@ def scrape_country_rankings(
             request_delay=request_delay,
             reader_proxy=reader_proxy,
         )
+        frame = frame.copy()
         frame.insert(1, "retrieved_at", retrieved_at)
         return index, frame
 
@@ -690,7 +792,12 @@ def scrape_country_rankings(
 def prepare_for_csv(frame: pd.DataFrame) -> pd.DataFrame:
     """Serialize nested values so CSV output remains machine-readable."""
     prepared = frame.copy()
-    for column in prepared.select_dtypes(include=["object"]).columns:
+    object_columns = [
+        column
+        for column, dtype in prepared.dtypes.items()
+        if pd.api.types.is_object_dtype(dtype)
+    ]
+    for column in object_columns:
         prepared[column] = prepared[column].map(
             lambda value: json.dumps(value, ensure_ascii=False)
             if isinstance(value, (dict, list))

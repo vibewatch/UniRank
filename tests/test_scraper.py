@@ -1,9 +1,12 @@
+import json
+import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
 
-from university_ranking_scraper import scraper
+from university_ranking_scraper import cli, scraper
 
 
 class FakeResponse:
@@ -94,6 +97,7 @@ class ScraperTests(unittest.TestCase):
             "computer_science_rankings/2026",
             client.get.call_args_list[1].args[0],
         )
+        self.assertTrue(client_class.call_args.kwargs["follow_redirects"])
 
     @patch("university_ranking_scraper.scraper.httpx.Client")
     def test_qs_reports_cloudflare_block(self, client_class):
@@ -107,11 +111,15 @@ class ScraperTests(unittest.TestCase):
     def test_qs_reader_proxy_encodes_query_and_fetches_every_page(self, client_class):
         first = {
             "total_pages": 2,
-            "score_nodes": [{"nid": "1", "title": "First University"}],
+            "score_nodes": [
+                {"nid": "1", "title": "First University", "rank_display": "1"}
+            ],
         }
         second = {
             "total_pages": 2,
-            "score_nodes": [{"nid": "2", "title": "Second University"}],
+            "score_nodes": [
+                {"nid": "2", "title": "Second University", "rank_display": "2"}
+            ],
         }
         client = fake_client([FakeResponse(first), FakeResponse(second)])
         client_class.return_value = client
@@ -134,7 +142,13 @@ class ScraperTests(unittest.TestCase):
     def test_qs_reader_proxy_retries_invalid_json(self, client_class):
         valid = {
             "total_pages": 1,
-            "score_nodes": [{"nid": "1", "title": "Recovered University"}],
+            "score_nodes": [
+                {
+                    "nid": "1",
+                    "title": "Recovered University",
+                    "rank_display": "1",
+                }
+            ],
         }
         client = fake_client(
             [FakeResponse(ValueError("challenge HTML")), FakeResponse(valid)]
@@ -152,6 +166,42 @@ class ScraperTests(unittest.TestCase):
         self.assertEqual(["Recovered University"], result["title"].tolist())
         self.assertEqual(2, client.get.call_count)
 
+    @patch("university_ranking_scraper.scraper.httpx.Client")
+    def test_qs_reader_proxy_supports_legacy_overall_data(self, client_class):
+        client = fake_client(
+            [
+                FakeResponse(
+                    {
+                        "data": [
+                            {
+                                "nid": "1",
+                                "title": "Historical University",
+                                "country": "United States",
+                                "rank_display": "1",
+                            },
+                            {
+                                "nid": "2",
+                                "title": "Unranked University",
+                                "country": "United States",
+                                "rank_display": "N/A",
+                            },
+                        ]
+                    }
+                )
+            ]
+        )
+        client_class.return_value = client
+
+        result = scraper.scrape_qs(
+            "",
+            year=2020,
+            reader_proxy=True,
+        )
+
+        self.assertEqual(["Historical University"], result["title"].tolist())
+        target = client.get.call_args.args[0]
+        self.assertIn("914824.txt%3F1625018950%3Fv%3D1625018964695", target)
+
     def test_qs_2026_node_map_covers_every_configured_subject(self):
         configured = set(scraper.SUBJECTS["qs"])
         mapped = set(scraper.QS_SUBJECT_NIDS[2026])
@@ -162,6 +212,20 @@ class ScraperTests(unittest.TestCase):
             sorted(int(node_id) for node_id in scraper.QS_SUBJECT_NIDS[2026].values()),
         )
         self.assertEqual("4153156", scraper.QS_OVERALL_NIDS[2027])
+
+    def test_qs_historical_node_map_covers_broad_subject_areas(self):
+        broad_subjects = {
+            "arts-humanities",
+            "engineering-technology",
+            "life-sciences-medicine",
+            "natural-sciences",
+            "social-sciences-management",
+        }
+
+        for year in range(2022, 2026):
+            self.assertTrue(
+                broad_subjects.issubset(scraper.QS_SUBJECT_NIDS[year])
+            )
 
     def test_usnews_output_excludes_prose_but_preserves_ranking_facts(self):
         raw = pd.DataFrame(
@@ -197,6 +261,25 @@ class ScraperTests(unittest.TestCase):
         self.assertEqual("5", result.loc[0, "ranking"])
         self.assertEqual("20", result.loc[0, "global_rank"])
         self.assertEqual("95.0", result.loc[0, "subject_score"])
+
+    def test_qs_normalization_cleans_titles_and_fills_display_rank(self):
+        raw = pd.DataFrame(
+            [
+                {
+                    "title": (
+                        '<div><a href="/universities/example">'
+                        "Example &amp; University</a></div>"
+                    ),
+                    "rank_display": None,
+                    "rank": 12,
+                }
+            ]
+        )
+
+        result = scraper._normalize_qs(raw, "overall", 2025)
+
+        self.assertEqual("Example & University", result.loc[0, "title"])
+        self.assertEqual(12, result.loc[0, "rank_display"])
 
     @patch("university_ranking_scraper.scraper._scope_frame")
     def test_country_batch_keeps_successes_when_one_scope_fails(self, scope_frame):
@@ -234,6 +317,114 @@ class ScraperTests(unittest.TestCase):
         self.assertEqual(["Example"], result["name"].tolist())
         self.assertEqual([], failures)
         self.assertIsNone(scope_frame.call_args.kwargs["country"])
+
+    def test_batch_output_preserves_scopes_from_previous_runs(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output_dir = Path(directory)
+            initial = pd.DataFrame(
+                [
+                    {
+                        "source": "qs",
+                        "retrieved_at": "2026-01-01T00:00:00+00:00",
+                        "ranking_scope": "overall",
+                        "ranking_year": 2025,
+                        "title": "Overall University",
+                    },
+                    {
+                        "source": "qs",
+                        "retrieved_at": "2026-01-01T00:00:00+00:00",
+                        "ranking_scope": "engineering-technology",
+                        "ranking_year": 2025,
+                        "title": "Old Engineering University",
+                    },
+                ]
+            )
+            cli._write_batch(
+                output_dir,
+                "qs",
+                None,
+                2025,
+                initial,
+                [],
+                True,
+            )
+            update = pd.DataFrame(
+                [
+                    {
+                        "source": "qs",
+                        "retrieved_at": "2026-01-02T00:00:00+00:00",
+                        "ranking_scope": "engineering-technology",
+                        "ranking_year": 2025,
+                        "title": "New Engineering University",
+                    },
+                    {
+                        "source": "qs",
+                        "retrieved_at": "2026-01-02T00:00:00+00:00",
+                        "ranking_scope": "arts-humanities",
+                        "ranking_year": 2025,
+                        "title": "Arts University",
+                    },
+                ]
+            )
+
+            csv_path = cli._write_batch(
+                output_dir,
+                "qs",
+                None,
+                2025,
+                update,
+                [],
+                True,
+            )
+
+            result = pd.read_csv(csv_path)
+            self.assertEqual(
+                ["overall", "arts-humanities", "engineering-technology"],
+                result["ranking_scope"].tolist(),
+            )
+            self.assertNotIn(
+                "Old Engineering University",
+                result["title"].tolist(),
+            )
+            manifest_path = csv_path.with_suffix(".manifest.json")
+            with manifest_path.open(encoding="utf-8") as manifest_file:
+                manifest = json.load(manifest_file)
+            self.assertEqual(3, manifest["records"])
+            self.assertEqual(
+                {
+                    "arts-humanities": 1,
+                    "engineering-technology": 1,
+                    "overall": 1,
+                },
+                manifest["records_by_scope"],
+            )
+
+    @patch("university_ranking_scraper.scraper._scope_frame")
+    def test_times_batch_skips_subjects_before_their_launch_year(self, scope_frame):
+        scope_frame.return_value = pd.DataFrame(
+            [{"source": "times", "ranking_scope": "overall", "name": "Example"}]
+        )
+
+        scraper.scrape_country_rankings(
+            "times",
+            None,
+            year=2011,
+            include_overall=True,
+        )
+
+        scopes = [call.args[1] for call in scope_frame.call_args_list]
+        self.assertEqual(
+            [
+                "overall",
+                "arts-and-humanities",
+                "engineering",
+                "life-sciences",
+                "clinical-pre-clinical-health",
+                "physical-sciences",
+                "social-sciences",
+            ],
+            scopes,
+        )
 
 
 if __name__ == "__main__":

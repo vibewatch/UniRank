@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import httpx
+import pandas as pd
 
 from .constant import LATEST_THE_YEAR, SUBJECTS, VALID_SOURCES
 from .scraper import (
@@ -69,6 +70,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="Scrape every supported subject for the selected provider",
     )
     parser.add_argument(
+        "--subjects",
+        help="Comma-separated subject slugs for a batch run",
+    )
+    parser.add_argument(
         "--overall-only",
         action="store_true",
         help="Scrape only the provider's overall ranking",
@@ -83,6 +88,16 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=LATEST_THE_YEAR,
         help=f"Provider ranking year (default: {LATEST_THE_YEAR})",
+    )
+    parser.add_argument(
+        "--start-year",
+        type=int,
+        help="First year in a historical batch range",
+    )
+    parser.add_argument(
+        "--end-year",
+        type=int,
+        help="Last year in a historical batch range",
     )
     parser.add_argument(
         "--reader-proxy",
@@ -131,7 +146,48 @@ def _write_batch(
     coverage = country or "worldwide"
     stem = f"{source}_{coverage}_all_rankings_{edition}"
     csv_path = output_dir / f"{stem}.csv"
+    manifest_path = output_dir / f"{stem}.manifest.json"
+
+    refreshed_scopes = set(frame["ranking_scope"].astype(str))
+    if csv_path.exists():
+        existing = pd.read_csv(csv_path)
+        if "ranking_scope" not in existing:
+            raise ScraperError(
+                f"Existing batch is missing ranking_scope: {csv_path}"
+            )
+        preserved = existing[
+            ~existing["ranking_scope"].astype(str).isin(refreshed_scopes)
+        ]
+        frame = pd.concat([preserved, frame], ignore_index=True, sort=False)
+
+        scope_order = {
+            scope: index
+            for index, scope in enumerate(["overall", *SUBJECTS[source]])
+        }
+        frame = (
+            frame.assign(
+                _scope_order=frame["ranking_scope"].map(scope_order).fillna(
+                    len(scope_order)
+                )
+            )
+            .sort_values("_scope_order", kind="stable")
+            .drop(columns="_scope_order")
+            .reset_index(drop=True)
+        )
+
     prepare_for_csv(frame).to_csv(csv_path, encoding="utf-8", index=False)
+
+    if manifest_path.exists():
+        with manifest_path.open(encoding="utf-8") as existing_manifest_file:
+            existing_manifest = json.load(existing_manifest_file)
+        attempted_scopes = refreshed_scopes | {
+            failure["ranking_scope"] for failure in failures
+        }
+        failures = [
+            failure
+            for failure in existing_manifest.get("failures", [])
+            if failure.get("ranking_scope") not in attempted_scopes
+        ] + failures
 
     counts = {
         str(scope): int(count)
@@ -148,7 +204,6 @@ def _write_batch(
         "records_by_scope": counts,
         "failures": failures,
     }
-    manifest_path = output_dir / f"{stem}.manifest.json"
     with manifest_path.open("w", encoding="utf-8") as output:
         json.dump(manifest, output, ensure_ascii=False, indent=2)
         output.write("\n")
@@ -162,10 +217,26 @@ def _run_all_subjects(args: argparse.Namespace, parser: argparse.ArgumentParser)
             "--country or --worldwide is required with batch ranking options"
         )
     country = None if args.worldwide else args.country
+    subjects = None
+    if args.subjects:
+        subjects = [
+            subject.strip()
+            for subject in args.subjects.split(",")
+            if subject.strip()
+        ]
+        invalid = [
+            subject
+            for subject in subjects
+            if subject not in SUBJECTS[args.website]
+        ]
+        if invalid:
+            parser.error(
+                f"Unsupported {args.website} subjects: {', '.join(invalid)}"
+            )
     frame, failures = scrape_country_rankings(
         args.website,
         country,
-        subjects=[] if args.overall_only else None,
+        subjects=[] if args.overall_only else subjects,
         year=args.year,
         include_overall=True if args.overall_only else args.include_overall,
         workers=args.workers,
@@ -190,6 +261,34 @@ def _run_all_subjects(args: argparse.Namespace, parser: argparse.ArgumentParser)
     )
     if failures:
         logger.warning("Completed with %s failed ranking scopes", len(failures))
+    return 0
+
+
+def _run_year_range(
+    args: argparse.Namespace,
+    parser: argparse.ArgumentParser,
+) -> int:
+    successful_years: list[int] = []
+    failed_years: list[int] = []
+    for year in range(args.start_year, args.end_year + 1):
+        year_args = argparse.Namespace(**vars(args))
+        year_args.year = year
+        try:
+            _run_all_subjects(year_args, parser)
+            successful_years.append(year)
+        except (ScraperError, httpx.HTTPError, OSError, ValueError) as exc:
+            logger.error("%s historical scrape failed for %s: %s", args.website, year, exc)
+            failed_years.append(year)
+
+    if not successful_years:
+        raise ScraperError(
+            f"No historical years were collected for {args.website}"
+        )
+    if failed_years:
+        logger.warning(
+            "Historical range completed with failed years: %s",
+            ", ".join(str(year) for year in failed_years),
+        )
     return 0
 
 
@@ -260,6 +359,10 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--country and --worldwide cannot be used together")
     if args.all_subjects and args.overall_only:
         parser.error("--all-subjects and --overall-only cannot be used together")
+    if args.all_subjects and args.subjects:
+        parser.error("--all-subjects and --subjects cannot be used together")
+    if args.overall_only and args.subjects:
+        parser.error("--overall-only and --subjects cannot be used together")
     if args.reader_proxy and args.website != "qs":
         parser.error("--reader-proxy is only supported for QS")
     if args.workers < 1:
@@ -268,9 +371,24 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--request-delay cannot be negative")
     if args.max_retries < 1:
         parser.error("--max-retries must be at least 1")
+    range_requested = args.start_year is not None or args.end_year is not None
+    if range_requested and (args.start_year is None or args.end_year is None):
+        parser.error("--start-year and --end-year must be used together")
+    if range_requested and args.start_year > args.end_year:
+        parser.error("--start-year cannot be greater than --end-year")
+    if range_requested and args.website == "usnews":
+        parser.error("US News does not expose historical editions")
+    if range_requested and not (
+        args.all_subjects or args.overall_only or args.subjects
+    ):
+        parser.error(
+            "Historical ranges require --all-subjects, --subjects, or --overall-only"
+        )
 
     try:
-        if args.all_subjects or args.overall_only:
+        if range_requested:
+            return _run_year_range(args, parser)
+        if args.all_subjects or args.overall_only or args.subjects:
             return _run_all_subjects(args, parser)
         return _run_single(args, parser)
     except ProviderBlockedError as exc:

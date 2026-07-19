@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 setuptools.setup(
     name="university_ranking_scraper",
-    version="0.0.5",
+    version="0.0.6",
     description="Scrape university rankings from US News, Times Higher Education, and QS",
     long_description=readme,
     long_description_content_type="text/markdown",

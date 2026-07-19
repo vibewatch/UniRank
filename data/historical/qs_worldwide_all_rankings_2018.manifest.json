@@ -1,0 +1,17 @@
+{
+  "source": "qs",
+  "country": null,
+  "coverage": "worldwide",
+  "ranking_year": 2018,
+  "retrieval_method": "reader-proxy",
+  "retrieved_at": "2026-07-19T10:44:57+00:00",
+  "records": 2503,
+  "records_by_scope": {
+    "arts-humanities": 499,
+    "engineering-technology": 501,
+    "life-sciences-medicine": 500,
+    "natural-sciences": 499,
+    "social-sciences-management": 504
+  },
+  "failures": []
+}

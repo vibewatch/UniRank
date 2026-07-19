@@ -1,0 +1,24 @@
+{
+  "source": "times",
+  "country": null,
+  "coverage": "worldwide",
+  "ranking_year": 2022,
+  "retrieval_method": "direct",
+  "retrieved_at": "2026-07-19T10:14:22+00:00",
+  "records": 11007,
+  "records_by_scope": {
+    "arts-and-humanities": 606,
+    "business-and-economics": 794,
+    "clinical-pre-clinical-health": 925,
+    "computer-science": 892,
+    "education": 596,
+    "engineering": 1188,
+    "law": 257,
+    "life-sciences": 972,
+    "overall": 2112,
+    "physical-sciences": 1227,
+    "psychology": 568,
+    "social-sciences": 870
+  },
+  "failures": []
+}

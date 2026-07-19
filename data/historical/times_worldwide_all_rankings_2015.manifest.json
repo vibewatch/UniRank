@@ -1,0 +1,19 @@
+{
+  "source": "times",
+  "country": null,
+  "coverage": "worldwide",
+  "ranking_year": 2015,
+  "retrieval_method": "direct",
+  "retrieved_at": "2026-07-19T10:14:01+00:00",
+  "records": 1004,
+  "records_by_scope": {
+    "arts-and-humanities": 101,
+    "clinical-pre-clinical-health": 100,
+    "engineering": 102,
+    "life-sciences": 100,
+    "overall": 401,
+    "physical-sciences": 100,
+    "social-sciences": 100
+  },
+  "failures": []
+}

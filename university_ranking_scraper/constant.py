@@ -3,6 +3,20 @@ VALID_SOURCES = ['usnews', 'times', 'qs']
 LATEST_THE_YEAR = 2026
 LATEST_QS_YEAR = 2026
 
+THE_SUBJECT_FIRST_YEAR = {
+    'arts-and-humanities': 2011,
+    'business-and-economics': 2017,
+    'computer-science': 2017,
+    'education': 2018,
+    'engineering': 2011,
+    'law': 2018,
+    'life-sciences': 2011,
+    'clinical-pre-clinical-health': 2011,
+    'physical-sciences': 2011,
+    'psychology': 2018,
+    'social-sciences': 2011,
+}
+
 # Valid regions for each source
 REGIONS = {
     'usnews': [
@@ -45,11 +59,77 @@ SUBJECTS = {
 }
 
 QS_OVERALL_NIDS = {
+    2021: '2057712',
+    2022: '3740566',
+    2023: '3816281',
+    2024: '3897789',
+    2025: '3990755',
     2026: '4061771',
     2027: '4153156',
 }
 
+QS_LEGACY_URLS = {
+    2018: {
+        'arts-humanities': 'https://www.topuniversities.com/sites/default/files/qs-rankings-data/en/379677.txt?1625019036?v=1625019049448',
+        'engineering-technology': 'https://www.topuniversities.com/sites/default/files/qs-rankings-data/en/379678.txt?1625019614?v=1625019633672',
+        'life-sciences-medicine': 'https://www.topuniversities.com/sites/default/files/qs-rankings-data/en/379679.txt?1625019213?v=1625019225313',
+        'natural-sciences': 'https://www.topuniversities.com/sites/default/files/qs-rankings-data/en/379680.txt?1625019258?v=1625019278792',
+        'social-sciences-management': 'https://www.topuniversities.com/sites/default/files/qs-rankings-data/en/379681.txt?1625019272?v=1625019296184',
+    },
+    2019: {
+        'overall': 'https://www.topuniversities.com/sites/default/files/qs-rankings-data/en/397863.txt?1625009603?v=1625018924236',
+        'arts-humanities': 'https://www.topuniversities.com/sites/default/files/qs-rankings-data/en/894231.txt?1625019064?v=1625019078658',
+        'engineering-technology': 'https://www.topuniversities.com/sites/default/files/qs-rankings-data/en/894232.txt?1625019583?v=1625019599868',
+        'life-sciences-medicine': 'https://www.topuniversities.com/sites/default/files/qs-rankings-data/en/894233.txt?1625019172?v=1625019196141',
+        'natural-sciences': 'https://www.topuniversities.com/sites/default/files/qs-rankings-data/en/894234.txt?1625019319?v=1625019359287',
+        'social-sciences-management': 'https://www.topuniversities.com/sites/default/files/qs-rankings-data/en/894235.txt?1625019397?v=1625019415049',
+    },
+    2020: {
+        'overall': 'https://www.topuniversities.com/sites/default/files/qs-rankings-data/en/914824.txt?1625018950?v=1625018964695',
+        'arts-humanities': 'https://www.topuniversities.com/sites/default/files/qs-rankings-data/en/2005415.txt?1625019094?v=1625019106189',
+        'engineering-technology': 'https://www.topuniversities.com/sites/default/files/qs-rankings-data/en/2005416.txt?1625019493?v=1625019513902',
+        'life-sciences-medicine': 'https://www.topuniversities.com/sites/default/files/qs-rankings-data/en/2005417.txt?1625019138?v=1625019151312',
+        'natural-sciences': 'https://www.topuniversities.com/sites/default/files/qs-rankings-data/en/2005418.txt?1625019387?v=1625019405172',
+        'social-sciences-management': 'https://www.topuniversities.com/sites/default/files/qs-rankings-data/en/2005419.txt?1625019445?v=1625019467182',
+    },
+    2021: {
+        'arts-humanities': 'https://www.topuniversities.com/sites/default/files/qs-rankings-data/en/3518694.txt?1625013961?v=1625018714660',
+        'engineering-technology': 'https://www.topuniversities.com/sites/default/files/qs-rankings-data/en/3518640.txt?1625018647?v=1625019569873',
+        'life-sciences-medicine': 'https://www.topuniversities.com/sites/default/files/qs-rankings-data/en/3518596.txt?1624891888?v=1625018717339',
+        'natural-sciences': 'https://www.topuniversities.com/sites/default/files/qs-rankings-data/en/3518540.txt?1625018650?v=1625018720746',
+        'social-sciences-management': 'https://www.topuniversities.com/sites/default/files/qs-rankings-data/en/3518490.txt?1624946112?v=1625019553334',
+    },
+}
+
 QS_SUBJECT_NIDS = {
+    2022: {
+        'arts-humanities': '3794804',
+        'engineering-technology': '3794805',
+        'life-sciences-medicine': '3794806',
+        'natural-sciences': '3794808',
+        'social-sciences-management': '3794809',
+    },
+    2023: {
+        'arts-humanities': '3846211',
+        'engineering-technology': '3846212',
+        'life-sciences-medicine': '3846213',
+        'natural-sciences': '3846219',
+        'social-sciences-management': '3846220',
+    },
+    2024: {
+        'arts-humanities': '3948166',
+        'engineering-technology': '3948167',
+        'life-sciences-medicine': '3948168',
+        'natural-sciences': '3948169',
+        'social-sciences-management': '3948170',
+    },
+    2025: {
+        'arts-humanities': '4023707',
+        'engineering-technology': '4023705',
+        'life-sciences-medicine': '4023706',
+        'natural-sciences': '4023710',
+        'social-sciences-management': '4023709',
+    },
     2026: {
         'engineering-technology': '4114613',
         'life-sciences-medicine': '4114614',
