@@ -6,10 +6,29 @@
   "retrieval_method": "reader-proxy",
   "data_license": "Provider-controlled; no explicit redistribution license",
   "data_attribution": "SCImago Institutions Rankings (SIR), scimagoir.com",
-  "retrieved_at": "2026-07-19T14:07:16+00:00",
-  "records": 4126,
+  "retrieved_at": "2026-07-20T03:42:51+00:00",
+  "records": 46085,
   "records_by_scope": {
-    "overall": 4126
+    "agricultural-biological-sciences": 2555,
+    "arts-humanities": 1872,
+    "biochemistry-genetics-molecular-biology": 2536,
+    "business-management-accounting": 2300,
+    "chemistry": 2590,
+    "computer-science": 2831,
+    "dentistry": 527,
+    "earth-planetary-sciences": 2349,
+    "economics-econometrics-finance": 1643,
+    "energy": 2582,
+    "engineering": 2705,
+    "environmental-science": 2932,
+    "mathematics": 2830,
+    "medicine": 2302,
+    "overall": 4126,
+    "pharmacology-toxicology-pharmaceutics": 2130,
+    "physics-astronomy": 2378,
+    "psychology": 1594,
+    "social-sciences": 2680,
+    "veterinary": 623
   },
   "failures": []
 }

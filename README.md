@@ -58,13 +58,13 @@ python3 -m venv .venv
 | --- | --- | --- | --- |
 | US News | `usnews` | Current overall and 52 subjects | Public site; provider terms apply |
 | Times Higher Education | `times` | 2011-2026 overall and available subjects | Public JSON; provider terms apply |
-| QS | `qs` | Archived 2018-2025 data and current rankings | Cloudflare-protected; explicit reader proxy available; provider terms apply |
+| QS | `qs` | Archived 2018-2025 (2023-2026 with full subject catalogue) and current rankings | Cloudflare-protected; explicit reader proxy available; provider terms apply |
 | Leiden Open Edition | `leiden` | 2023-2025 overall and five fields | Official Zenodo files, CC0 |
 | OpenAlex | `openalex` | Derived annual research-output ranking | Official API, CC0 |
 | CWUR | `cwur` | 2012-2026 overall | Public HTML; provider-controlled; included under separate permission |
 | NTU Ranking | `ntu` | 2007-2025 overall, fields, and subjects | Public JSON; provider-controlled; included under separate permission |
 | ShanghaiRanking | `arwu` | ARWU 2003-2017 and 2019-2025; GRAS 2017-2025 | Public JSON; provider-controlled; included under separate permission |
-| SCImago SIR | `scimago` | 2009-2026 overall and 19 supported areas | Public download with attribution; included under separate permission; direct access is Cloudflare-blocked |
+| SCImago SIR | `scimago` | 2009-2026 overall; 19 subject areas 2021-2026 | Public download with attribution; included under separate permission; direct access is Cloudflare-blocked |
 | Nature Index | `nature` | 2016-2026 overall, academic, and eight discipline views | Annual institution tables; CC BY-NC-SA 4.0 numerical data; included under separate permission; direct access returns HTTP 406 |
 | Webometrics | `webometrics` | July 2025 overall, 32,053 institutions | Official Figshare PDF, CC BY 4.0 |
 
@@ -104,7 +104,10 @@ five-year data window, so the adapter maps edition 2026 to data period 2020-2024
 rather than silently requesting an invalid year. Challenge responses are
 rejected instead of being saved as data. The provider exporter supports 19
 subject areas; eight other Scopus area codes silently return the overall table
-and are therefore deliberately not exposed as subject rankings.
+and are therefore deliberately not exposed as subject rankings. SCImago only
+began publishing subject-area rankings with its 2021 edition; earlier editions
+respond with "Area rankings were included in 2021 edition", so overall reaches
+back to 2009 while the 19 areas are available for 2021-2026.
 
 Nature Index editions contain the prior full calendar year's research output:
 edition 2026 represents 2025. The adapter collects both all-sector and academic
@@ -197,6 +200,26 @@ constructed public ranking URLs (never cookies or credentials) through
 
 An authorized QS export or API remains preferable when available.
 
+### Optional: Jina reader API key
+
+The `r.jina.ai` reader proxy has a shared free-tier rate limit that causes
+intermittent `HTTP 422/429` failures during large subject sweeps (QS, SCImago,
+Nature). Setting a Jina reader key authenticates those requests and lifts the
+limit — the scraper attaches it automatically as a bearer token when the
+`JINA_API_KEY` environment variable is present (it is never written to disk or
+committed):
+
+```bash
+export JINA_API_KEY=jina_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+.venv/bin/python -m university_ranking_scraper \
+  --website qs --worldwide --all-subjects \
+  --year 2025 --reader-proxy --output-dir data/historical
+```
+
+Without a key the scraper still works, retrying with jittered exponential
+backoff, rotating User-Agent profiles, and reader cache-busting; a key simply
+makes wide historical sweeps far more reliable.
+
 ## Historical collection
 
 ```bash
@@ -224,9 +247,10 @@ An authorized QS export or API remains preferable when available.
   --start-year 2003 --end-year 2025 \
   --output-dir data/restricted
 
-# SCImago overall history; the adapter maps edition years to data windows
+# SCImago overall history plus subject areas; the adapter maps edition years to
+# data windows and automatically skips areas before their 2021 launch edition
 .venv/bin/python -m university_ranking_scraper \
-  --website scimago --worldwide --overall-only \
+  --website scimago --worldwide --all-subjects --include-overall \
   --start-year 2009 --end-year 2026 --reader-proxy \
   --request-delay 2 --output-dir data/restricted
 
@@ -243,9 +267,15 @@ An authorized QS export or API remains preferable when available.
   --output-dir data/historical
 
 .venv/bin/python -m university_ranking_scraper \
+  --website qs --worldwide --all-subjects \
+  --start-year 2023 --end-year 2025 --reader-proxy \
+  --request-delay 3 --output-dir data/historical
+
+# Older QS editions publish only the five broad faculty areas
+.venv/bin/python -m university_ranking_scraper \
   --website qs --worldwide \
   --subjects arts-humanities,engineering-technology,life-sciences-medicine,natural-sciences,social-sciences-management \
-  --start-year 2018 --end-year 2025 --reader-proxy \
+  --start-year 2018 --end-year 2022 --reader-proxy \
   --output-dir data/historical
 ```
 
@@ -267,7 +297,7 @@ The repository's existing snapshots contain:
 | US News United States | 3,986 |
 | THE United States | 1,657 |
 | Worldwide US News, THE, and QS | 65,813 |
-| Historical THE and QS | 117,877 |
+| Historical THE and QS | 167,259 |
 | Leiden Open Edition 2023-2025 | 27,825 |
 | Derived OpenAlex 2016-2025 | 96,232 |
 | Webometrics July 2025 | 32,053 |
@@ -281,9 +311,9 @@ under separate permission contains:
 | CWUR | Overall, 2012-2026 | 21,200 |
 | NTU | Overall, fields, and available subjects, 2007-2025 | 157,371 |
 | ARWU/GRAS | ARWU except 2018; available GRAS subjects, 2003-2025 | 181,898 |
-| SCImago | Overall 2009-2026; all 19 areas for 2025-2026 | 171,304 |
+| SCImago | Overall 2009-2026; 19 areas 2021-2026 | 355,225 |
 | Nature Index | All-sector and academic tables with available disciplines, 2016-2026 | 43,761 |
-| **Approved provider-controlled total** | | **575,534** |
+| **Approved provider-controlled total** | | **759,455** |
 
 ## Python API
 

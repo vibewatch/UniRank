@@ -57,12 +57,12 @@ class InsightPayloadTests(unittest.TestCase):
 
     def test_archive_inventory_and_consensus_invariants(self):
         meta = self.payload["meta"]
-        self.assertEqual(920_977, meta["archiveRows"])
-        self.assertEqual(915_334, meta["globalRows"])
+        self.assertEqual(1_154_280, meta["archiveRows"])
+        self.assertEqual(1_148_637, meta["globalRows"])
         self.assertEqual(129, meta["csvFiles"])
         self.assertEqual(11, meta["providers"])
         self.assertEqual(194, meta["countries"])
-        self.assertEqual(1, meta["failedScopes"])
+        self.assertEqual(6, meta["failedScopes"])
 
         consensus = self.payload["consensus"]
         self.assertGreater(len(consensus), 1000)

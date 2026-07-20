@@ -389,6 +389,77 @@ class ScraperTests(unittest.TestCase):
         self.assertNotIn("chemical-engineering", scraper.SCIMAGO_AREA_CODES)
         self.assertNotIn("multidisciplinary", scraper.SCIMAGO_AREA_CODES)
 
+    def test_reader_proxy_headers_add_jina_auth_only_when_key_present(self):
+        with patch.dict("os.environ", {"JINA_API_KEY": ""}, clear=False):
+            self.assertNotIn(
+                "Authorization",
+                scraper._reader_proxy_headers({"X-Return-Format": "text"}),
+            )
+        with patch.dict("os.environ", {"JINA_API_KEY": "secret-token"}):
+            headers = scraper._reader_proxy_headers({"X-Return-Format": "text"})
+        self.assertEqual("Bearer secret-token", headers["Authorization"])
+        self.assertEqual("text", headers["X-Return-Format"])
+
+    def test_looks_like_challenge_detects_vendor_markers(self):
+        self.assertTrue(scraper._looks_like_challenge("Just a moment..."))
+        self.assertTrue(
+            scraper._looks_like_challenge("Checking your browser before access")
+        )
+        self.assertTrue(scraper._looks_like_challenge("Blocked by DataDome"))
+        self.assertFalse(
+            scraper._looks_like_challenge("rank,name\n1,Example University\n")
+        )
+
+    @patch("university_ranking_scraper.scraper.httpx.Client")
+    def test_qs_reader_proxy_sends_jina_auth_header(self, client_class):
+        payload = {
+            "total_pages": 1,
+            "score_nodes": [
+                {"nid": "1", "title": "First University", "rank_display": "1"}
+            ],
+        }
+        client = fake_client([FakeResponse(payload)])
+        client_class.return_value = client
+
+        with patch.dict("os.environ", {"JINA_API_KEY": "secret-token"}):
+            scraper.scrape_qs(
+                "computer-science-information-systems",
+                reader_proxy=True,
+                request_delay=0,
+            )
+
+        headers = client_class.call_args.kwargs["headers"]
+        self.assertEqual("Bearer secret-token", headers["Authorization"])
+
+    @patch("university_ranking_scraper.scraper.httpx.Client")
+    def test_qs_reader_proxy_retries_missing_node_id(self, client_class):
+        api_payload = {
+            "total_pages": 1,
+            "score_nodes": [
+                {"nid": "1", "title": "Recovered University", "rank_display": "1"}
+            ],
+        }
+        client = fake_client(
+            [
+                FakeResponse(text="rate limited, no node here"),
+                FakeResponse(text='<div data-history-node-id="12345"></div>'),
+                FakeResponse(api_payload),
+            ]
+        )
+        client_class.return_value = client
+
+        result = scraper.scrape_qs(
+            "dentistry",
+            year=2025,
+            reader_proxy=True,
+            request_delay=0,
+            base_delay=0,
+        )
+
+        self.assertEqual(["Recovered University"], result["title"].tolist())
+        self.assertEqual(3, client.get.call_count)
+        self.assertIn("12345", client.get.call_args_list[2].args[0])
+
     def test_nature_parser_supports_table_and_compact_formats(self):
         single_year_table = (
             "| Position | Institution | Share 2024 | Count 2024 |\n"

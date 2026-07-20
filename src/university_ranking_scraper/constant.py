@@ -262,7 +262,10 @@ SUBJECT_FIRST_YEAR = {
     'leiden': {subject: 2023 for subject in LEIDEN_FIELD_IDS},
     'ntu': NTU_SCOPE_FIRST_YEAR,
     'arwu': ARWU_SUBJECT_FIRST_YEAR,
-    'scimago': {subject: 2009 for subject in SCIMAGO_AREA_CODES},
+    # SCImago overall editions start in 2009, but the exporter only returns
+    # subject-area (major) rankings from the 2021 edition onward; earlier years
+    # respond with "Area rankings were included in 2021 edition".
+    'scimago': {subject: 2021 for subject in SCIMAGO_AREA_CODES},
     'nature': NATURE_SCOPE_FIRST_YEAR,
 }
 

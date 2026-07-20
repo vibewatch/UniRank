@@ -1,15 +1,15 @@
 {
   "meta": {
-    "archiveRows": 920977,
-    "globalRows": 915334,
+    "archiveRows": 1154280,
+    "globalRows": 1148637,
     "csvFiles": 129,
     "providers": 11,
     "firstYear": 2003,
     "lastYear": 2027,
     "countries": 194,
     "subjectViews": 253,
-    "failedScopes": 1,
-    "latestRetrieval": "2026-07-19T21:53:28+00:00"
+    "failedScopes": 6,
+    "latestRetrieval": "2026-07-20T06:10:51+00:00"
   },
   "providers": [
     {
@@ -54,8 +54,8 @@
       "lastYear": 2027,
       "editions": 10,
       "files": 10,
-      "records": 54067,
-      "globalRecords": 54067,
+      "records": 103449,
+      "globalRecords": 103449,
       "subjectViews": 60,
       "license": null,
       "attribution": null
@@ -150,8 +150,8 @@
       "lastYear": 2026,
       "editions": 18,
       "files": 18,
-      "records": 171304,
-      "globalRecords": 171304,
+      "records": 355225,
+      "globalRecords": 355225,
       "subjectViews": 19,
       "license": "Provider-controlled; no explicit redistribution license",
       "attribution": "SCImago Institutions Rankings (SIR), scimagoir.com"

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import random
 import re
 import tempfile
@@ -60,6 +61,72 @@ SCIMAGO_URL = "https://www.scimagoir.com/getdata.php"
 NATURE_INDEX_URL = "https://www.nature.com/nature-index"
 
 
+JINA_API_KEY_ENV = "JINA_API_KEY"
+
+# Rotating desktop / bot User-Agent profiles, ported from ReadWise's fetch
+# strategy chain. Cycling the UA across retries helps ride out soft blocks and
+# per-agent rate limits without changing the request payload.
+USER_AGENT_PROFILES = (
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/124.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 "
+    "Firefox/125.0",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 "
+    "(KHTML, like Gecko) Version/17.4 Safari/605.1.15",
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) "
+    "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 "
+    "Safari/604.1",
+)
+
+# Substrings that mark a bot-challenge / interstitial page instead of real
+# content. Extended with the vendor markers ReadWise watches for (Cloudflare,
+# Akamai, DataDome, ...).
+CHALLENGE_MARKERS = (
+    "just a moment",
+    "performing security verification",
+    "requiring captcha",
+    "checking your browser",
+    "attention required",
+    "cf-mitigated",
+    "cf-chl",
+    "access denied",
+    "please enable javascript and cookies",
+    "datadome",
+)
+
+
+def _jina_api_key() -> str:
+    """Return the configured Jina reader API key, if any.
+
+    Read lazily from the environment so the key is never baked into source or
+    committed. When set, reader-proxy requests are authenticated, which lifts
+    r.jina.ai's shared free-tier rate limits — the main cause of 422/429
+    failures during QS, SCImago and Nature collection.
+    """
+    return os.environ.get(JINA_API_KEY_ENV, "").strip()
+
+
+def _reader_proxy_headers(base_headers: dict[str, str]) -> dict[str, str]:
+    """Augment reader-proxy headers with Jina authentication when available."""
+    headers = dict(base_headers)
+    key = _jina_api_key()
+    if key:
+        headers["Authorization"] = f"Bearer {key}"
+    return headers
+
+
+def _looks_like_challenge(text: str) -> bool:
+    """Return True when a response body looks like a bot-challenge page."""
+    sample = text[:2_000].casefold()
+    return any(marker in sample for marker in CHALLENGE_MARKERS)
+
+
+def _rotate_user_agent(client: httpx.Client, attempt: int) -> None:
+    """Cycle the client's User-Agent to spread retries across UA profiles."""
+    profile = USER_AGENT_PROFILES[attempt % len(USER_AGENT_PROFILES)]
+    client.headers["User-Agent"] = profile
+
+
 class ScraperError(RuntimeError):
     """Raised when a provider returns an unusable response."""
 
@@ -68,8 +135,15 @@ class ProviderBlockedError(ScraperError):
     """Raised when a provider explicitly blocks automated access."""
 
 
-def _retry_delay(base_delay: float, attempt: int) -> float:
-    return base_delay * (2**attempt) + random.uniform(0, min(base_delay, 0.25))
+def _retry_delay(base_delay: float, attempt: int, *, cap: float = 30.0) -> float:
+    """Jittered exponential backoff (ported from ReadWise's backoff helper).
+
+    Grows as ``base_delay * 2**attempt`` seconds, capped at ``cap`` so a long
+    retry chain can't stall indefinitely, with additive jitter up to
+    ``base_delay`` so concurrent workers don't retry in lockstep.
+    """
+    expo = min(cap, base_delay * (2**attempt))
+    return expo + random.uniform(0, base_delay)
 
 
 def _request(
@@ -101,12 +175,7 @@ def _request(
                 )
             response.raise_for_status()
             if provider in {"qs", "scimago"}:
-                challenge = response.text[:2_000].casefold()
-                if (
-                    "performing security verification" in challenge
-                    or "just a moment" in challenge
-                    or "requiring captcha" in challenge
-                ):
+                if _looks_like_challenge(response.text):
                     provider_name = "QS" if provider == "qs" else "SCImago"
                     raise ProviderBlockedError(
                         f"{provider_name} returned a Cloudflare challenge "
@@ -129,6 +198,11 @@ def _request(
                 except ValueError:
                     retry_after = 5.0
                 delay = max(delay, retry_after)
+            # Rotate the User-Agent and bust the reader-proxy cache before the
+            # next attempt, mirroring ReadWise's per-retry strategy switching.
+            _rotate_user_agent(client, attempt)
+            if url.startswith(READER_PROXY_URL):
+                client.headers["X-No-Cache"] = "true"
             logger.warning(
                 "Retry %s/%s for %s after %.2fs: %s",
                 attempt + 1,
@@ -180,7 +254,7 @@ def _request_json(
 
         if attempt == max_retries - 1:
             break
-        if provider == "qs-reader":
+        if url.startswith(READER_PROXY_URL):
             client.headers["X-No-Cache"] = "true"
         delay = _retry_delay(base_delay, attempt)
         logger.warning(
@@ -510,7 +584,7 @@ def scrape_qs(
     legacy_url = QS_LEGACY_URLS.get(year, {}).get(scope)
     if legacy_url:
         headers = (
-            {"X-Return-Format": "text"}
+            _reader_proxy_headers({"X-Return-Format": "text"})
             if reader_proxy
             else HEADERS["qs"]
         )
@@ -571,9 +645,7 @@ def scrape_qs(
         if subject and year != LATEST_QS_YEAR:
             page_url = f"{page_url}/{year}"
         page_headers = (
-            {
-                "X-Return-Format": "html",
-            }
+            _reader_proxy_headers({"X-Return-Format": "html"})
             if reader_proxy
             else HEADERS["qs"]
         )
@@ -587,26 +659,37 @@ def scrape_qs(
             timeout=120.0,
             follow_redirects=True,
         ) as page_client:
-            response = _request(
-                page_client,
-                page_target,
-                params=None,
-                provider="qs-reader" if reader_proxy else "qs",
-                max_retries=max_retries,
-                base_delay=base_delay,
-            )
-        match = re.search(r'data-history-node-id=["\'](\d+)["\']', response.text)
-        if not match:
-            raise ScraperError(
-                f"QS page did not expose a ranking node ID for "
-                f"{subject or 'overall'} ({year})"
-            )
-        node_id = match.group(1)
+            attempts = max_retries if reader_proxy else 1
+            for attempt in range(attempts):
+                response = _request(
+                    page_client,
+                    page_target,
+                    params=None,
+                    provider="qs-reader" if reader_proxy else "qs",
+                    max_retries=max_retries,
+                    base_delay=base_delay,
+                )
+                match = re.search(
+                    r'data-history-node-id=["\'](\d+)["\']', response.text
+                )
+                if match:
+                    node_id = match.group(1)
+                    break
+                # A reader proxy under rate-limiting can return a cached empty
+                # or challenge page (HTTP 200) that lacks the node ID. Bust its
+                # cache, rotate the User-Agent and retry before giving up.
+                if attempt < attempts - 1:
+                    page_client.headers["X-No-Cache"] = "true"
+                    _rotate_user_agent(page_client, attempt)
+                    time.sleep(_retry_delay(base_delay, attempt))
+            if node_id is None:
+                raise ScraperError(
+                    f"QS page did not expose a ranking node ID for "
+                    f"{subject or 'overall'} ({year})"
+                )
 
     headers = (
-        {
-            "X-Return-Format": "text",
-        }
+        _reader_proxy_headers({"X-Return-Format": "text"})
         if reader_proxy
         else HEADERS["qs"]
     )
@@ -1666,7 +1749,11 @@ def scrape_nature(
     )
     last_error: ScraperError | None = None
     with httpx.Client(
-        headers=HEADERS["nature"],
+        headers=(
+            _reader_proxy_headers(HEADERS["nature"])
+            if reader_proxy
+            else HEADERS["nature"]
+        ),
         timeout=180.0,
         follow_redirects=True,
     ) as client:
@@ -1747,7 +1834,11 @@ def scrape_scimago(
         else origin_url
     )
     with httpx.Client(
-        headers=HEADERS["scimago"],
+        headers=(
+            _reader_proxy_headers(HEADERS["scimago"])
+            if reader_proxy
+            else HEADERS["scimago"]
+        ),
         timeout=120.0,
         follow_redirects=True,
     ) as client:
@@ -1763,6 +1854,11 @@ def scrape_scimago(
     csv_text = response.text
     if "Markdown Content:\n" in csv_text:
         csv_text = csv_text.partition("Markdown Content:\n")[2]
+    if "Area rankings were included in" in csv_text:
+        raise ScraperError(
+            f"SCImago has no area ranking for {subject or 'overall'} in the "
+            f"{year} edition; subject-area rankings start with the 2021 edition"
+        )
     header_match = re.search(r"(?m)^Rank;", csv_text)
     if header_match:
         csv_text = csv_text[header_match.start() :]
