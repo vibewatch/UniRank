@@ -44,6 +44,16 @@ test("archive inventory and consensus invariants", () => {
   assert.equal(byCanonical("ucl").providerCount, 6);
   const wisconsin = byCanonical("university of wisconsin madison");
   assert.ok(new Set(wisconsin.ranks.map((rank: Record<string, any>) => rank.provider)).has("cwur"));
+
+  // NAME_ALIASES consolidate provider spelling variants into one consensus entity.
+  assert.equal(byCanonical("china university of mining and technology").providerCount, 5);
+  assert.equal(byCanonical("charles university").providerCount, 6);
+  assert.equal(byCanonical("university of alabama").providerCount, 6);
+  // Distinct institutions that merely share a name prefix must remain separate.
+  assert.notEqual(
+    byCanonical("university of pennsylvania").id,
+    byCanonical("pennsylvania state university").id,
+  );
 });
 
 test("analytical outputs preserve publisher semantics", () => {
