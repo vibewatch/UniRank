@@ -54,6 +54,10 @@ test("archive inventory and consensus invariants", () => {
     byCanonical("university of pennsylvania").id,
     byCanonical("pennsylvania state university").id,
   );
+  assert.notEqual(
+    byCanonical("university of alabama").id,
+    byCanonical("university of alabama at birmingham").id,
+  );
 });
 
 test("analytical outputs preserve publisher semantics", () => {
