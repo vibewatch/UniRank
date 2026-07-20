@@ -85,9 +85,11 @@ const serialized = JSON.stringify(boards).replaceAll('<', '\\u003c');
     institutions: LeaderInstitution[];
   }
 
-  const root = document.querySelector<HTMLElement>('[data-subject-explorer]');
-  const dataElement = document.querySelector<HTMLScriptElement>('#subject-explorer-data');
-  if (root && dataElement) {
+  const initializeSubjectExplorer = () => {
+    const root = document.querySelector<HTMLElement>('[data-subject-explorer]');
+    const dataElement = document.querySelector<HTMLScriptElement>('#subject-explorer-data');
+    if (!root || !dataElement || root.dataset.initialized === 'true') return;
+    root.dataset.initialized = 'true';
     const boards = JSON.parse(dataElement.textContent || '[]') as Board[];
     const subjectSelect = root.querySelector<HTMLSelectElement>('[data-subject]');
     const chart = root.querySelector<SVGSVGElement>('[data-chart]');
@@ -261,7 +263,10 @@ const serialized = JSON.stringify(boards).replaceAll('<', '\\u003c');
 
     subjectSelect?.addEventListener('change', render);
     render();
-  }
+  };
+
+  initializeSubjectExplorer();
+  document.addEventListener('astro:page-load', initializeSubjectExplorer);
 </script>
 
 <style>

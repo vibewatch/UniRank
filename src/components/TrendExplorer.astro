@@ -68,9 +68,11 @@ const serialized = JSON.stringify(trends).replaceAll('<', '\\u003c');
     series: Series[];
   }
 
-  const root = document.querySelector<HTMLElement>('[data-trend-explorer]');
-  const dataElement = document.querySelector<HTMLScriptElement>('#trend-explorer-data');
-  if (root && dataElement) {
+  const initializeTrendExplorer = () => {
+    const root = document.querySelector<HTMLElement>('[data-trend-explorer]');
+    const dataElement = document.querySelector<HTMLScriptElement>('#trend-explorer-data');
+    if (!root || !dataElement || root.dataset.initialized === 'true') return;
+    root.dataset.initialized = 'true';
     const trends = JSON.parse(dataElement.textContent || '[]') as Trend[];
     const institutionSelect = root.querySelector<HTMLSelectElement>('[data-institution]');
     const providerSelect = root.querySelector<HTMLSelectElement>('[data-provider]');
@@ -249,7 +251,10 @@ const serialized = JSON.stringify(trends).replaceAll('<', '\\u003c');
     providerSelect?.addEventListener('change', render);
     populateProviders();
     render();
-  }
+  };
+
+  initializeTrendExplorer();
+  document.addEventListener('astro:page-load', initializeTrendExplorer);
 </script>
 
 <style>

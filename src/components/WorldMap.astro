@@ -82,9 +82,11 @@ const serialized = JSON.stringify({ metrics: atlas.metrics, countries: atlas.cou
   };
   type Payload = { metrics: Metric[]; countries: Country[]; initialMetric: string };
 
-  const root = document.querySelector<HTMLElement>('[data-worldmap]');
-  const dataElement = document.querySelector<HTMLScriptElement>('#worldmap-data');
-  if (root && dataElement) {
+  const initializeWorldMap = () => {
+    const root = document.querySelector<HTMLElement>('[data-worldmap]');
+    const dataElement = document.querySelector<HTMLScriptElement>('#worldmap-data');
+    if (!root || !dataElement || root.dataset.initialized === 'true') return;
+    root.dataset.initialized = 'true';
     const payload = JSON.parse(dataElement.textContent || '{}') as Payload;
     const metrics = payload.metrics;
     const byId = new Map<string, Country>();
@@ -379,7 +381,10 @@ const serialized = JSON.stringify({ metrics: atlas.metrics, countries: atlas.cou
       });
 
     activate(activeMetric);
-  }
+  };
+
+  initializeWorldMap();
+  document.addEventListener('astro:page-load', initializeWorldMap);
 </script>
 
 <style>

@@ -99,34 +99,41 @@ const providerShort: Record<string, string> = {
 </div>
 
 <script>
-  document.querySelectorAll<HTMLElement>('[data-consensus-table][data-interactive="true"]')
-    .forEach((root) => {
-      const search = root.querySelector<HTMLInputElement>('[data-search]');
-      const country = root.querySelector<HTMLSelectElement>('[data-country]');
-      const coverage = root.querySelector<HTMLSelectElement>('[data-coverage]');
-      const count = root.querySelector<HTMLElement>('[data-result-count]');
-      const rows = [...root.querySelectorAll<HTMLTableRowElement>('[data-row]')];
+  const initializeConsensusTables = () => {
+    document.querySelectorAll<HTMLElement>('[data-consensus-table][data-interactive="true"]')
+      .forEach((root) => {
+        if (root.dataset.initialized === 'true') return;
+        root.dataset.initialized = 'true';
+        const search = root.querySelector<HTMLInputElement>('[data-search]');
+        const country = root.querySelector<HTMLSelectElement>('[data-country]');
+        const coverage = root.querySelector<HTMLSelectElement>('[data-coverage]');
+        const count = root.querySelector<HTMLElement>('[data-result-count]');
+        const rows = [...root.querySelectorAll<HTMLTableRowElement>('[data-row]')];
 
-      const filter = () => {
-        const query = search?.value.trim().toLowerCase() ?? '';
-        const selectedCountry = country?.value ?? '';
-        const minimumCoverage = Number(coverage?.value ?? 4);
-        let visible = 0;
-        rows.forEach((row) => {
-          const matches =
-            (row.dataset.search?.includes(query) ?? false) &&
-            (!selectedCountry || row.dataset.country === selectedCountry) &&
-            Number(row.dataset.providerCount) >= minimumCoverage;
-          row.hidden = !matches;
-          if (matches) visible += 1;
-        });
-        if (count) count.textContent = `${visible} institution${visible === 1 ? '' : 's'}`;
-      };
+        const filter = () => {
+          const query = search?.value.trim().toLowerCase() ?? '';
+          const selectedCountry = country?.value ?? '';
+          const minimumCoverage = Number(coverage?.value ?? 4);
+          let visible = 0;
+          rows.forEach((row) => {
+            const matches =
+              (row.dataset.search?.includes(query) ?? false) &&
+              (!selectedCountry || row.dataset.country === selectedCountry) &&
+              Number(row.dataset.providerCount) >= minimumCoverage;
+            row.hidden = !matches;
+            if (matches) visible += 1;
+          });
+          if (count) count.textContent = `${visible} institution${visible === 1 ? '' : 's'}`;
+        };
 
-      search?.addEventListener('input', filter);
-      country?.addEventListener('change', filter);
-      coverage?.addEventListener('change', filter);
-    });
+        search?.addEventListener('input', filter);
+        country?.addEventListener('change', filter);
+        coverage?.addEventListener('change', filter);
+      });
+  };
+
+  initializeConsensusTables();
+  document.addEventListener('astro:page-load', initializeConsensusTables);
 </script>
 
 <style>

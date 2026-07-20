@@ -3,6 +3,11 @@ import '@fontsource-variable/inter/wght.css';
 import '@fontsource-variable/fraunces/full.css';
 import '@fontsource/space-mono/400.css';
 import '@fontsource/space-mono/700.css';
+import { ClientRouter } from 'astro:transitions';
+import frauncesLatin from '@fontsource-variable/fraunces/files/fraunces-latin-full-normal.woff2?url';
+import interLatin from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url';
+import spaceMonoLatin400 from '@fontsource/space-mono/files/space-mono-latin-400-normal.woff2?url';
+import spaceMonoLatin700 from '@fontsource/space-mono/files/space-mono-latin-700-normal.woff2?url';
 import { insights } from '../lib/data';
 import '../styles/global.css';
 
@@ -32,11 +37,16 @@ const fullTitle = title === 'Overview' ? 'University Signals' : `${title} · Uni
     <meta name="description" content={description} />
     <meta name="theme-color" content="#101820" />
     <meta name="generator" content={Astro.generator} />
+    <link rel="preload" href={interLatin} as="font" type="font/woff2" crossorigin="anonymous" />
+    <link rel="preload" href={frauncesLatin} as="font" type="font/woff2" crossorigin="anonymous" />
+    <link rel="preload" href={spaceMonoLatin400} as="font" type="font/woff2" crossorigin="anonymous" />
+    <link rel="preload" href={spaceMonoLatin700} as="font" type="font/woff2" crossorigin="anonymous" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{fullTitle}</title>
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
+    <ClientRouter />
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
