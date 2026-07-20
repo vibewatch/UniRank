@@ -7,6 +7,7 @@
 !data/restricted/*.csv
 .venv/
 .tmp-smoke/
+build/
 dist/
 *.egg-info/
 __pycache__/

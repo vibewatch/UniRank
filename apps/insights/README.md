@@ -16,7 +16,7 @@ The site covers:
 ## Architecture
 
 Source CSVs and manifests stay in the repository's `data/` directories.
-`../scripts/generate_insights.py` reduces them to the typed,
+`../../scripts/generate_insights.py` reduces them to the typed,
 browser-ready `src/data/insights.json` artifact. Astro then emits static HTML,
 CSS, SVG, and small vanilla-JavaScript interactions. The browser does not load
 the 920,000+ source rows.
@@ -29,8 +29,8 @@ From the repository root:
 
 ```bash
 python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-cd insights
+.venv/bin/pip install -e .
+cd apps/insights
 npm ci
 ```
 
@@ -38,7 +38,7 @@ Node.js 22.12 or newer is required.
 
 ## Commands
 
-Run these from `insights/`:
+Run these from `apps/insights/`:
 
 | Command | Purpose |
 | --- | --- |

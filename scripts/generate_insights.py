@@ -17,7 +17,7 @@ import pycountry
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_ROOT = ROOT / "data"
-OUTPUT_PATH = ROOT / "insights" / "src" / "data" / "insights.json"
+OUTPUT_PATH = ROOT / "apps" / "insights" / "src" / "data" / "insights.json"
 
 PROVIDER_META = {
     "usnews": {

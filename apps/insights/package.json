@@ -6,7 +6,7 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "data": "../.venv/bin/python ../scripts/generate_insights.py",
+    "data": "../../.venv/bin/python ../../scripts/generate_insights.py",
     "dev": "astro dev --background",
     "dev:status": "astro dev status",
     "dev:stop": "astro dev stop",

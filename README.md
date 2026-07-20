@@ -5,9 +5,28 @@ supports worldwide and country-filtered exports, subject/major rankings, year
 ranges, incremental CSV updates, and JSON manifests that record failures,
 retrieval methods, licenses, and required attribution.
 
+## Repository structure
+
+```text
+.
+├── apps/
+│   └── insights/                  # Deployable Astro data-insights site
+├── data/                          # Versioned ranking snapshots and manifests
+├── scripts/                       # Repository-level data generation tools
+├── src/
+│   └── university_ranking_scraper/ # Installable Python package and CLI
+├── tests/                         # Scraper and analytics regression tests
+└── pyproject.toml                 # Python build metadata and dependencies
+```
+
+The boundaries are intentional: `src/` contains reusable Python behavior,
+`apps/` contains independently deployable interfaces, `scripts/` connects
+repository data to those applications, and `data/` remains separate from
+installable packages so snapshots are never bundled into Python distributions.
+
 ## Data insights website
 
-`insights/` contains **University Signals**, a static Astro data-atlas generated
+`apps/insights/` contains **University Signals**, a static Astro data-atlas generated
 from the committed ranking snapshots. It provides cross-provider consensus,
 historical trajectories, subject strengths, research geography, ranking-universe
 growth, and publication-scale versus citation-impact analysis.
@@ -17,12 +36,12 @@ growth, and publication-scale versus citation-impact analysis.
 .venv/bin/python scripts/generate_insights.py
 
 # Install, validate, and build the static site
-cd insights
+cd apps/insights
 npm ci
 npm run verify
 ```
 
-See [`insights/README.md`](insights/README.md) for development, methodology, and
+See [`apps/insights/README.md`](apps/insights/README.md) for development, methodology, and
 deployment details. The generated site preserves source editions and caveats;
 it is not a replacement for provider-published tables.
 
@@ -30,7 +49,7 @@ it is not a replacement for provider-published tables.
 
 ```bash
 python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
+.venv/bin/pip install -e .
 ```
 
 ## Providers

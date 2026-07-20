@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "university-ranking-scraper"
+version = "0.0.8"
+description = "Collect current and historical worldwide university rankings"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "Low Wei Hong", email = "M140042@e.ntu.edu.sg" },
+]
+keywords = [
+  "university_rankings",
+  "higher_education",
+  "bibliometrics",
+  "open_data",
+]
+classifiers = [
+  "Programming Language :: Python :: 3",
+]
+dependencies = [
+  "httpx",
+  "pandas",
+  "lxml",
+  "pypdf>=5.0",
+  "pycountry>=24.6.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/lowweihong/university_ranking_scraper"
+
+[project.scripts]
+university-ranking-scraper = "university_ranking_scraper:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["university_ranking_scraper*"]
