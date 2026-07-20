@@ -116,6 +116,20 @@ test("analytical outputs preserve publisher semantics", () => {
     scimago.map((board) => board.label),
     [...scimago.map((board) => board.label)].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)),
   );
+
+  const national = payload.nationalRankings as Record<string, any>;
+  assert.equal(national.country, "United States");
+  assert.deepEqual(
+    national.providers.map((board: Record<string, any>) => board.provider),
+    ["times", "usnews"],
+  );
+  assert.ok(national.providers.every((board: Record<string, any>) => board.totalRanked >= 50 && board.top.length > 0 && board.top.length <= 20));
+  assert.ok(national.consensus.length > 0 && national.consensus.length <= 15);
+  assert.ok(national.consensus.every((entry: Record<string, any>) => entry.ranks.length === 2 && typeof entry.meanRank === "number" && entry.name));
+  assert.deepEqual(
+    national.consensus.map((entry: Record<string, any>) => entry.meanRank),
+    [...national.consensus.map((entry: Record<string, any>) => entry.meanRank)].sort((a, b) => a - b),
+  );
 });
 
 test("research metrics match fixed cohorts", () => {

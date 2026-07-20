@@ -105821,6 +105821,499 @@
       ]
     }
   ],
+  "nationalRankings": {
+    "country": "United States",
+    "providers": [
+      {
+        "provider": "times",
+        "providerLabel": "Times Higher Education",
+        "year": 2026,
+        "totalRanked": 171,
+        "top": [
+          {
+            "rank": 2,
+            "rankDisplay": "2",
+            "name": "Massachusetts Institute of Technology"
+          },
+          {
+            "rank": 3,
+            "rankDisplay": "=3",
+            "name": "Princeton University"
+          },
+          {
+            "rank": 5,
+            "rankDisplay": "=5",
+            "name": "Harvard University"
+          },
+          {
+            "rank": 5,
+            "rankDisplay": "=5",
+            "name": "Stanford University"
+          },
+          {
+            "rank": 7,
+            "rankDisplay": "7",
+            "name": "California Institute of Technology"
+          },
+          {
+            "rank": 9,
+            "rankDisplay": "9",
+            "name": "University of California, Berkeley"
+          },
+          {
+            "rank": 10,
+            "rankDisplay": "10",
+            "name": "Yale University"
+          },
+          {
+            "rank": 14,
+            "rankDisplay": "14",
+            "name": "University of Pennsylvania"
+          },
+          {
+            "rank": 15,
+            "rankDisplay": "15",
+            "name": "The University of Chicago"
+          },
+          {
+            "rank": 16,
+            "rankDisplay": "16",
+            "name": "Johns Hopkins University"
+          },
+          {
+            "rank": 18,
+            "rankDisplay": "=18",
+            "name": "Cornell University"
+          },
+          {
+            "rank": 18,
+            "rankDisplay": "=18",
+            "name": "University of California, Los Angeles"
+          },
+          {
+            "rank": 20,
+            "rankDisplay": "20",
+            "name": "Columbia University"
+          },
+          {
+            "rank": 23,
+            "rankDisplay": "23",
+            "name": "University of Michigan-Ann Arbor"
+          },
+          {
+            "rank": 24,
+            "rankDisplay": "24",
+            "name": "Carnegie Mellon University"
+          },
+          {
+            "rank": 25,
+            "rankDisplay": "25",
+            "name": "University of Washington"
+          },
+          {
+            "rank": 28,
+            "rankDisplay": "28",
+            "name": "Duke University"
+          },
+          {
+            "rank": 30,
+            "rankDisplay": "30",
+            "name": "Northwestern University"
+          },
+          {
+            "rank": 31,
+            "rankDisplay": "=31",
+            "name": "New York University"
+          },
+          {
+            "rank": 41,
+            "rankDisplay": "=41",
+            "name": "Georgia Institute of Technology"
+          }
+        ]
+      },
+      {
+        "provider": "usnews",
+        "providerLabel": "U.S. News",
+        "year": 2026,
+        "totalRanked": 275,
+        "top": [
+          {
+            "rank": 1,
+            "rankDisplay": "1",
+            "name": "Harvard University"
+          },
+          {
+            "rank": 2,
+            "rankDisplay": "2",
+            "name": "Massachusetts Institute of Technology"
+          },
+          {
+            "rank": 3,
+            "rankDisplay": "3",
+            "name": "Stanford University"
+          },
+          {
+            "rank": 7,
+            "rankDisplay": "7",
+            "name": "University of California--Berkeley"
+          },
+          {
+            "rank": 8,
+            "rankDisplay": "8",
+            "name": "Yale University"
+          },
+          {
+            "rank": 10,
+            "rankDisplay": "10",
+            "name": "Columbia University"
+          },
+          {
+            "rank": 11,
+            "rankDisplay": "11",
+            "name": "University of California--Los Angeles"
+          },
+          {
+            "rank": 12,
+            "rankDisplay": "12",
+            "name": "University of Washington"
+          },
+          {
+            "rank": 13,
+            "rankDisplay": "13",
+            "name": "Cornell University"
+          },
+          {
+            "rank": 14,
+            "rankDisplay": "=14",
+            "name": "Princeton University"
+          },
+          {
+            "rank": 17,
+            "rankDisplay": "=17",
+            "name": "Johns Hopkins University"
+          },
+          {
+            "rank": 17,
+            "rankDisplay": "=17",
+            "name": "University of Pennsylvania"
+          },
+          {
+            "rank": 21,
+            "rankDisplay": "21",
+            "name": "University of Michigan--Ann Arbor"
+          },
+          {
+            "rank": 22,
+            "rankDisplay": "22",
+            "name": "University of California--San Francisco"
+          },
+          {
+            "rank": 23,
+            "rankDisplay": "=23",
+            "name": "California Institute of Technology"
+          },
+          {
+            "rank": 23,
+            "rankDisplay": "=23",
+            "name": "University of California--San Diego"
+          },
+          {
+            "rank": 25,
+            "rankDisplay": "25",
+            "name": "University of Chicago"
+          },
+          {
+            "rank": 26,
+            "rankDisplay": "26",
+            "name": "Northwestern University"
+          },
+          {
+            "rank": 30,
+            "rankDisplay": "30",
+            "name": "Duke University"
+          },
+          {
+            "rank": 32,
+            "rankDisplay": "32",
+            "name": "Washington University in St. Louis"
+          }
+        ]
+      }
+    ],
+    "consensus": [
+      {
+        "name": "Massachusetts Institute of Technology",
+        "meanRank": 2,
+        "ranks": [
+          {
+            "provider": "times",
+            "providerLabel": "Times Higher Education",
+            "rank": 2,
+            "rankDisplay": "2"
+          },
+          {
+            "provider": "usnews",
+            "providerLabel": "U.S. News",
+            "rank": 2,
+            "rankDisplay": "2"
+          }
+        ]
+      },
+      {
+        "name": "Harvard University",
+        "meanRank": 3,
+        "ranks": [
+          {
+            "provider": "times",
+            "providerLabel": "Times Higher Education",
+            "rank": 5,
+            "rankDisplay": "=5"
+          },
+          {
+            "provider": "usnews",
+            "providerLabel": "U.S. News",
+            "rank": 1,
+            "rankDisplay": "1"
+          }
+        ]
+      },
+      {
+        "name": "Stanford University",
+        "meanRank": 4,
+        "ranks": [
+          {
+            "provider": "times",
+            "providerLabel": "Times Higher Education",
+            "rank": 5,
+            "rankDisplay": "=5"
+          },
+          {
+            "provider": "usnews",
+            "providerLabel": "U.S. News",
+            "rank": 3,
+            "rankDisplay": "3"
+          }
+        ]
+      },
+      {
+        "name": "University of California, Berkeley",
+        "meanRank": 8,
+        "ranks": [
+          {
+            "provider": "times",
+            "providerLabel": "Times Higher Education",
+            "rank": 9,
+            "rankDisplay": "9"
+          },
+          {
+            "provider": "usnews",
+            "providerLabel": "U.S. News",
+            "rank": 7,
+            "rankDisplay": "7"
+          }
+        ]
+      },
+      {
+        "name": "Princeton University",
+        "meanRank": 8.5,
+        "ranks": [
+          {
+            "provider": "times",
+            "providerLabel": "Times Higher Education",
+            "rank": 3,
+            "rankDisplay": "=3"
+          },
+          {
+            "provider": "usnews",
+            "providerLabel": "U.S. News",
+            "rank": 14,
+            "rankDisplay": "=14"
+          }
+        ]
+      },
+      {
+        "name": "Yale University",
+        "meanRank": 9,
+        "ranks": [
+          {
+            "provider": "times",
+            "providerLabel": "Times Higher Education",
+            "rank": 10,
+            "rankDisplay": "10"
+          },
+          {
+            "provider": "usnews",
+            "providerLabel": "U.S. News",
+            "rank": 8,
+            "rankDisplay": "8"
+          }
+        ]
+      },
+      {
+        "name": "University of California, Los Angeles",
+        "meanRank": 14.5,
+        "ranks": [
+          {
+            "provider": "times",
+            "providerLabel": "Times Higher Education",
+            "rank": 18,
+            "rankDisplay": "=18"
+          },
+          {
+            "provider": "usnews",
+            "providerLabel": "U.S. News",
+            "rank": 11,
+            "rankDisplay": "11"
+          }
+        ]
+      },
+      {
+        "name": "California Institute of Technology",
+        "meanRank": 15,
+        "ranks": [
+          {
+            "provider": "times",
+            "providerLabel": "Times Higher Education",
+            "rank": 7,
+            "rankDisplay": "7"
+          },
+          {
+            "provider": "usnews",
+            "providerLabel": "U.S. News",
+            "rank": 23,
+            "rankDisplay": "=23"
+          }
+        ]
+      },
+      {
+        "name": "Columbia University",
+        "meanRank": 15,
+        "ranks": [
+          {
+            "provider": "times",
+            "providerLabel": "Times Higher Education",
+            "rank": 20,
+            "rankDisplay": "20"
+          },
+          {
+            "provider": "usnews",
+            "providerLabel": "U.S. News",
+            "rank": 10,
+            "rankDisplay": "10"
+          }
+        ]
+      },
+      {
+        "name": "Cornell University",
+        "meanRank": 15.5,
+        "ranks": [
+          {
+            "provider": "times",
+            "providerLabel": "Times Higher Education",
+            "rank": 18,
+            "rankDisplay": "=18"
+          },
+          {
+            "provider": "usnews",
+            "providerLabel": "U.S. News",
+            "rank": 13,
+            "rankDisplay": "13"
+          }
+        ]
+      },
+      {
+        "name": "University of Pennsylvania",
+        "meanRank": 15.5,
+        "ranks": [
+          {
+            "provider": "times",
+            "providerLabel": "Times Higher Education",
+            "rank": 14,
+            "rankDisplay": "14"
+          },
+          {
+            "provider": "usnews",
+            "providerLabel": "U.S. News",
+            "rank": 17,
+            "rankDisplay": "=17"
+          }
+        ]
+      },
+      {
+        "name": "Johns Hopkins University",
+        "meanRank": 16.5,
+        "ranks": [
+          {
+            "provider": "times",
+            "providerLabel": "Times Higher Education",
+            "rank": 16,
+            "rankDisplay": "16"
+          },
+          {
+            "provider": "usnews",
+            "providerLabel": "U.S. News",
+            "rank": 17,
+            "rankDisplay": "=17"
+          }
+        ]
+      },
+      {
+        "name": "University of Washington",
+        "meanRank": 18.5,
+        "ranks": [
+          {
+            "provider": "times",
+            "providerLabel": "Times Higher Education",
+            "rank": 25,
+            "rankDisplay": "25"
+          },
+          {
+            "provider": "usnews",
+            "providerLabel": "U.S. News",
+            "rank": 12,
+            "rankDisplay": "12"
+          }
+        ]
+      },
+      {
+        "name": "The University of Chicago",
+        "meanRank": 20,
+        "ranks": [
+          {
+            "provider": "times",
+            "providerLabel": "Times Higher Education",
+            "rank": 15,
+            "rankDisplay": "15"
+          },
+          {
+            "provider": "usnews",
+            "providerLabel": "U.S. News",
+            "rank": 25,
+            "rankDisplay": "25"
+          }
+        ]
+      },
+      {
+        "name": "University of Michigan-Ann Arbor",
+        "meanRank": 22,
+        "ranks": [
+          {
+            "provider": "times",
+            "providerLabel": "Times Higher Education",
+            "rank": 23,
+            "rankDisplay": "23"
+          },
+          {
+            "provider": "usnews",
+            "providerLabel": "U.S. News",
+            "rank": 21,
+            "rankDisplay": "21"
+          }
+        ]
+      }
+    ]
+  },
   "qsSubjectOutperformers": [
     {
       "name": "EHL Hospitality Business School",

@@ -1,0 +1,171 @@
+---
+import type { NationalRankings } from '../data/schema';
+import { number } from '../lib/format';
+
+interface Props {
+  data: NationalRankings;
+}
+
+const { data } = Astro.props;
+const leaders = data.consensus;
+---
+
+<section class="national-spotlight surface" aria-label={`${data.country} spotlight`}>
+  <header class="national-head">
+    <div>
+      <p class="mono">{data.country}</p>
+      <h3>How the two largest publisher rankings place U.S. universities.</h3>
+    </div>
+    <ul class="national-legend">
+      {data.providers.map((provider) => (
+        <li>
+          <strong>{provider.providerLabel}</strong>
+          <span>{number.format(provider.totalRanked)} U.S. listed · {provider.year}</span>
+        </li>
+      ))}
+    </ul>
+  </header>
+
+  <ol class="national-board">
+    {leaders.map((institution, index) => (
+      <li>
+        <span class="rank mono">{String(index + 1).padStart(2, '0')}</span>
+        <span class="identity">
+          <strong>{institution.name}</strong>
+          <span class="chips">
+            {institution.ranks.map((rank) => (
+              <b class="chip">{rank.providerLabel} #{rank.rankDisplay}</b>
+            ))}
+          </span>
+        </span>
+        <span class="mean" title="Mean of both providers' rank positions">
+          <small>Mean</small>
+          <b class="mono">{institution.meanRank}</b>
+        </span>
+      </li>
+    ))}
+  </ol>
+
+  <p class="fine-print">
+    Ranks are each provider&rsquo;s global position restricted to U.S.
+    institutions; the order combines the two into a mean rank across the {data.consensus.length}
+    universities both rankings list near the top. It is a focused national lens
+    built from the collected U.S. tables, not a separate methodology.
+  </p>
+</section>
+
+<style>
+  .national-spotlight {
+    padding: clamp(1.5rem, 3vw, 2.25rem);
+    display: grid;
+    gap: 1.5rem;
+  }
+  .national-head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem 2rem;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+  .national-head .mono {
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    margin: 0 0 0.35rem;
+  }
+  .national-head h3 {
+    margin: 0;
+    font-size: clamp(1.15rem, 2.4vw, 1.5rem);
+    max-width: 32ch;
+  }
+  .national-legend {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.5rem;
+  }
+  .national-legend li {
+    display: flex;
+    flex-direction: column;
+    text-align: right;
+  }
+  .national-legend strong {
+    font-size: 0.95rem;
+  }
+  .national-legend span {
+    color: var(--muted);
+    font-size: 0.78rem;
+  }
+  .national-board {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.5rem;
+  }
+  .national-board li {
+    display: grid;
+    grid-template-columns: 2.25rem 1fr auto;
+    align-items: center;
+    gap: 0.75rem 1rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface-2, transparent);
+  }
+  .national-board .rank {
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  .identity {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    min-width: 0;
+  }
+  .identity strong {
+    font-size: 0.98rem;
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .chip {
+    font-weight: 600;
+    font-size: 0.72rem;
+    color: var(--muted);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0.1rem 0.55rem;
+    white-space: nowrap;
+  }
+  .mean {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.1rem;
+  }
+  .mean small {
+    color: var(--muted);
+    font-size: 0.66rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .mean b {
+    font-size: 1.05rem;
+  }
+  @media (max-width: 640px) {
+    .national-board li {
+      grid-template-columns: 2rem 1fr;
+    }
+    .mean {
+      grid-column: 2;
+      flex-direction: row;
+      align-items: baseline;
+      gap: 0.4rem;
+    }
+  }
+</style>
