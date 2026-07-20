@@ -1,0 +1,109 @@
+---
+import { decimal, number } from '../lib/format';
+
+interface Item {
+  label: string;
+  value: number;
+  detail?: string;
+}
+
+interface Props {
+  items: Item[];
+  color?: string;
+  format?: 'number' | 'decimal' | 'percent';
+  max?: number;
+}
+
+const {
+  items,
+  color = 'var(--teal)',
+  format = 'number',
+  max = Math.max(...items.map((item) => item.value), 1),
+} = Astro.props;
+
+const display = (value: number) => {
+  if (format === 'percent') return `${decimal.format(value)}%`;
+  if (format === 'decimal') return decimal.format(value);
+  return number.format(value);
+};
+---
+
+<ol class="bar-chart">
+  {items.map((item, index) => (
+    <li style={`--width:${Math.max(2, item.value / max * 100)}%;--color:${color}`}>
+      <span class="rank mono">{String(index + 1).padStart(2, '0')}</span>
+      <div>
+        <div class="bar-label">
+          <strong>{item.label}</strong>
+          {item.detail && <small>{item.detail}</small>}
+        </div>
+        <span class="track"><i></i></span>
+      </div>
+      <strong class="value">{display(item.value)}</strong>
+    </li>
+  ))}
+</ol>
+
+<style>
+  .bar-chart {
+    display: grid;
+    gap: 15px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .rank {
+    color: #9ba3a7;
+    font-size: 0.64rem;
+  }
+
+  .bar-label {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 5px;
+  }
+
+  .bar-label strong,
+  .value {
+    font-size: 0.78rem;
+  }
+
+  small {
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 0.65rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .track {
+    display: block;
+    height: 7px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #e7e4dc;
+  }
+
+  .track i {
+    display: block;
+    width: var(--width);
+    height: 100%;
+    border-radius: inherit;
+    background: var(--color);
+  }
+
+  .value {
+    min-width: 54px;
+    text-align: right;
+  }
+</style>

@@ -5,6 +5,27 @@ supports worldwide and country-filtered exports, subject/major rankings, year
 ranges, incremental CSV updates, and JSON manifests that record failures,
 retrieval methods, licenses, and required attribution.
 
+## Data insights website
+
+`insights/` contains **University Signals**, a static Astro data-atlas generated
+from the committed ranking snapshots. It provides cross-provider consensus,
+historical trajectories, subject strengths, research geography, ranking-universe
+growth, and publication-scale versus citation-impact analysis.
+
+```bash
+# Regenerate the browser-ready analytical dataset
+.venv/bin/python scripts/generate_insights.py
+
+# Install, validate, and build the static site
+cd insights
+npm ci
+npm run verify
+```
+
+See [`insights/README.md`](insights/README.md) for development, methodology, and
+deployment details. The generated site preserves source editions and caveats;
+it is not a replacement for provider-published tables.
+
 ## Installation
 
 ```bash

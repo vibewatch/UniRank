@@ -1,0 +1,395 @@
+---
+import type { InstitutionTrend } from '../data/schema';
+
+interface Props {
+  trends: InstitutionTrend[];
+}
+
+const { trends } = Astro.props;
+const serialized = JSON.stringify(trends).replaceAll('<', '\\u003c');
+---
+
+<section class="trend-explorer surface" data-trend-explorer>
+  <div class="controls">
+    <label>
+      <span>Institution</span>
+      <select data-institution>
+        {trends.map((trend, index) => (
+          <option value={trend.id} selected={index === 0}>
+            {trend.name}
+          </option>
+        ))}
+      </select>
+    </label>
+    <label>
+      <span>Provider lens</span>
+      <select data-provider></select>
+    </label>
+    <div class="trend-summary" data-summary aria-live="polite"></div>
+  </div>
+  <div class="chart-frame">
+    <svg
+      data-chart
+      viewBox="0 0 900 360"
+      role="img"
+      aria-label="Historical rank trajectory"
+    ></svg>
+  </div>
+  <div class="point-list" data-point-list></div>
+  <p class="fine-print">
+    Rank 1 is at the top. Each provider is viewed separately because table size,
+    methodology, and rank bands differ. Banded ranks use their lower bound.
+  </p>
+  <script
+    id="trend-explorer-data"
+    type="application/json"
+    is:inline
+    set:html={serialized}
+  ></script>
+</section>
+
+<script>
+  interface Point {
+    year: number;
+    rank: number;
+    rankDisplay: string;
+  }
+  interface Series {
+    provider: string;
+    label: string;
+    color: string;
+    points: Point[];
+  }
+  interface Trend {
+    id: string;
+    name: string;
+    country: string;
+    series: Series[];
+  }
+
+  const root = document.querySelector<HTMLElement>('[data-trend-explorer]');
+  const dataElement = document.querySelector<HTMLScriptElement>('#trend-explorer-data');
+  if (root && dataElement) {
+    const trends = JSON.parse(dataElement.textContent || '[]') as Trend[];
+    const institutionSelect = root.querySelector<HTMLSelectElement>('[data-institution]');
+    const providerSelect = root.querySelector<HTMLSelectElement>('[data-provider]');
+    const chart = root.querySelector<SVGSVGElement>('[data-chart]');
+    const summary = root.querySelector<HTMLElement>('[data-summary]');
+    const pointList = root.querySelector<HTMLElement>('[data-point-list]');
+    const svgNamespace = 'http://www.w3.org/2000/svg';
+
+    const svgElement = <K extends keyof SVGElementTagNameMap>(
+      name: K,
+      attributes: Record<string, string | number>,
+    ): SVGElementTagNameMap[K] => {
+      const element = document.createElementNS(svgNamespace, name);
+      Object.entries(attributes).forEach(([key, value]) => {
+        element.setAttribute(key, String(value));
+      });
+      return element;
+    };
+
+    const selectedTrend = () =>
+      trends.find((trend) => trend.id === institutionSelect?.value) ?? trends[0];
+
+    const populateProviders = () => {
+      if (!providerSelect) return;
+      const trend = selectedTrend();
+      const previous = providerSelect.value;
+      providerSelect.replaceChildren();
+      trend.series.forEach((series) => {
+        const option = document.createElement('option');
+        option.value = series.provider;
+        option.textContent = series.label;
+        providerSelect.append(option);
+      });
+      const preferred = trend.series.some((series) => series.provider === previous)
+        ? previous
+        : trend.series.some((series) => series.provider === 'arwu')
+          ? 'arwu'
+          : trend.series[0]?.provider;
+      if (preferred) providerSelect.value = preferred;
+    };
+
+    const render = () => {
+      if (!chart || !providerSelect || !summary || !pointList) return;
+      const trend = selectedTrend();
+      const series =
+        trend.series.find((item) => item.provider === providerSelect.value) ??
+        trend.series[0];
+      if (!series) return;
+      const points = series.points;
+      const first = points[0];
+      const latest = points[points.length - 1];
+      const minYear = Math.min(...points.map((point) => point.year));
+      const maxYear = Math.max(...points.map((point) => point.year));
+      const rawMaxRank = Math.max(...points.map((point) => point.rank));
+      const maxRank = Math.max(10, Math.ceil(rawMaxRank / 10) * 10);
+      const plot = { left: 68, right: 26, top: 30, bottom: 56 };
+      const innerWidth = 900 - plot.left - plot.right;
+      const innerHeight = 360 - plot.top - plot.bottom;
+      const x = (year: number) =>
+        plot.left + (year - minYear) / Math.max(1, maxYear - minYear) * innerWidth;
+      const y = (rank: number) =>
+        plot.top + (rank - 1) / Math.max(1, maxRank - 1) * innerHeight;
+
+      chart.replaceChildren();
+      const title = svgElement('title', {});
+      title.textContent = `${trend.name}: ${series.label} rank from ${minYear} to ${maxYear}`;
+      chart.append(title);
+
+      for (let index = 0; index < 5; index += 1) {
+        const rank = Math.round(1 + (maxRank - 1) * index / 4);
+        const lineY = y(rank);
+        chart.append(
+          svgElement('line', {
+            x1: plot.left,
+            x2: 900 - plot.right,
+            y1: lineY,
+            y2: lineY,
+            stroke: '#d9d6ce',
+            'stroke-width': 1,
+          }),
+        );
+        const label = svgElement('text', {
+          x: plot.left - 13,
+          y: lineY + 4,
+          'text-anchor': 'end',
+          fill: '#748087',
+          'font-size': 11,
+          'font-family': 'ui-monospace, monospace',
+        });
+        label.textContent = `#${rank}`;
+        chart.append(label);
+      }
+
+      const visibleYears = points.filter((_, index) => {
+        const every = Math.max(1, Math.ceil(points.length / 7));
+        return index === 0 || index === points.length - 1 || index % every === 0;
+      });
+      visibleYears.forEach((point) => {
+        const label = svgElement('text', {
+          x: x(point.year),
+          y: 360 - 22,
+          'text-anchor': 'middle',
+          fill: '#748087',
+          'font-size': 11,
+          'font-family': 'ui-monospace, monospace',
+        });
+        label.textContent = String(point.year);
+        chart.append(label);
+      });
+
+      const path = svgElement('path', {
+        d: points
+          .map((point, index) => `${index === 0 ? 'M' : 'L'} ${x(point.year)} ${y(point.rank)}`)
+          .join(' '),
+        fill: 'none',
+        stroke: series.color,
+        'stroke-width': 4,
+        'stroke-linecap': 'round',
+        'stroke-linejoin': 'round',
+      });
+      chart.append(path);
+
+      points.forEach((point) => {
+        const circle = svgElement('circle', {
+          cx: x(point.year),
+          cy: y(point.rank),
+          r: 6,
+          fill: '#fffdf8',
+          stroke: series.color,
+          'stroke-width': 3,
+        });
+        const pointTitle = svgElement('title', {});
+        pointTitle.textContent = `${point.year}: ${point.rankDisplay}`;
+        circle.append(pointTitle);
+        chart.append(circle);
+      });
+
+      const movement = first.rank - latest.rank;
+      const movementLabel =
+        movement > 0
+          ? `improved ${Math.round(movement)} places`
+          : movement < 0
+            ? `moved down ${Math.abs(Math.round(movement))} places`
+            : 'held the same rank';
+      const summaryCountry = document.createElement('span');
+      summaryCountry.textContent = trend.country;
+      const summaryRanks = document.createElement('strong');
+      const firstRank = document.createElement('b');
+      firstRank.textContent = `#${first.rankDisplay}`;
+      const latestRank = document.createElement('b');
+      latestRank.textContent = `#${latest.rankDisplay}`;
+      summaryRanks.append(
+        `${first.year} `,
+        firstRank,
+        ` → ${latest.year} `,
+        latestRank,
+      );
+      const summaryMovement = document.createElement('small');
+      summaryMovement.textContent = movementLabel;
+      summary.replaceChildren(summaryCountry, summaryRanks, summaryMovement);
+      pointList.replaceChildren(
+        ...points.map((point) => {
+          const item = document.createElement('span');
+          const year = document.createElement('b');
+          year.textContent = String(point.year);
+          item.append(year, ` #${point.rankDisplay}`);
+          return item;
+        }),
+      );
+    };
+
+    institutionSelect?.addEventListener('change', () => {
+      populateProviders();
+      render();
+    });
+    providerSelect?.addEventListener('change', render);
+    populateProviders();
+    render();
+  }
+</script>
+
+<style>
+  .trend-explorer {
+    padding: 24px;
+  }
+
+  .controls {
+    display: grid;
+    grid-template-columns: minmax(210px, 1fr) minmax(180px, 0.7fr) 1.2fr;
+    align-items: end;
+    gap: 14px;
+  }
+
+  label {
+    display: grid;
+    gap: 6px;
+  }
+
+  label span {
+    color: var(--muted);
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 0.61rem;
+    font-weight: 750;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  select {
+    width: 100%;
+    min-height: 44px;
+    padding: 9px 38px 9px 12px;
+    border: 1px solid var(--line-strong);
+    border-radius: 10px;
+    color: var(--ink);
+    background: #fffdf8;
+    font-size: 0.8rem;
+    font-weight: 650;
+  }
+
+  .trend-summary {
+    min-height: 44px;
+    padding-left: 18px;
+    border-left: 1px solid var(--line);
+  }
+
+  .trend-summary :global(span),
+  .trend-summary :global(strong),
+  .trend-summary :global(small) {
+    display: block;
+  }
+
+  .trend-summary :global(span),
+  .trend-summary :global(small) {
+    color: var(--muted);
+    font-size: 0.63rem;
+  }
+
+  .trend-summary :global(strong) {
+    font-size: 0.78rem;
+  }
+
+  .trend-summary :global(b) {
+    color: var(--teal-dark);
+  }
+
+  .chart-frame {
+    margin-top: 20px;
+    padding: 10px;
+    border: 1px solid #e3e0d8;
+    border-radius: 14px;
+    background:
+      linear-gradient(rgb(255 253 248 / 94%), rgb(255 253 248 / 94%)),
+      radial-gradient(circle, #bdbab1 1px, transparent 1px);
+    background-size: auto, 12px 12px;
+  }
+
+  svg {
+    width: 100%;
+    height: auto;
+  }
+
+  .point-list {
+    display: flex;
+    overflow-x: auto;
+    gap: 7px;
+    padding: 12px 2px 4px;
+  }
+
+  .point-list :global(span) {
+    display: inline-flex;
+    flex: none;
+    gap: 5px;
+    padding: 5px 8px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--muted);
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 0.59rem;
+  }
+
+  .point-list :global(b) {
+    color: var(--ink);
+  }
+
+  .fine-print {
+    margin: 12px 0 0;
+  }
+
+  @media (max-width: 760px) {
+    .controls {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .trend-summary {
+      grid-column: 1 / -1;
+      padding: 12px 0 0;
+      border-top: 1px solid var(--line);
+      border-left: 0;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .trend-explorer {
+      padding: 16px;
+    }
+
+    .controls {
+      grid-template-columns: 1fr;
+    }
+
+    .trend-summary {
+      grid-column: auto;
+    }
+
+    .chart-frame {
+      overflow-x: auto;
+    }
+
+    svg {
+      min-width: 650px;
+    }
+  }
+</style>

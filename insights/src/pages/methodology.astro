@@ -1,0 +1,669 @@
+---
+import ProviderTimeline from '../components/ProviderTimeline.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { insights } from '../lib/data';
+import { compact, number } from '../lib/format';
+
+const restrictedProviders = new Set(['usnews', 'times', 'qs', 'cwur', 'ntu', 'arwu', 'scimago']);
+const formatDate = new Intl.DateTimeFormat('en-US', {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+  timeZone: 'UTC',
+});
+---
+
+<BaseLayout
+  title="Methodology"
+  description="Review data provenance, consensus construction, rank semantics, entity matching, metric definitions, licensing, and responsible-use guidance for University Signals."
+>
+  <section class="page-hero methodology-hero">
+    <div class="shell">
+      <p class="eyebrow">Methods before conclusions</p>
+      <h1>Every signal keeps its source attached.</h1>
+      <p class="lede">
+        This site reduces {number.format(insights.meta.archiveRows)} archived rows
+        into a small analytical layer. It does not erase provider definitions,
+        measurement windows, ties, missingness, or reuse restrictions.
+      </p>
+      <dl class="provenance-strip">
+        <div><dt>Snapshots</dt><dd>{insights.meta.csvFiles}</dd></div>
+        <div><dt>Providers</dt><dd>{insights.meta.providers}</dd></div>
+        <div><dt>Coverage</dt><dd>{insights.meta.firstYear}—{insights.meta.lastYear}</dd></div>
+        <div><dt>Latest retrieval</dt><dd>{formatDate.format(new Date(insights.meta.latestRetrieval))}</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="section" id="consensus">
+    <div class="shell method-grid">
+      <div>
+        <SectionHeading
+          eyebrow="Analytical consensus"
+          title="An overlap index, not a seventh ranking."
+          description={insights.methodology.consensusDefinition}
+        />
+        <div class="formula surface">
+          <span class="mono">FOR EACH PROVIDER</span>
+          <code>percentile = 100 × (1 − (rank − 1) / (ranked rows − 1))</code>
+          <span class="operator">↓</span>
+          <span class="mono">FOR EACH INSTITUTION</span>
+          <code>signal = mean(provider percentiles)</code>
+        </div>
+      </div>
+      <aside class="method-steps">
+        <article>
+          <span>01</span>
+          <div><h3>Latest broad editions</h3><p>U.S. News, THE, QS, CWUR, NTU, and ARWU contribute one overall table each.</p></div>
+        </article>
+        <article>
+          <span>02</span>
+          <div><h3>Four-source minimum</h3><p>An institution needs evidence from at least {insights.methodology.consensusMinimumProviders} providers. Missing sources are not imputed.</p></div>
+        </article>
+        <article>
+          <span>03</span>
+          <div><h3>Equal source weight</h3><p>Provider scores are not mixed. Only displayed rank position within each ranked universe is normalized.</p></div>
+        </article>
+        <article>
+          <span>04</span>
+          <div><h3>Read the chips</h3><p>The provider ranks and coverage count are more informative than tenths between tightly clustered elite percentiles.</p></div>
+        </article>
+      </aside>
+    </div>
+  </section>
+
+  <section class="section" id="providers">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="Source inventory"
+        title="Eleven providers, different questions."
+        description="Archive totals include overlapping editions, scopes, and country subsets. They are observations—not a count of unique universities."
+      />
+      <ProviderTimeline providers={insights.providers} />
+      <div class="provider-table table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Provider</th>
+              <th>Lens</th>
+              <th>Coverage</th>
+              <th>Rows</th>
+              <th>Reuse status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {insights.providers.map((provider) => (
+              <tr>
+                <td><strong>{provider.label}</strong></td>
+                <td>{provider.kind}</td>
+                <td>{provider.firstYear}—{provider.lastYear} · {provider.subjectViews} subject views</td>
+                <td>{compact.format(provider.records)}</td>
+                <td>
+                  <span class:list={{ restricted: restrictedProviders.has(provider.id), open: !restrictedProviders.has(provider.id) }}>
+                    {restrictedProviders.has(provider.id) ? 'Provider-controlled' : provider.license}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p class="fine-print">
+        Provider-controlled snapshots are included under separately confirmed
+        permission. That permission does not replace publisher terms or
+        automatically grant downstream redistribution rights. OpenAlex and
+        Leiden are CC0; Webometrics is CC BY 4.0; Nature Index numerical data is
+        CC BY-NC-SA 4.0.
+      </p>
+    </div>
+  </section>
+
+  <section class="section semantics-section">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="Rank semantics"
+        title="Ties, bands, and non-ranks stay distinct."
+        description="The site preserves publisher display values and uses a band’s lower bound only when a numeric position is required for plotting or percentile conversion."
+      />
+      <div class="semantics-grid">
+        <article>
+          <strong>=42</strong>
+          <h3>Tied rank</h3>
+          <p>Several institutions may share a position. Top-100 tables can therefore contain more than 100 rows.</p>
+        </article>
+        <article>
+          <strong>601–800</strong>
+          <h3>Rank band</h3>
+          <p>The display stays a band. A trajectory uses 601 as a documented plotting convention, not as a precise rank.</p>
+        </article>
+        <article>
+          <strong>Reporter</strong>
+          <h3>Unranked status</h3>
+          <p>THE reporters are counted in table coverage but excluded from ranked universes and consensus calculations.</p>
+        </article>
+        <article>
+          <strong>—</strong>
+          <h3>Not listed or unmatched</h3>
+          <p>Absence is not zero. It may mean outside the published table, not eligible, not collected, or not safely matched.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="research-metrics">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="Research metrics"
+        title="Output, impact, and selected-journal Share are not synonyms."
+      />
+      <div class="definition-grid">
+        <article class="surface">
+          <span class="source-tag">LEIDEN OPEN EDITION</span>
+          <h3>Fractional publications</h3>
+          <p><code>p</code> allocates multi-institution papers fractionally. The site’s scale rank is derived from this value within the selected field.</p>
+          <dl><div><dt>Window</dt><dd>2020–2023 in edition 2025</dd></div><div><dt>License</dt><dd>CC0</dd></div></dl>
+        </article>
+        <article class="surface">
+          <span class="source-tag">LEIDEN OPEN EDITION</span>
+          <h3>MNCS and top-10% share</h3>
+          <p>MNCS normalizes citation impact by field and year. Top-10% share measures the fraction of work among highly cited papers.</p>
+          <dl><div><dt>Scale correlation</dt><dd>{insights.leidenSummary.scaleImpactSpearman.toFixed(3)}</dd></div><div><dt>Top-100 overlap</dt><dd>{insights.leidenSummary.scaleImpactTop100Overlap}</dd></div></dl>
+        </article>
+        <article class="surface">
+          <span class="source-tag">OPENALEX</span>
+          <h3>Annual institution-work count</h3>
+          <p>Historical values are reconstructed from current institution snapshots. Counts are institution-work associations, not deduplicated global papers.</p>
+          <dl><div><dt>Site window</dt><dd>{insights.methodology.openAlexWindow}</dd></div><div><dt>License</dt><dd>CC0</dd></div></dl>
+        </article>
+        <article class="surface">
+          <span class="source-tag">NATURE INDEX</span>
+          <h3>Fractional Share</h3>
+          <p>Share covers contributions to a selected journal set. Edition 2026 represents 2025 output; journal and method changes limit causal comparisons.</p>
+          <dl><div><dt>Site comparison</dt><dd>{insights.methodology.natureWindow}</dd></div><div><dt>License</dt><dd>CC BY-NC-SA 4.0</dd></div></dl>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell entity-grid">
+      <div>
+        <SectionHeading
+          eyebrow="Entity resolution"
+          title="Names are matched only inside country boundaries."
+          description="Institution names change, translate, abbreviate, and collide. Shared ROR or OpenAlex identifiers are preferred where available; publisher consensus otherwise uses exact normalized names, country blocks, and a small reviewed alias map."
+        />
+        <ol class="entity-steps">
+          <li><span>1</span><p>Preserve every raw source name and country.</p></li>
+          <li><span>2</span><p>Preserve source-specific identifiers and use shared ROR or OpenAlex IDs where datasets expose them.</p></li>
+          <li><span>3</span><p>Normalize Unicode, case, punctuation, and whitespace only to generate candidates.</p></li>
+          <li><span>4</span><p>Require a harmonized country, apply reviewed aliases for known variants, and keep ambiguous matches separate.</p></li>
+        </ol>
+      </div>
+      <aside class="warning-card">
+        <span class="mono">DO NOT BLINDLY MERGE</span>
+        <h3>Campuses, systems, hospitals, and namesakes</h3>
+        <p>
+          “Southeast University,” for example, can refer to institutions in
+          different countries. Removing location, parentheticals, or diacritics
+          without blocking by country and city can create false consensus.
+        </p>
+      </aside>
+    </div>
+  </section>
+
+  <section class="section guidance-section" id="guidance">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="Responsible guidance"
+        title="A ranking can narrow a search. It cannot make the decision."
+      />
+      <div class="checklist">
+        <article><span>Signal</span><p>Look for recurring strength across methods and years.</p></article>
+        <article><span>Subject</span><p>Verify the exact department, program, faculty, and facilities.</p></article>
+        <article><span>Access</span><p>Compare admissions likelihood, cost, aid, visas, and prerequisites.</p></article>
+        <article><span>Experience</span><p>Inspect class model, support, location, culture, and student outcomes.</p></article>
+        <article><span>Evidence</span><p>Open the provider methodology and measurement period before interpreting movement.</p></article>
+        <article><span>Decision</span><p>Weight your constraints explicitly; do not substitute the consensus decimal.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section reproducibility-section">
+    <div class="shell reproducibility-grid">
+      <div>
+        <p class="eyebrow">Reproducibility</p>
+        <h2>Generated from committed snapshots.</h2>
+        <p>
+          The browser never loads the source CSV archive. A Python pipeline
+          reduces it to a typed static JSON artifact, then Astro emits static
+          HTML, CSS, SVG, and small vanilla-JavaScript interactions.
+        </p>
+      </div>
+      <div class="code-card">
+        <span class="mono">FROM REPOSITORY ROOT</span>
+        <pre><code>.venv/bin/python scripts/generate_insights.py
+cd insights
+npm run check
+npm run build</code></pre>
+        <p>
+          One known source failure is retained explicitly: the 2018 ARWU overall
+          bulk edition was unavailable, while its GRAS subject tables remain in
+          the archive.
+        </p>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .methodology-hero h1 {
+    max-width: 980px;
+  }
+
+  .provenance-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    margin: 48px 0 0;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    background: rgb(255 253 248 / 55%);
+  }
+
+  .provenance-strip div {
+    padding: 18px;
+  }
+
+  .provenance-strip div + div {
+    border-left: 1px solid var(--line);
+  }
+
+  .provenance-strip dt,
+  .provenance-strip dd {
+    margin: 0;
+  }
+
+  .provenance-strip dt {
+    color: var(--muted);
+    font-size: 0.6rem;
+    text-transform: uppercase;
+  }
+
+  .provenance-strip dd {
+    font-size: 1rem;
+    font-weight: 750;
+  }
+
+  .method-grid,
+  .entity-grid,
+  .reproducibility-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+    gap: clamp(30px, 7vw, 90px);
+  }
+
+  .formula {
+    display: grid;
+    gap: 10px;
+    padding: 24px;
+  }
+
+  .formula span {
+    color: var(--muted);
+    font-size: 0.59rem;
+  }
+
+  .formula code {
+    overflow-wrap: anywhere;
+    color: var(--teal-dark);
+    font-size: 0.82rem;
+  }
+
+  .formula .operator {
+    color: var(--coral);
+    font-size: 1.2rem;
+    text-align: center;
+  }
+
+  .method-steps {
+    display: grid;
+  }
+
+  .method-steps article {
+    display: grid;
+    grid-template-columns: 38px 1fr;
+    gap: 14px;
+    padding: 16px 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .method-steps article > span {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border-radius: 50%;
+    color: white;
+    background: var(--ink);
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 0.59rem;
+  }
+
+  .method-steps h3 {
+    margin-bottom: 3px;
+    font-size: 0.88rem;
+  }
+
+  .method-steps p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.72rem;
+  }
+
+  .provider-table {
+    margin-top: 26px;
+  }
+
+  .provider-table td {
+    font-size: 0.72rem;
+  }
+
+  .provider-table td:nth-child(3) {
+    min-width: 220px;
+  }
+
+  .provider-table span {
+    display: inline-block;
+    padding: 3px 7px;
+    border-radius: 999px;
+    font-size: 0.58rem;
+    font-weight: 750;
+  }
+
+  .provider-table .open {
+    color: #075545;
+    background: #c9eddf;
+  }
+
+  .provider-table .restricted {
+    color: #84422f;
+    background: #f7d6cb;
+  }
+
+  .semantics-section {
+    color: white;
+    background: var(--ink);
+  }
+
+  .semantics-section :global(.eyebrow) {
+    color: #73ddc4;
+  }
+
+  .semantics-section :global(.section-heading p:last-child) {
+    color: #99a5a9;
+  }
+
+  .semantics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border: 1px solid rgb(255 255 255 / 14%);
+    border-radius: var(--radius);
+  }
+
+  .semantics-grid article {
+    min-height: 260px;
+    padding: 24px;
+  }
+
+  .semantics-grid article + article {
+    border-left: 1px solid rgb(255 255 255 / 14%);
+  }
+
+  .semantics-grid article > strong {
+    display: block;
+    margin-bottom: 52px;
+    color: var(--yellow);
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 1.55rem;
+  }
+
+  .semantics-grid p {
+    color: #95a1a6;
+    font-size: 0.7rem;
+  }
+
+  .definition-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  .definition-grid article {
+    padding: 24px;
+  }
+
+  .source-tag {
+    color: var(--teal-dark);
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 0.59rem;
+    font-weight: 750;
+  }
+
+  .definition-grid h3 {
+    margin: 32px 0 8px;
+  }
+
+  .definition-grid p {
+    min-height: 68px;
+    color: var(--muted);
+    font-size: 0.73rem;
+  }
+
+  .definition-grid dl {
+    display: grid;
+    gap: 6px;
+    margin: 20px 0 0;
+  }
+
+  .definition-grid dl div {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    padding-top: 7px;
+    border-top: 1px solid var(--line);
+  }
+
+  .definition-grid dt,
+  .definition-grid dd {
+    font-size: 0.61rem;
+  }
+
+  .definition-grid dt {
+    color: var(--muted);
+  }
+
+  .definition-grid dd {
+    margin: 0;
+    text-align: right;
+  }
+
+  .entity-steps {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .entity-steps li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .entity-steps span {
+    display: grid;
+    width: 26px;
+    height: 26px;
+    flex: none;
+    place-items: center;
+    border-radius: 50%;
+    color: white;
+    background: var(--teal);
+    font-size: 0.6rem;
+  }
+
+  .entity-steps p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.74rem;
+  }
+
+  .warning-card {
+    align-self: end;
+    padding: 28px;
+    border-radius: var(--radius);
+    color: white;
+    background: var(--coral);
+  }
+
+  .warning-card span {
+    font-size: 0.59rem;
+    opacity: 0.72;
+  }
+
+  .warning-card h3 {
+    margin: 42px 0 10px;
+    font-size: 1.5rem;
+  }
+
+  .warning-card p {
+    margin: 0;
+    font-size: 0.74rem;
+    opacity: 0.78;
+  }
+
+  .checklist {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .checklist article {
+    padding: 20px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+  }
+
+  .checklist span {
+    color: var(--violet);
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 0.62rem;
+    font-weight: 750;
+    text-transform: uppercase;
+  }
+
+  .checklist p {
+    margin: 28px 0 0;
+    color: var(--muted);
+    font-size: 0.72rem;
+  }
+
+  .reproducibility-section {
+    color: white;
+    background: var(--teal-dark);
+  }
+
+  .reproducibility-section .eyebrow {
+    color: #a4f0df;
+  }
+
+  .reproducibility-section h2 {
+    max-width: 570px;
+  }
+
+  .reproducibility-section p {
+    color: rgb(255 255 255 / 68%);
+    font-size: 0.78rem;
+  }
+
+  .code-card {
+    padding: 24px;
+    border: 1px solid rgb(255 255 255 / 22%);
+    border-radius: var(--radius);
+    background: rgb(0 0 0 / 12%);
+  }
+
+  .code-card > span {
+    font-size: 0.59rem;
+    opacity: 0.65;
+  }
+
+  pre {
+    overflow-x: auto;
+    margin: 18px 0;
+    padding: 18px;
+    border-radius: 10px;
+    color: #d8fff5;
+    background: rgb(0 0 0 / 22%);
+    font-size: 0.72rem;
+  }
+
+  .code-card p {
+    margin: 0;
+    font-size: 0.66rem;
+  }
+
+  @media (max-width: 900px) {
+    .method-grid,
+    .entity-grid,
+    .reproducibility-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .semantics-grid,
+    .checklist {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .semantics-grid article:nth-child(n) {
+      border-top: 0;
+      border-left: 0;
+    }
+
+    .semantics-grid article:nth-child(n + 3) {
+      border-top: 1px solid rgb(255 255 255 / 14%);
+    }
+
+    .semantics-grid article:nth-child(even) {
+      border-left: 1px solid rgb(255 255 255 / 14%);
+    }
+
+    .warning-card {
+      max-width: 620px;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .provenance-strip,
+    .semantics-grid,
+    .definition-grid,
+    .checklist {
+      grid-template-columns: 1fr;
+    }
+
+    .provenance-strip div + div {
+      border-top: 1px solid var(--line);
+      border-left: 0;
+    }
+
+    .semantics-grid article:nth-child(n + 2) {
+      border-top: 1px solid rgb(255 255 255 / 14%);
+      border-left: 0;
+    }
+  }
+</style>

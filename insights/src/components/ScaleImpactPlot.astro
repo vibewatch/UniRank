@@ -1,0 +1,146 @@
+---
+import type { LeidenPoint } from '../data/schema';
+import { compact, decimal } from '../lib/format';
+
+interface Props {
+  points: LeidenPoint[];
+}
+
+const { points } = Astro.props;
+const width = 900;
+const height = 440;
+const margin = { left: 62, right: 24, top: 28, bottom: 54 };
+const innerWidth = width - margin.left - margin.right;
+const innerHeight = height - margin.top - margin.bottom;
+const xValues = points.map((point) => Math.log10(point.publicationCount));
+const yValues = points.map((point) => point.normalizedImpact);
+const minX = Math.min(...xValues);
+const maxX = Math.max(...xValues);
+const minY = Math.floor(Math.min(...yValues) * 10) / 10;
+const maxY = Math.ceil(Math.max(...yValues) * 10) / 10;
+const x = (value: number) =>
+  margin.left + (Math.log10(value) - minX) / (maxX - minX) * innerWidth;
+const y = (value: number) =>
+  margin.top + (maxY - value) / (maxY - minY) * innerHeight;
+const xTicks = [10000, 20000, 30000, 40000].filter(
+  (value) => Math.log10(value) >= minX && Math.log10(value) <= maxX,
+);
+const yTicks = Array.from({ length: 5 }, (_, index) =>
+  minY + (maxY - minY) * index / 4
+);
+---
+
+<div class="plot surface">
+  <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-labelledby="plot-title plot-desc">
+    <title id="plot-title">Leiden publication scale versus normalized citation impact</title>
+    <desc id="plot-desc">
+      Each point is a university in the top 140 by fractional publication count.
+      Points farther right publish more; points higher up have greater field-normalized impact.
+    </desc>
+    {yTicks.map((tick) => (
+      <g>
+        <line
+          x1={margin.left}
+          x2={width - margin.right}
+          y1={y(tick)}
+          y2={y(tick)}
+          class="gridline"
+        />
+        <text x={margin.left - 10} y={y(tick) + 4} text-anchor="end">
+          {decimal.format(tick)}
+        </text>
+      </g>
+    ))}
+    {xTicks.map((tick) => (
+      <g>
+        <line
+          x1={x(tick)}
+          x2={x(tick)}
+          y1={margin.top}
+          y2={height - margin.bottom}
+          class="gridline"
+        />
+        <text x={x(tick)} y={height - margin.bottom + 23} text-anchor="middle">
+          {compact.format(tick)}
+        </text>
+      </g>
+    ))}
+    <text x={margin.left + innerWidth / 2} y={height - 12} text-anchor="middle" class="axis-label">
+      Fractional publication count (log scale)
+    </text>
+    <text
+      x={16}
+      y={margin.top + innerHeight / 2}
+      text-anchor="middle"
+      class="axis-label"
+      transform={`rotate(-90 16 ${margin.top + innerHeight / 2})`}
+    >
+      Field-normalized citation impact
+    </text>
+    {points.map((point) => (
+      <circle
+        cx={x(point.publicationCount)}
+        cy={y(point.normalizedImpact)}
+        r={point.top10Share >= 20 ? 5.5 : 4}
+        class:list={{ standout: point.top10Share >= 20 }}
+      >
+        <title>
+          {`${point.name} · ${point.country}\n${compact.format(point.publicationCount)} publications · ${decimal.format(point.normalizedImpact)} normalized impact · ${decimal.format(point.top10Share)}% top-10% papers`}
+        </title>
+      </circle>
+    ))}
+  </svg>
+  <p>Hover a point for institution detail. Larger coral points have at least 20% of publications in the field-normalized top 10%.</p>
+</div>
+
+<style>
+  .plot {
+    padding: 16px 16px 10px;
+  }
+
+  svg {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  .gridline {
+    stroke: #dcd9d1;
+    stroke-width: 1;
+  }
+
+  text {
+    fill: #778187;
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 10px;
+  }
+
+  .axis-label {
+    fill: #5b666c;
+    font-size: 11px;
+  }
+
+  circle {
+    fill: var(--teal);
+    fill-opacity: 0.52;
+    stroke: #08715e;
+    stroke-width: 0.8;
+  }
+
+  circle.standout {
+    fill: var(--coral);
+    fill-opacity: 0.76;
+    stroke: #a9402d;
+  }
+
+  circle:hover {
+    fill-opacity: 1;
+    stroke-width: 2;
+  }
+
+  p {
+    margin: 0 10px 8px;
+    color: var(--muted);
+    font-size: 0.68rem;
+  }
+</style>

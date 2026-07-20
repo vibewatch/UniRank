@@ -1,0 +1,242 @@
+---
+import type { ConsensusInstitution } from '../data/schema';
+
+interface Props {
+  institutions: ConsensusInstitution[];
+  limit?: number;
+  interactive?: boolean;
+}
+
+const {
+  institutions,
+  limit = institutions.length,
+  interactive = false,
+} = Astro.props;
+const shown = institutions.slice(0, limit);
+const countries = [...new Set(shown.map((item) => item.country))].sort();
+const providerShort: Record<string, string> = {
+  usnews: 'USN',
+  times: 'THE',
+  qs: 'QS',
+  cwur: 'CWUR',
+  ntu: 'NTU',
+  arwu: 'ARWU',
+};
+---
+
+<div
+  class="consensus"
+  data-consensus-table
+  data-interactive={interactive ? 'true' : 'false'}
+>
+  {interactive && (
+    <div class="filters surface">
+      <label class="search">
+        <span>Search institution</span>
+        <input type="search" placeholder="Try Oxford, Tsinghua, Toronto…" data-search />
+      </label>
+      <label>
+        <span>Country</span>
+        <select data-country>
+          <option value="">All countries</option>
+          {countries.map((country) => <option value={country}>{country}</option>)}
+        </select>
+      </label>
+      <label>
+        <span>Coverage</span>
+        <select data-coverage>
+          <option value="4">4+ providers</option>
+          <option value="5">5+ providers</option>
+          <option value="6">All 6 providers</option>
+        </select>
+      </label>
+      <p data-result-count aria-live="polite">{shown.length} institutions</p>
+    </div>
+  )}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Signal rank</th>
+          <th>Institution</th>
+          <th>Consensus</th>
+          <th>Provider evidence</th>
+        </tr>
+      </thead>
+      <tbody>
+        {shown.map((institution) => (
+          <tr
+            data-row
+            data-search={`${institution.name} ${institution.country}`.toLowerCase()}
+            data-country={institution.country}
+            data-provider-count={institution.providerCount}
+          >
+            <td><strong class="signal-rank">#{institution.consensusRank}</strong></td>
+            <td>
+              <strong class="institution-name">{institution.name}</strong>
+              <small>{institution.country}</small>
+            </td>
+            <td>
+              <strong class="score">{institution.score.toFixed(1)}</strong>
+              <small>{institution.providerCount}/6 sources</small>
+            </td>
+            <td>
+              <div class="rank-chips">
+                {institution.ranks.map((rank) => (
+                  <span title={`${rank.providerLabel} ${rank.year}: ${rank.rankDisplay}`}>
+                    <b>{providerShort[rank.provider] ?? rank.provider.toUpperCase()}</b>
+                    {rank.rankDisplay}
+                  </span>
+                ))}
+              </div>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-consensus-table][data-interactive="true"]')
+    .forEach((root) => {
+      const search = root.querySelector<HTMLInputElement>('[data-search]');
+      const country = root.querySelector<HTMLSelectElement>('[data-country]');
+      const coverage = root.querySelector<HTMLSelectElement>('[data-coverage]');
+      const count = root.querySelector<HTMLElement>('[data-result-count]');
+      const rows = [...root.querySelectorAll<HTMLTableRowElement>('[data-row]')];
+
+      const filter = () => {
+        const query = search?.value.trim().toLowerCase() ?? '';
+        const selectedCountry = country?.value ?? '';
+        const minimumCoverage = Number(coverage?.value ?? 4);
+        let visible = 0;
+        rows.forEach((row) => {
+          const matches =
+            (row.dataset.search?.includes(query) ?? false) &&
+            (!selectedCountry || row.dataset.country === selectedCountry) &&
+            Number(row.dataset.providerCount) >= minimumCoverage;
+          row.hidden = !matches;
+          if (matches) visible += 1;
+        });
+        if (count) count.textContent = `${visible} institution${visible === 1 ? '' : 's'}`;
+      };
+
+      search?.addEventListener('input', filter);
+      country?.addEventListener('change', filter);
+      coverage?.addEventListener('change', filter);
+    });
+</script>
+
+<style>
+  .filters {
+    display: grid;
+    grid-template-columns: 1.4fr 0.8fr 0.8fr auto;
+    align-items: end;
+    gap: 12px;
+    margin-bottom: 18px;
+    padding: 16px;
+  }
+
+  label {
+    display: grid;
+    gap: 5px;
+  }
+
+  label span {
+    color: var(--muted);
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 0.59rem;
+    font-weight: 750;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  input,
+  select {
+    min-height: 42px;
+    padding: 8px 11px;
+    border: 1px solid var(--line-strong);
+    border-radius: 9px;
+    color: var(--ink);
+    background: var(--surface);
+    font-size: 0.76rem;
+  }
+
+  .filters p {
+    min-width: 105px;
+    margin: 0 0 10px;
+    color: var(--muted);
+    font-size: 0.68rem;
+    text-align: right;
+  }
+
+  .signal-rank {
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 0.78rem;
+  }
+
+  .institution-name,
+  td small {
+    display: block;
+  }
+
+  .institution-name {
+    max-width: 280px;
+    font-size: 0.78rem;
+  }
+
+  td small {
+    color: var(--muted);
+    font-size: 0.62rem;
+  }
+
+  .score {
+    color: var(--teal-dark);
+    font-size: 1rem;
+  }
+
+  .rank-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    min-width: 260px;
+  }
+
+  .rank-chips span {
+    display: inline-flex;
+    gap: 4px;
+    padding: 4px 6px;
+    border: 1px solid #dfdcd4;
+    border-radius: 6px;
+    color: #5a656b;
+    background: #f8f6f0;
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 0.57rem;
+  }
+
+  .rank-chips b {
+    color: var(--ink);
+  }
+
+  tr[hidden] {
+    display: none;
+  }
+
+  @media (max-width: 800px) {
+    .filters {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .filters p {
+      margin: 0;
+      text-align: left;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .filters {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

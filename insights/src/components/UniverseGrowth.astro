@@ -1,0 +1,161 @@
+---
+import type { RankingUniverse } from '../data/schema';
+import { number, signedPercent } from '../lib/format';
+
+interface Props {
+  series: RankingUniverse[];
+}
+
+const { series } = Astro.props;
+const width = 280;
+const height = 96;
+const margin = 8;
+---
+
+<div class="universe-grid">
+  {series.map((item) => {
+    const first = item.points[0];
+    const latest = item.points[item.points.length - 1];
+    const minYear = first.year;
+    const maxYear = latest.year;
+    const maxSize = Math.max(...item.points.map((point) => point.size));
+    const x = (year: number) =>
+      margin + (year - minYear) / Math.max(1, maxYear - minYear) * (width - margin * 2);
+    const y = (size: number) =>
+      height - margin - size / maxSize * (height - margin * 2);
+    const path = item.points
+      .map((point, index) => `${index === 0 ? 'M' : 'L'} ${x(point.year)} ${y(point.size)}`)
+      .join(' ');
+    const growth = (latest.size / first.size - 1) * 100;
+    return (
+      <article class="surface" style={`--series:${item.color}`}>
+        <header>
+          <div>
+            <span>{item.label}</span>
+            <strong>{number.format(latest.size)}</strong>
+          </div>
+          <b>{signedPercent(growth)}</b>
+        </header>
+        <svg viewBox={`0 0 ${width} ${height}`} role="img">
+          <title>
+            {`${item.label} overall table size grew from ${number.format(first.size)} in ${first.year} to ${number.format(latest.size)} in ${latest.year}`}
+          </title>
+          <path d={path} />
+          {item.points.map((point) => (
+            <circle cx={x(point.year)} cy={y(point.size)} r="2.3">
+              <title>{`${point.year}: ${number.format(point.size)} records`}</title>
+            </circle>
+          ))}
+        </svg>
+        <footer>
+          <span><b>{first.year}</b>{number.format(first.size)}</span>
+          {latest.unranked > 0 && (
+            <span class="reporters">
+              <b>{number.format(latest.unranked)}</b>reporters
+            </span>
+          )}
+          <span><b>{latest.year}</b>{number.format(latest.size)}</span>
+        </footer>
+      </article>
+    );
+  })}
+</div>
+
+<style>
+  .universe-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  article {
+    padding: 18px;
+  }
+
+  header,
+  footer {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  header div {
+    display: grid;
+  }
+
+  header span {
+    color: var(--muted);
+    font-size: 0.67rem;
+    font-weight: 750;
+  }
+
+  header strong {
+    font-size: 1.65rem;
+    letter-spacing: -0.04em;
+  }
+
+  header > b {
+    padding: 4px 7px;
+    border-radius: 999px;
+    color: color-mix(in srgb, var(--series), black 30%);
+    background: color-mix(in srgb, var(--series), transparent 85%);
+    font-size: 0.62rem;
+  }
+
+  svg {
+    width: 100%;
+    margin-block: 12px 8px;
+    overflow: visible;
+  }
+
+  path {
+    fill: none;
+    stroke: var(--series);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 3;
+  }
+
+  circle {
+    fill: var(--surface);
+    stroke: var(--series);
+    stroke-width: 1.5;
+  }
+
+  footer {
+    align-items: end;
+    color: var(--muted);
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 0.59rem;
+  }
+
+  footer span {
+    display: grid;
+  }
+
+  footer span:last-child {
+    text-align: right;
+  }
+
+  footer b {
+    color: var(--ink);
+  }
+
+  .reporters {
+    color: var(--coral);
+    text-align: center;
+  }
+
+  @media (max-width: 960px) {
+    .universe-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 540px) {
+    .universe-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

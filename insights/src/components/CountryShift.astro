@@ -1,0 +1,166 @@
+---
+import type { NatureCountryShift } from '../data/schema';
+import { decimal, number, signedPercent } from '../lib/format';
+
+interface Props {
+  items: NatureCountryShift[];
+}
+
+const { items } = Astro.props;
+const max = Math.max(...items.map((item) => item.share2025));
+---
+
+<div class="shift-chart surface">
+  <div class="legend">
+    <span><i class="early"></i>2015 output</span>
+    <span><i class="latest"></i>2025 output</span>
+  </div>
+  <ol>
+    {items.map((item) => (
+      <li>
+        <div class="country">
+          <strong>{item.country}</strong>
+          <span class:list={{ positive: item.shareChange >= 0, negative: item.shareChange < 0 }}>
+            {signedPercent(item.shareChangePercent)}
+          </span>
+        </div>
+        <div class="pair">
+          <span class="bar early" style={`--width:${item.share2015 / max * 100}%`}>
+            <i></i><b>{decimal.format(item.share2015)}</b>
+          </span>
+          <span class="bar latest" style={`--width:${item.share2025 / max * 100}%`}>
+            <i></i><b>{decimal.format(item.share2025)}</b>
+          </span>
+        </div>
+        <span class="institutions mono">{number.format(item.institutions2025)} in table</span>
+      </li>
+    ))}
+  </ol>
+</div>
+
+<style>
+  .shift-chart {
+    padding: 22px;
+  }
+
+  .legend {
+    display: flex;
+    justify-content: flex-end;
+    gap: 16px;
+    margin-bottom: 14px;
+    color: var(--muted);
+    font-size: 0.66rem;
+  }
+
+  .legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .legend i {
+    width: 9px;
+    height: 9px;
+    border-radius: 2px;
+  }
+
+  .legend .early {
+    background: #c5c3ba;
+  }
+
+  .legend .latest {
+    background: var(--teal);
+  }
+
+  ol {
+    display: grid;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: grid;
+    grid-template-columns: 160px minmax(200px, 1fr) 82px;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .country {
+    display: flex;
+    min-width: 0;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .country strong {
+    overflow: hidden;
+    font-size: 0.75rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .country span {
+    font-size: 0.62rem;
+    font-weight: 750;
+  }
+
+  .pair {
+    display: grid;
+    gap: 3px;
+  }
+
+  .bar {
+    display: flex;
+    height: 9px;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .bar i {
+    display: block;
+    width: max(2px, var(--width));
+    height: 6px;
+    border-radius: 99px;
+  }
+
+  .bar b {
+    color: var(--muted);
+    font-size: 0.55rem;
+    font-weight: 650;
+  }
+
+  .bar.early i {
+    background: #c5c3ba;
+  }
+
+  .bar.latest i {
+    background: var(--teal);
+  }
+
+  .institutions {
+    color: var(--muted);
+    font-size: 0.58rem;
+    text-align: right;
+  }
+
+  @media (max-width: 700px) {
+    li {
+      grid-template-columns: 120px minmax(170px, 1fr);
+    }
+
+    .institutions {
+      display: none;
+    }
+
+    .shift-chart {
+      overflow-x: auto;
+    }
+
+    ol {
+      min-width: 480px;
+    }
+  }
+</style>

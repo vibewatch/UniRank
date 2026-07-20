@@ -1,0 +1,533 @@
+---
+import BarChart from '../components/BarChart.astro';
+import ConsensusTable from '../components/ConsensusTable.astro';
+import MetricCard from '../components/MetricCard.astro';
+import ProviderTimeline from '../components/ProviderTimeline.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { insights } from '../lib/data';
+import { compact, decimal, number, signedPercent } from '../lib/format';
+
+const chinaShift = insights.natureCountryShift.find((item) => item.countryCode === 'CN');
+const usShift = insights.natureCountryShift.find((item) => item.countryCode === 'US');
+const subjectLeaderCountries = insights.natureSubjects.map(
+  (subject) => subject.leaders[0]?.country,
+);
+const leaderCountryCount = new Map<string, number>();
+subjectLeaderCountries.forEach((country) => {
+  if (country) leaderCountryCount.set(country, (leaderCountryCount.get(country) ?? 0) + 1);
+});
+const dominantSubjectCountry = [...leaderCountryCount.entries()]
+  .sort((a, b) => b[1] - a[1])[0];
+---
+
+<BaseLayout
+  title="Overview"
+  description="Explore 920,000+ university ranking records across 11 providers, with transparent consensus, research momentum, subject strength, and geographic trend analysis."
+>
+  <section class="page-hero home-hero">
+    <div class="shell hero-grid">
+      <div>
+        <p class="eyebrow">A multi-source evidence atlas</p>
+        <h1>See the signal behind the rank.</h1>
+        <p class="lede">
+          One league table gives a position. This archive connects
+          <strong>{number.format(insights.meta.archiveRows)} rows</strong> across
+          reputation, research scale, citation impact, subject strength, and
+          web visibility—without pretending those measures are interchangeable.
+        </p>
+        <div class="button-row">
+          <a class="button" href="/explorer/">Explore institutions <span aria-hidden="true">→</span></a>
+          <a class="button secondary" href="/trends/">Follow the trajectories</a>
+        </div>
+      </div>
+      <aside class="signal-panel surface" aria-label="Leading multi-provider signals">
+        <div class="panel-top">
+          <span class="mono">LATEST BROAD EDITIONS</span>
+          <span>6 sources</span>
+        </div>
+        <p>Cross-provider signal</p>
+        <ol>
+          {insights.consensus.slice(0, 6).map((institution) => (
+            <li>
+              <span class="rank mono">{String(institution.consensusRank).padStart(2, '0')}</span>
+              <span class="institution">
+                <strong>{institution.name}</strong>
+                <small>{institution.country}</small>
+              </span>
+              <span class="score">{institution.score.toFixed(1)}</span>
+            </li>
+          ))}
+        </ol>
+        <a href="/methodology/#consensus">How the signal is calculated <span aria-hidden="true">↗</span></a>
+      </aside>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell">
+      <div class="grid four metric-grid">
+        <MetricCard
+          label="Archive rows"
+          value={compact.format(insights.meta.archiveRows)}
+          detail={`${number.format(insights.meta.csvFiles)} CSV snapshots; rows are observations, not unique institutions.`}
+          tone="teal"
+          index="01"
+        />
+        <MetricCard
+          label="Provider lenses"
+          value={String(insights.meta.providers)}
+          detail="Publisher rankings, bibliometrics, research output, and web visibility."
+          tone="coral"
+          index="02"
+        />
+        <MetricCard
+          label="Time horizon"
+          value={`${insights.meta.firstYear}—${insights.meta.lastYear}`}
+          detail="Uneven by provider; every visual preserves its source edition."
+          tone="violet"
+          index="03"
+        />
+        <MetricCard
+          label="Country coverage"
+          value={String(insights.meta.countries)}
+          detail={`${number.format(insights.meta.subjectViews)} provider-specific subject or field views.`}
+          tone="yellow"
+          index="04"
+        />
+      </div>
+    </div>
+  </section>
+
+  <section class="section insight-section">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="What the archive suggests"
+        title="Three signals worth investigating."
+        description="These are prompts for deeper comparison—not causal claims. Each card links a pattern to the source that produced it."
+      />
+      <div class="grid three insight-grid">
+        <article class="insight-card dark">
+          <span class="card-index mono">01 / RESEARCH GEOGRAPHY</span>
+          <strong>{signedPercent(chinaShift?.shareChangePercent ?? null)}</strong>
+          <h3>China’s represented Nature Index Share expanded sharply.</h3>
+          <p>
+            Across the published academic table, Share moved from
+            {` ${decimal.format(chinaShift?.share2015 ?? 0)} `}in 2015 output to
+            {` ${decimal.format(chinaShift?.share2025 ?? 0)} `}in 2025 output.
+            Journal-set and coverage changes mean this is directional, not a
+            pure growth rate.
+          </p>
+          <a href="/trends/#geography">Inspect the country shift →</a>
+        </article>
+        <article class="insight-card light">
+          <span class="card-index mono">02 / DURABLE CONSENSUS</span>
+          <strong>{insights.consensus[0].providerCount}/6</strong>
+          <h3>{insights.consensus[0].name} appears at the top across methods.</h3>
+          <p>
+            The leading signal averages within-table percentiles across six
+            broad publisher rankings. The top five all have evidence from every
+            included source.
+          </p>
+          <a href="/explorer/">Compare provider evidence →</a>
+        </article>
+        <article class="insight-card color">
+          <span class="card-index mono">03 / SUBJECT FIT</span>
+          <strong>{dominantSubjectCountry?.[1] ?? 0}/8</strong>
+          <h3>{dominantSubjectCountry?.[0]} institutions lead most Nature subject views.</h3>
+          <p>
+            Overall strength hides specialization. Biology and health point to
+            different leaders than chemistry, applied science, or the physical
+            sciences.
+          </p>
+          <a href="/subjects/">Open the subject lens →</a>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="Consensus, not certainty"
+        title="Where independent broad rankings overlap."
+        description="Institutions must appear in at least four of six latest broad editions. The score is the mean within-table percentile, so it measures agreement—not educational fit."
+        href="/explorer/"
+        linkLabel={`Search all ${number.format(insights.consensus.length)} signals`}
+      />
+      <ConsensusTable institutions={insights.consensus} limit={10} />
+      <p class="fine-print table-note">
+        Latest editions differ by source: {insights.methodology.consensusProviders.map((item) => `${item.label} ${item.year}`).join(' · ')}.
+      </p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell country-grid">
+      <div>
+        <SectionHeading
+          eyebrow="Global footprint"
+          title="Top-100 placements remain concentrated."
+          description="Count of institutions placed at rank 100 or better across the six broad publisher tables. One institution can contribute once per provider."
+          href="/trends/#geography"
+          linkLabel="See research geography"
+        />
+        <div class="chart-card surface">
+          <BarChart
+            items={insights.countryFootprint.slice(0, 12).map((item) => ({
+              label: item.country,
+              value: item.placements,
+              detail: `${item.providerCount}/6 sources`,
+            }))}
+            color="var(--coral)"
+          />
+        </div>
+      </div>
+      <aside class="context-card">
+        <p class="eyebrow">Read with context</p>
+        <strong>{number.format(insights.countryFootprint[0].placements)}</strong>
+        <h3>U.S. top-100 placements across six tables</h3>
+        <p>
+          This reflects system depth and table methodology, not the quality of
+          every institution in a country. China appears in
+          {` ${insights.countryFootprint.find((item) => item.countryCode === 'CN')?.providerCount ?? 0} `}
+          of the six top-100 lists; the United States and United Kingdom appear
+          in all six.
+        </p>
+        <div class="comparison">
+          <span>Nature academic Share, 2015→2025</span>
+          <div><b>China</b><strong>{signedPercent(chinaShift?.shareChangePercent ?? null)}</strong></div>
+          <div><b>United States</b><strong>{signedPercent(usShift?.shareChangePercent ?? null)}</strong></div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="Coverage map"
+        title="Eleven lenses, eleven definitions of “best.”"
+        description="The archive’s time depth and subject coverage vary. Long bars show historical continuity; row totals show how much evidence each lens contributes."
+        href="/methodology/#providers"
+        linkLabel="Read provider notes"
+      />
+      <ProviderTimeline providers={insights.providers} />
+    </div>
+  </section>
+
+  <section class="section guidance-section">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="From ranking to decision"
+        title="Use the data as a funnel, not a verdict."
+      />
+      <div class="guidance-flow">
+        <article>
+          <span class="step mono">01</span>
+          <h3>Shortlist on durable signal</h3>
+          <p>Look for repeated strength across methods and years, not a one-edition jump.</p>
+          <a href="/explorer/">Start with consensus</a>
+        </article>
+        <article>
+          <span class="step mono">02</span>
+          <h3>Match the subject</h3>
+          <p>Compare field-specific research position; the broad table can hide the program you care about.</p>
+          <a href="/subjects/">Compare disciplines</a>
+        </article>
+        <article>
+          <span class="step mono">03</span>
+          <h3>Add your constraints</h3>
+          <p>Cost, admissions, location, teaching model, and career outcomes are not resolved by this archive.</p>
+          <a href="/methodology/#guidance">Use the decision checklist</a>
+        </article>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .home-hero {
+    padding-top: 90px;
+  }
+
+  .hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(330px, 0.68fr);
+    align-items: center;
+    gap: clamp(40px, 8vw, 110px);
+  }
+
+  .home-hero h1 {
+    max-width: 820px;
+  }
+
+  .home-hero .lede strong {
+    color: var(--ink);
+  }
+
+  .signal-panel {
+    overflow: hidden;
+    padding: 22px;
+    transform: rotate(1.2deg);
+  }
+
+  .panel-top {
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 0.59rem;
+  }
+
+  .signal-panel > p {
+    margin: 18px 0 8px;
+    font-size: 0.72rem;
+    font-weight: 750;
+  }
+
+  .signal-panel ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .signal-panel li {
+    display: grid;
+    grid-template-columns: 26px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 9px;
+    padding: 11px 0;
+    border-bottom: 1px solid #e7e4dd;
+  }
+
+  .signal-panel .rank {
+    color: #969fa3;
+    font-size: 0.58rem;
+  }
+
+  .institution {
+    display: grid;
+    min-width: 0;
+  }
+
+  .institution strong {
+    overflow: hidden;
+    font-size: 0.72rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .institution small {
+    color: var(--muted);
+    font-size: 0.58rem;
+  }
+
+  .signal-panel .score {
+    color: var(--teal-dark);
+    font-size: 0.77rem;
+    font-weight: 800;
+  }
+
+  .signal-panel > a {
+    display: inline-block;
+    margin-top: 16px;
+    color: var(--muted);
+    font-size: 0.66rem;
+    font-weight: 700;
+  }
+
+  .insight-section {
+    padding-top: 80px;
+    color: white;
+    background: var(--ink);
+  }
+
+  .insight-section :global(.section-heading p:last-child) {
+    color: #96a2a7;
+  }
+
+  .insight-section :global(.eyebrow) {
+    color: #73ddc4;
+  }
+
+  .insight-card {
+    display: flex;
+    min-height: 390px;
+    flex-direction: column;
+    padding: 26px;
+    border: 1px solid rgb(255 255 255 / 12%);
+    border-radius: 18px;
+  }
+
+  .insight-card .card-index {
+    margin-bottom: auto;
+    font-size: 0.62rem;
+    opacity: 0.7;
+  }
+
+  .insight-card > strong {
+    display: block;
+    margin: 42px 0 10px;
+    font-size: clamp(3.2rem, 6vw, 5.3rem);
+    letter-spacing: -0.07em;
+    line-height: 0.9;
+  }
+
+  .insight-card h3 {
+    max-width: 320px;
+    margin-bottom: 12px;
+    font-size: 1.25rem;
+  }
+
+  .insight-card p {
+    color: inherit;
+    font-size: 0.78rem;
+    opacity: 0.72;
+  }
+
+  .insight-card a {
+    margin-top: 16px;
+    font-size: 0.72rem;
+    font-weight: 750;
+  }
+
+  .insight-card.light {
+    color: var(--ink);
+    background: var(--paper);
+  }
+
+  .insight-card.color {
+    color: var(--ink);
+    background: var(--yellow);
+  }
+
+  .table-note {
+    margin: 13px 4px 0;
+  }
+
+  .country-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.55fr);
+    gap: 28px;
+  }
+
+  .chart-card {
+    padding: 25px;
+  }
+
+  .context-card {
+    align-self: end;
+    padding: 28px;
+    border-radius: var(--radius);
+    color: white;
+    background: var(--violet);
+    box-shadow: var(--shadow);
+  }
+
+  .context-card .eyebrow {
+    color: white;
+    opacity: 0.75;
+  }
+
+  .context-card > strong {
+    display: block;
+    margin: 20px 0 8px;
+    font-size: 4.8rem;
+    letter-spacing: -0.07em;
+    line-height: 0.9;
+  }
+
+  .context-card p {
+    font-size: 0.76rem;
+    opacity: 0.76;
+  }
+
+  .comparison {
+    display: grid;
+    gap: 8px;
+    margin-top: 24px;
+    padding-top: 18px;
+    border-top: 1px solid rgb(255 255 255 / 25%);
+  }
+
+  .comparison > span {
+    font-size: 0.62rem;
+    opacity: 0.7;
+  }
+
+  .comparison div {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+  }
+
+  .guidance-flow {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+
+  .guidance-flow article {
+    min-height: 260px;
+    padding: 26px;
+  }
+
+  .guidance-flow article + article {
+    border-left: 1px solid var(--line);
+  }
+
+  .step {
+    display: inline-grid;
+    width: 38px;
+    height: 38px;
+    margin-bottom: 42px;
+    place-items: center;
+    border-radius: 50%;
+    color: white;
+    background: var(--ink);
+    font-size: 0.65rem;
+  }
+
+  .guidance-flow p {
+    min-height: 60px;
+    color: var(--muted);
+    font-size: 0.78rem;
+  }
+
+  .guidance-flow a {
+    font-size: 0.72rem;
+    font-weight: 750;
+  }
+
+  @media (max-width: 900px) {
+    .hero-grid,
+    .country-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .signal-panel {
+      max-width: 560px;
+      transform: none;
+    }
+
+    .guidance-flow {
+      grid-template-columns: 1fr;
+    }
+
+    .guidance-flow article + article {
+      border-top: 1px solid var(--line);
+      border-left: 0;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .metric-grid,
+    .insight-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

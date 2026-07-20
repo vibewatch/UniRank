@@ -1,0 +1,522 @@
+---
+import BarChart from '../components/BarChart.astro';
+import CountryShift from '../components/CountryShift.astro';
+import MomentumChart from '../components/MomentumChart.astro';
+import ScaleImpactPlot from '../components/ScaleImpactPlot.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import TrendExplorer from '../components/TrendExplorer.astro';
+import UniverseGrowth from '../components/UniverseGrowth.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { insights } from '../lib/data';
+import { decimal, number, signedPercent } from '../lib/format';
+
+const chinaNature = insights.natureCountryShift.find((item) => item.countryCode === 'CN');
+const usNature = insights.natureCountryShift.find((item) => item.countryCode === 'US');
+const arwuEarly = insights.arwuConcentration[0];
+const arwuLatest = insights.arwuConcentration[1];
+const arwuCountry = (edition: typeof arwuEarly, code: string) =>
+  edition.countries.find((country) => country.countryCode === code)?.count ?? 0;
+const theUniverse = insights.rankingUniverse.find((item) => item.provider === 'times');
+const theFirst = theUniverse?.points[0];
+const theLatest = theUniverse?.points.at(-1);
+const theExpansion = theFirst && theLatest ? theLatest.size / theFirst.size : 0;
+---
+
+<BaseLayout
+  title="Trends"
+  description="Follow historical university ranking trajectories, changing table universes, research geography, and the difference between research scale and impact."
+>
+  <section class="page-hero">
+    <div class="shell hero-grid">
+      <div>
+        <p class="eyebrow">Change over time</p>
+        <h1>A rank moves. So does the frame around it.</h1>
+        <p class="lede">
+          Trajectories only become useful when table expansion, ties, coverage,
+          and measurement windows remain visible. Follow the line—then inspect
+          the universe that produced it.
+        </p>
+      </div>
+      <aside class="hero-note">
+        <span class="mono">THE OVERALL TABLE</span>
+        <strong>{decimal.format(theExpansion)}×</strong>
+        <p>
+          larger from {theFirst?.year} to {theLatest?.year}, including
+          {` ${number.format(theLatest?.unranked ?? 0)} `}unranked reporters in the
+          latest edition.
+        </p>
+      </aside>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="Institution trajectories"
+        title="Follow one method at a time."
+        description="Choose an institution and provider. Rank 1 is at the top; bands use their lower bound. A line is not drawn across providers because each source defines and sizes its table differently."
+      />
+      <TrendExplorer trends={insights.institutionTrends} />
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="The denominator changed"
+        title="Ranking universes expanded—sometimes dramatically."
+        description="A stable institution can move as hundreds or thousands of entrants are added. Overall-table row counts are shown exactly as published; THE’s latest total separates ranked entries from reporters."
+      />
+      <UniverseGrowth series={insights.rankingUniverse} />
+    </div>
+  </section>
+
+  <section class="section method-section">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="Method changes the map"
+        title="The same “top 100” tells six geographic stories."
+        description="Latest broad publisher editions. Counts include every institution whose displayed rank lower bound is 100 or better, so QS has 102 records because rank 100 is tied."
+      />
+      <div class="provider-mix">
+        {insights.providerTop100.map((provider) => {
+          const selected = ['US', 'GB', 'CN'].map((code) => ({
+            code,
+            count: provider.countries.find((country) => country.countryCode === code)?.count ?? 0,
+          }));
+          const known = selected.reduce((total, country) => total + country.count, 0);
+          return (
+            <article class="surface">
+              <header>
+                <div>
+                  <strong>{provider.label}</strong>
+                  <span>{provider.year} · {number.format(provider.universeSize)} ranked</span>
+                </div>
+                <b>{provider.top100Size}</b>
+              </header>
+              <div class="stack" aria-label={`${provider.label} top-100 country composition`}>
+                {selected.map((country) => (
+                  <i
+                    class={`country-${country.code.toLowerCase()}`}
+                    style={`--width:${country.count / provider.top100Size * 100}%`}
+                    title={`${country.code}: ${country.count}`}
+                  ></i>
+                ))}
+                <i
+                  class="country-other"
+                  style={`--width:${(provider.top100Size - known) / provider.top100Size * 100}%`}
+                  title={`Other countries: ${provider.top100Size - known}`}
+                ></i>
+              </div>
+              <dl>
+                {selected.map((country) => (
+                  <div><dt>{country.code}</dt><dd>{country.count}</dd></div>
+                ))}
+                <div><dt>Other</dt><dd>{provider.top100Size - known}</dd></div>
+              </dl>
+            </article>
+          );
+        })}
+      </div>
+      <p class="fine-print">
+        Hong Kong remains separate from mainland China. These are placements,
+        not shares of national systems and not a pooled global league table.
+      </p>
+    </div>
+  </section>
+
+  <section class="section" id="geography">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="Research geography"
+        title="Two long-run views point toward wider Asian representation."
+        description="Nature Index academic Share and ARWU top-100 composition measure different things. Their direction is informative; their magnitudes are not directly comparable."
+      />
+      <div class="nature-grid">
+        <CountryShift items={insights.natureCountryShift.slice(0, 12)} />
+        <aside class="nature-callout">
+          <span class="mono">NATURE ACADEMIC TOP 20</span>
+          <div>
+            <strong>{chinaNature?.top20In2015} → {chinaNature?.top20In2025}</strong>
+            <p>Chinese institutions, 2015 to 2025 output</p>
+          </div>
+          <div>
+            <strong>{usNature?.top20In2015} → {usNature?.top20In2025}</strong>
+            <p>U.S. institutions over the same editions</p>
+          </div>
+          <small>
+            Nature Share covers a selected journal set. Journal and methodology
+            changes prevent a causal “growth” interpretation.
+          </small>
+        </aside>
+      </div>
+
+      <div class="arwu-grid">
+        {[arwuEarly, arwuLatest].map((edition) => (
+          <article class="surface">
+            <header>
+              <div>
+                <span class="mono">ARWU {edition.year}</span>
+                <strong>{edition.top100Size} seats</strong>
+              </div>
+              <div>
+                <span>Country HHI</span>
+                <strong>{edition.countryHhi.toFixed(3)}</strong>
+              </div>
+            </header>
+            <BarChart
+              items={edition.countries.slice(0, 8).map((country) => ({
+                label: country.country,
+                value: country.count,
+                detail: `${decimal.format(country.share)}%`,
+              }))}
+              max={60}
+              color={edition.year === 2003 ? 'var(--violet)' : 'var(--coral)'}
+            />
+          </article>
+        ))}
+        <div class="arwu-story">
+          <span class="mono">2003 → 2025</span>
+          <strong>{arwuCountry(arwuEarly, 'US')} → {arwuCountry(arwuLatest, 'US')}</strong>
+          <p>U.S. institutions in the ARWU top 100.</p>
+          <strong>{arwuCountry(arwuEarly, 'CN')} → {arwuCountry(arwuLatest, 'CN')}</strong>
+          <p>Mainland Chinese institutions; Hong Kong remains separate.</p>
+          <small>
+            The 2003 denominator is 101 because the published rank 99 was tied.
+            Lower HHI indicates less country concentration.
+          </small>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="Indexed-output momentum"
+        title="OpenAlex coverage shows a changing publication footprint."
+        description={`For the fixed cohort of ${number.format(insights.openAlexCountryMomentum.cohortSize)} institutions present in all ten annual files, summed institution-work associations rose ${signedPercent(insights.openAlexCountryMomentum.totalChangePercent)} through 2022.`}
+      />
+      <MomentumChart momentum={insights.openAlexCountryMomentum} />
+    </div>
+  </section>
+
+  <section class="section impact-section">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="Scale is not impact"
+        title="Publishing more and being cited more intensely are different signals."
+        description={`Across ${number.format(insights.leidenSummary.institutionCount)} Leiden 2025 institutions, output rank and field-normalized impact rank have a Spearman correlation of ${insights.leidenSummary.scaleImpactSpearman.toFixed(3)}. Only ${insights.leidenSummary.scaleImpactTop100Overlap} institutions overlap their two top 100s.`}
+        href="/methodology/#research-metrics"
+        linkLabel="Read metric definitions"
+      />
+      <div class="impact-grid">
+        <ScaleImpactPlot points={insights.leidenScaleImpact} />
+        <aside>
+          {insights.leidenSummary.spotlights.map((institution) => (
+            <article class="surface">
+              <span>{institution.country}</span>
+              <h3>{institution.name}</h3>
+              <dl>
+                <div><dt>Output rank</dt><dd>#{number.format(institution.scaleRank)}</dd></div>
+                <div><dt>MNCS rank</dt><dd>#{number.format(institution.impactRank)}</dd></div>
+                <div><dt>Top-10% rank</dt><dd>#{number.format(institution.top10Rank)}</dd></div>
+              </dl>
+            </article>
+          ))}
+          <p class="fine-print">
+            The plot shows the top 140 by fractional publication count. An
+            impact specialist such as Rockefeller sits outside that scale
+            window—which is precisely the point.
+          </p>
+        </aside>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(260px, 0.5fr);
+    align-items: end;
+    gap: clamp(30px, 7vw, 90px);
+  }
+
+  .hero-note {
+    padding: 26px;
+    border-left: 4px solid var(--coral);
+    background: rgb(255 253 248 / 62%);
+  }
+
+  .hero-note span,
+  .arwu-story > span {
+    color: var(--muted);
+    font-size: 0.62rem;
+  }
+
+  .hero-note > strong {
+    display: block;
+    margin: 12px 0 4px;
+    font-size: 4.4rem;
+    letter-spacing: -0.07em;
+    line-height: 1;
+  }
+
+  .hero-note p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.76rem;
+  }
+
+  .method-section {
+    color: white;
+    background: var(--ink);
+  }
+
+  .method-section :global(.section-heading p:last-child) {
+    color: #9ba5aa;
+  }
+
+  .method-section :global(.eyebrow) {
+    color: #74ddc4;
+  }
+
+  .provider-mix {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .provider-mix article {
+    padding: 18px;
+    color: var(--ink);
+  }
+
+  .provider-mix header,
+  .arwu-grid header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .provider-mix header div {
+    display: grid;
+  }
+
+  .provider-mix header strong {
+    font-size: 0.82rem;
+  }
+
+  .provider-mix header span {
+    color: var(--muted);
+    font-size: 0.59rem;
+  }
+
+  .provider-mix header > b {
+    font-size: 1.4rem;
+  }
+
+  .stack {
+    display: flex;
+    height: 12px;
+    overflow: hidden;
+    margin: 20px 0 12px;
+    border-radius: 99px;
+    background: #e3e1da;
+  }
+
+  .stack i {
+    width: var(--width);
+    min-width: 1px;
+  }
+
+  .country-us { background: var(--violet); }
+  .country-gb { background: var(--teal); }
+  .country-cn { background: var(--coral); }
+  .country-other { background: #c9c6be; }
+
+  .provider-mix dl,
+  .impact-grid dl {
+    display: flex;
+    justify-content: space-between;
+    margin: 0;
+  }
+
+  .provider-mix dl div,
+  .impact-grid dl div {
+    display: grid;
+  }
+
+  dt {
+    color: var(--muted);
+    font-size: 0.57rem;
+  }
+
+  dd {
+    margin: 0;
+    font-size: 0.72rem;
+    font-weight: 750;
+  }
+
+  .method-section > .shell > .fine-print {
+    margin: 16px 2px 0;
+    color: #9ba5aa;
+  }
+
+  .nature-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.55fr);
+    gap: 20px;
+  }
+
+  .nature-callout {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 26px;
+    border-radius: var(--radius);
+    color: white;
+    background: var(--teal-dark);
+  }
+
+  .nature-callout > span {
+    font-size: 0.62rem;
+    opacity: 0.65;
+  }
+
+  .nature-callout strong {
+    display: block;
+    font-size: 2.5rem;
+    letter-spacing: -0.05em;
+  }
+
+  .nature-callout p {
+    margin: 0;
+    font-size: 0.7rem;
+    opacity: 0.75;
+  }
+
+  .nature-callout small {
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid rgb(255 255 255 / 24%);
+    font-size: 0.62rem;
+    opacity: 0.68;
+  }
+
+  .arwu-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 0.65fr;
+    gap: 20px;
+    margin-top: 40px;
+  }
+
+  .arwu-grid article,
+  .arwu-story {
+    padding: 22px;
+  }
+
+  .arwu-grid article header {
+    margin-bottom: 22px;
+  }
+
+  .arwu-grid article header div {
+    display: grid;
+  }
+
+  .arwu-grid article header div:last-child {
+    text-align: right;
+  }
+
+  .arwu-grid header span {
+    color: var(--muted);
+    font-size: 0.58rem;
+  }
+
+  .arwu-grid header strong {
+    font-size: 0.83rem;
+  }
+
+  .arwu-story {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+
+  .arwu-story > strong {
+    display: block;
+    margin-top: 16px;
+    font-size: 2.2rem;
+    letter-spacing: -0.05em;
+  }
+
+  .arwu-story p,
+  .arwu-story small {
+    color: var(--muted);
+    font-size: 0.67rem;
+  }
+
+  .arwu-story small {
+    display: block;
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+  }
+
+  .impact-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(260px, 0.6fr);
+    align-items: start;
+    gap: 20px;
+  }
+
+  .impact-grid aside {
+    display: grid;
+    gap: 14px;
+  }
+
+  .impact-grid article {
+    padding: 20px;
+  }
+
+  .impact-grid article > span {
+    color: var(--muted);
+    font-size: 0.61rem;
+  }
+
+  .impact-grid h3 {
+    margin: 4px 0 18px;
+  }
+
+  @media (max-width: 950px) {
+    .provider-mix {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .nature-grid,
+    .impact-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .arwu-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .arwu-story {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (max-width: 680px) {
+    .hero-grid,
+    .provider-mix,
+    .arwu-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .arwu-story {
+      grid-column: auto;
+    }
+  }
+</style>

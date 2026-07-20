@@ -1,0 +1,440 @@
+---
+import ConsensusTable from '../components/ConsensusTable.astro';
+import MetricCard from '../components/MetricCard.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { insights } from '../lib/data';
+
+const allSix = insights.consensus.filter((institution) => institution.providerCount === 6);
+const universalTop20 = insights.consensus.filter(
+  (institution) =>
+    institution.providerCount === 6 &&
+    institution.ranks.every((rank) => rank.rank <= 20),
+);
+const scoreHigh = insights.consensus[0].score;
+const scoreLow = insights.consensus.at(-1)?.score ?? scoreHigh;
+const providerById = new Map(insights.providers.map((provider) => [provider.id, provider]));
+---
+
+<BaseLayout
+  title="Explorer"
+  description="Search and filter a transparent six-provider university ranking consensus, then inspect the source ranks behind every analytical signal."
+>
+  <section class="page-hero explorer-hero">
+    <div class="shell">
+      <p class="eyebrow">Cross-provider explorer</p>
+      <h1>Find agreement. Keep the disagreement.</h1>
+      <p class="lede">
+        {insights.consensus.length.toLocaleString('en-US')} institutions appear
+        in at least four of six latest broad tables. Search the overlap, filter
+        the evidence, and read every provider rank behind the signal.
+      </p>
+      <div class="grid three metric-grid">
+        <MetricCard
+          label="Searchable signals"
+          value={insights.consensus.length.toLocaleString('en-US')}
+          detail="Institutions meeting the four-provider evidence threshold."
+          tone="teal"
+          index="01"
+        />
+        <MetricCard
+          label="Full coverage"
+          value={String(allSix.length)}
+          detail="Institutions represented in all six broad editions."
+          tone="violet"
+          index="02"
+        />
+        <MetricCard
+          label="Score spread"
+          value={(scoreHigh - scoreLow).toFixed(1)}
+          detail="Points from first to the last eligible institution; inspect ranks before decimals."
+          tone="coral"
+          index="03"
+        />
+      </div>
+    </div>
+  </section>
+
+  <section class="section explorer-section">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="Evidence table"
+        title="Search the multi-provider cohort."
+        description="Signal rank sorts the mean within-table percentile. Provider chips preserve displayed ranks, including ties and bands; hover a chip for its source edition."
+        href="/methodology/#consensus"
+        linkLabel="See the formula"
+      />
+      <ConsensusTable institutions={insights.consensus} interactive={true} />
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell overlap-grid">
+      <div>
+        <SectionHeading
+          eyebrow="Durable top tier"
+          title={`${universalTop20.length} institutions sit in every provider’s top 20.`}
+          description="This strict membership test avoids inventing another weighted score. It asks only whether six different broad methods all place the institution in their displayed top 20."
+        />
+        <div class="institution-cloud">
+          {universalTop20.map((institution, index) => (
+            <article class="surface">
+              <span class="mono">{String(index + 1).padStart(2, '0')}</span>
+              <div>
+                <strong>{institution.name}</strong>
+                <small>{institution.country}</small>
+              </div>
+              <span class="range">
+                {`${Math.min(...institution.ranks.map((rank) => rank.rank))}–${Math.max(...institution.ranks.map((rank) => rank.rank))}`}
+              </span>
+            </article>
+          ))}
+        </div>
+      </div>
+      <aside class="score-note">
+        <span class="mono">WHY 99 ≠ PERFECT</span>
+        <strong>{scoreHigh.toFixed(1)}</strong>
+        <h3>Percentile scores are tightly clustered by design.</h3>
+        <p>
+          A rank near the top of a 1,000–3,000 institution table converts to a
+          percentile near 100. Tenths should not be read as meaningful quality
+          gaps. The provider ranks and coverage count carry more context than
+          the final decimal.
+        </p>
+      </aside>
+    </div>
+  </section>
+
+  <section class="section lens-section">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="Six broad lenses"
+        title="Consensus is strongest when methods differ."
+        description="The signal combines rank position, not provider scores or weights. Each source contributes one latest overall table."
+      />
+      <div class="lens-grid">
+        {insights.methodology.consensusProviders.map((edition, index) => {
+          const provider = providerById.get(edition.id);
+          return (
+            <article>
+              <header>
+                <span class="mono">{String(index + 1).padStart(2, '0')}</span>
+                <i style={`--provider:${provider?.color}`}></i>
+              </header>
+              <h3>{edition.label}</h3>
+              <p>{provider?.kind}</p>
+              <dl>
+                <div><dt>Edition</dt><dd>{edition.year}</dd></div>
+                <div><dt>Archive</dt><dd>{provider?.coverage}</dd></div>
+              </dl>
+            </article>
+          );
+        })}
+      </div>
+      <p class="fine-print">
+        Editions are not synchronized to one measurement year. This is a
+        descriptive overlap of the latest available snapshots, not a forecast
+        or an official ranking product.
+      </p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="A disciplined shortlist"
+        title="What the explorer can—and cannot—do."
+      />
+      <div class="use-grid">
+        <article class="good">
+          <span>Use it for</span>
+          <h3>Finding repeated institutional signals</h3>
+          <p>Identify universities whose broad standing is resilient across research-heavy, reputation-heavy, and mixed methods.</p>
+        </article>
+        <article class="good">
+          <span>Use it for</span>
+          <h3>Spotting provider disagreement</h3>
+          <p>A wide rank range is a reason to inspect methodology, subject strengths, and historical stability—not to average harder.</p>
+        </article>
+        <article class="avoid">
+          <span>Do not use it for</span>
+          <h3>Declaring a universal “best”</h3>
+          <p>The archive does not measure affordability, admissions fit, teaching experience, student support, or personal goals.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .explorer-hero {
+    padding-bottom: 22px;
+  }
+
+  .explorer-hero h1 {
+    max-width: 980px;
+  }
+
+  .metric-grid {
+    margin-top: 48px;
+  }
+
+  .explorer-section {
+    padding-top: 40px;
+  }
+
+  .overlap-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(270px, 0.65fr);
+    align-items: end;
+    gap: 24px;
+  }
+
+  .institution-cloud {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .institution-cloud article {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    padding: 15px;
+  }
+
+  .institution-cloud > article > span:first-child {
+    color: #9ba3a7;
+    font-size: 0.59rem;
+  }
+
+  .institution-cloud div {
+    display: grid;
+    min-width: 0;
+  }
+
+  .institution-cloud strong {
+    overflow: hidden;
+    font-size: 0.74rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .institution-cloud small {
+    color: var(--muted);
+    font-size: 0.59rem;
+  }
+
+  .institution-cloud .range {
+    color: var(--teal-dark);
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 0.65rem;
+    font-weight: 750;
+  }
+
+  .score-note {
+    padding: 28px;
+    border-radius: var(--radius);
+    color: white;
+    background: var(--violet);
+    box-shadow: var(--shadow);
+  }
+
+  .score-note > span {
+    font-size: 0.61rem;
+    opacity: 0.7;
+  }
+
+  .score-note > strong {
+    display: block;
+    margin: 18px 0 10px;
+    font-size: 4.6rem;
+    letter-spacing: -0.07em;
+    line-height: 0.9;
+  }
+
+  .score-note p {
+    margin: 0;
+    font-size: 0.75rem;
+    opacity: 0.72;
+  }
+
+  .lens-section {
+    color: white;
+    background: var(--ink);
+  }
+
+  .lens-section :global(.eyebrow) {
+    color: #72ddc4;
+  }
+
+  .lens-section :global(.section-heading p:last-child) {
+    color: #9ba6aa;
+  }
+
+  .lens-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border: 1px solid rgb(255 255 255 / 13%);
+    border-radius: var(--radius);
+  }
+
+  .lens-grid article {
+    min-height: 230px;
+    padding: 22px;
+  }
+
+  .lens-grid article:nth-child(n + 4) {
+    border-top: 1px solid rgb(255 255 255 / 13%);
+  }
+
+  .lens-grid article:not(:nth-child(3n + 1)) {
+    border-left: 1px solid rgb(255 255 255 / 13%);
+  }
+
+  .lens-grid header {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .lens-grid header span {
+    color: #68757b;
+    font-size: 0.59rem;
+  }
+
+  .lens-grid header i {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--provider);
+  }
+
+  .lens-grid h3 {
+    margin: 45px 0 2px;
+  }
+
+  .lens-grid p {
+    color: #98a4a9;
+    font-size: 0.69rem;
+  }
+
+  .lens-grid dl {
+    display: grid;
+    gap: 6px;
+    margin: 20px 0 0;
+  }
+
+  .lens-grid dl div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 6px;
+    border-top: 1px solid rgb(255 255 255 / 9%);
+  }
+
+  .lens-grid dt,
+  .lens-grid dd {
+    font-size: 0.6rem;
+  }
+
+  .lens-grid dt {
+    color: #748087;
+  }
+
+  .lens-grid dd {
+    margin: 0;
+    color: #c8ced0;
+    text-align: right;
+  }
+
+  .lens-section > .shell > .fine-print {
+    margin: 14px 2px 0;
+    color: #879399;
+  }
+
+  .use-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .use-grid article {
+    min-height: 240px;
+    padding: 24px;
+    border: 1px solid var(--line);
+    border-top: 5px solid var(--teal);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+
+  .use-grid article.avoid {
+    border-top-color: var(--coral);
+  }
+
+  .use-grid span {
+    color: var(--muted);
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 0.61rem;
+    text-transform: uppercase;
+  }
+
+  .use-grid h3 {
+    margin-top: 38px;
+  }
+
+  .use-grid p {
+    color: var(--muted);
+    font-size: 0.76rem;
+  }
+
+  @media (max-width: 900px) {
+    .overlap-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .score-note {
+      max-width: 580px;
+    }
+
+    .lens-grid,
+    .use-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .lens-grid article:nth-child(n) {
+      border-top: 0;
+      border-left: 0;
+    }
+
+    .lens-grid article:nth-child(n + 3) {
+      border-top: 1px solid rgb(255 255 255 / 13%);
+    }
+
+    .lens-grid article:nth-child(even) {
+      border-left: 1px solid rgb(255 255 255 / 13%);
+    }
+
+    .use-grid article:last-child {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (max-width: 620px) {
+    .metric-grid,
+    .institution-cloud,
+    .lens-grid,
+    .use-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .lens-grid article:nth-child(n + 2) {
+      border-top: 1px solid rgb(255 255 255 / 13%);
+      border-left: 0;
+    }
+
+    .use-grid article:last-child {
+      grid-column: auto;
+    }
+  }
+</style>

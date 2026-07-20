@@ -1,0 +1,215 @@
+---
+import type { OpenAlexCountryMomentum } from '../data/schema';
+import { signedPercent } from '../lib/format';
+
+interface Props {
+  momentum: OpenAlexCountryMomentum;
+}
+
+const { momentum } = Astro.props;
+const width = 900;
+const height = 390;
+const margin = { left: 60, right: 24, top: 24, bottom: 46 };
+const innerWidth = width - margin.left - margin.right;
+const innerHeight = height - margin.top - margin.bottom;
+const colors: Record<string, string> = {
+  US: '#7168e8',
+  CN: '#f1674b',
+  GB: '#1aa88a',
+  IN: '#c68b13',
+  ID: '#197fba',
+  DE: '#7a654f',
+};
+const indexed = momentum.countries.map((country) => {
+  const first = country.works[0].value;
+  return {
+    ...country,
+    points: country.works.map((point) => ({
+      ...point,
+      index: point.value / first * 100,
+    })),
+  };
+});
+const maxIndex = Math.ceil(
+  Math.max(...indexed.flatMap((country) => country.points.map((point) => point.index))) / 100,
+) * 100;
+const minYear = 2016;
+const maxYear = 2025;
+const x = (year: number) =>
+  margin.left + (year - minYear) / (maxYear - minYear) * innerWidth;
+const y = (value: number) =>
+  margin.top + (maxIndex - value) / maxIndex * innerHeight;
+const ticks = Array.from({ length: maxIndex / 100 + 1 }, (_, index) => index * 100)
+  .filter((tick) => tick > 0);
+const path = (points: Array<{ year: number; index: number }>) =>
+  points.map((point, index) => `${index ? 'L' : 'M'} ${x(point.year)} ${y(point.index)}`).join(' ');
+const charted = indexed.map((country) => ({
+  ...country,
+  stable: country.points.filter((point) => point.year <= momentum.comparisonYear),
+  recent: country.points.filter((point) => point.year >= momentum.comparisonYear),
+  color: colors[country.countryCode] ?? '#647078',
+}));
+---
+
+<div class="momentum surface">
+  <div class="legend">
+    {indexed.map((country) => (
+      <span style={`--country:${colors[country.countryCode] ?? '#647078'}`}>
+        <i></i><b>{country.country}</b>{signedPercent(country.changePercent)}
+      </span>
+    ))}
+  </div>
+  <div class="chart-scroll">
+    <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-labelledby="momentum-title momentum-desc">
+      <title id="momentum-title">Indexed OpenAlex institution-work output by country</title>
+      <desc id="momentum-desc">
+        Country totals for institutions present in every annual snapshot, indexed to 100 in 2016.
+        Solid lines end at 2022; dashed lines show less mature publication years.
+      </desc>
+      {ticks.map((tick) => (
+        <g>
+          <line
+            x1={margin.left}
+            x2={width - margin.right}
+            y1={y(tick)}
+            y2={y(tick)}
+            class="gridline"
+          />
+          <text x={margin.left - 10} y={y(tick) + 4} text-anchor="end">{tick}</text>
+        </g>
+      ))}
+      {[2016, 2018, 2020, 2022, 2025].map((year) => (
+        <text x={x(year)} y={height - 17} text-anchor="middle">{year}</text>
+      ))}
+      <line
+        x1={x(momentum.comparisonYear)}
+        x2={x(momentum.comparisonYear)}
+        y1={margin.top}
+        y2={height - margin.bottom}
+        class="cutoff"
+      />
+      {charted.map((country) => (
+          <g>
+            <path d={path(country.stable)} style={`--country:${country.color}`} />
+            <path d={path(country.recent)} class="recent" style={`--country:${country.color}`} />
+            <circle
+              cx={x(momentum.comparisonYear)}
+              cy={y(country.stable[country.stable.length - 1].index)}
+              r="4"
+              style={`--country:${country.color}`}
+            >
+              <title>
+                {`${country.country}: ${country.changePercent > 0 ? '+' : ''}${country.changePercent}% from 2016 to ${momentum.comparisonYear}`}
+              </title>
+            </circle>
+          </g>
+      ))}
+      <text x={margin.left} y={14} class="axis-label">2016 = 100</text>
+      <text x={x(momentum.comparisonYear) + 7} y={margin.top + 12} class="cutoff-label">
+        comparison cutoff
+      </text>
+    </svg>
+  </div>
+  <p>
+    Institution-work associations, not unique papers. The dashed 2023–2025 segment
+    is shown for continuity but is excluded from growth percentages because recent
+    OpenAlex years are less mature.
+  </p>
+</div>
+
+<style>
+  .momentum {
+    padding: 20px;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    margin: 0 6px 10px;
+  }
+
+  .legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--muted);
+    font-size: 0.64rem;
+  }
+
+  .legend i {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--country);
+  }
+
+  .legend b {
+    color: var(--ink);
+  }
+
+  svg {
+    width: 100%;
+    height: auto;
+  }
+
+  path {
+    fill: none;
+    stroke: var(--country);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 3;
+  }
+
+  path.recent {
+    stroke-dasharray: 6 6;
+    opacity: 0.52;
+  }
+
+  circle {
+    fill: var(--surface);
+    stroke: var(--country);
+    stroke-width: 2.5;
+  }
+
+  .gridline,
+  .cutoff {
+    stroke: #ddd9d1;
+    stroke-width: 1;
+  }
+
+  .cutoff {
+    stroke-dasharray: 3 5;
+  }
+
+  text {
+    fill: #778187;
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 10px;
+  }
+
+  .axis-label,
+  .cutoff-label {
+    fill: #5d686e;
+  }
+
+  .cutoff-label {
+    font-size: 9px;
+  }
+
+  p {
+    margin: 8px 6px 0;
+    color: var(--muted);
+    font-size: 0.68rem;
+  }
+
+  @media (max-width: 620px) {
+    .chart-scroll {
+      overflow-x: auto;
+    }
+
+    svg {
+      min-width: 720px;
+    }
+  }
+</style>

@@ -1,0 +1,430 @@
+---
+import SectionHeading from '../components/SectionHeading.astro';
+import SubjectMatrix from '../components/SubjectMatrix.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { insights } from '../lib/data';
+import { decimal, number } from '../lib/format';
+
+const subjectLeaderCountries = insights.natureSubjects.map(
+  (subject) => subject.leaders[0]?.country,
+);
+const countryCounts = new Map<string, number>();
+subjectLeaderCountries.forEach((country) => {
+  if (country) countryCounts.set(country, (countryCounts.get(country) ?? 0) + 1);
+});
+const split = [...countryCounts.entries()].sort((a, b) => b[1] - a[1]);
+---
+
+<BaseLayout
+  title="Subject lens"
+  description="Compare specialist subject strengths using QS 2026 and Nature Index 2026 academic discipline tables, with transparent limits on what subject rankings can tell you."
+>
+  <section class="page-hero subject-hero">
+    <div class="shell hero-grid">
+      <div>
+        <p class="eyebrow">Program-level evidence</p>
+        <h1>The broad table can hide the field that fits.</h1>
+        <p class="lede">
+          Specialist institutions often disappear inside an overall ranking—or
+          never enter it at all. Subject tables reveal where focused research
+          communities outperform their broad institutional position.
+        </p>
+      </div>
+      <aside class="subject-stamp">
+        <span class="mono">ARCHIVED VIEWS</span>
+        <strong>{number.format(insights.meta.subjectViews)}</strong>
+        <p>provider-specific subjects and fields across the archive</p>
+      </aside>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="Hidden strengths"
+        title="A specialist can lead its field without appearing broadly elite."
+        description="QS 2026 examples are selected reproducibly: subject rank 10 or better, plus an overall rank of 300 or lower—or no overall listing. “Not listed” is a distinct status, never a rank of zero."
+      />
+      <div class="outperformer-grid">
+        {insights.qsSubjectOutperformers.map((institution, index) => (
+          <article class="surface">
+            <header>
+              <span class="mono">{String(index + 1).padStart(2, '0')}</span>
+              <span>{institution.country}</span>
+            </header>
+            <p>{institution.subjectLabel}</p>
+            <h3>{institution.name}</h3>
+            <div class="rank-compare">
+              <span>
+                <small>Subject</small>
+                <strong>#{institution.subjectRankDisplay}</strong>
+              </span>
+              <i aria-hidden="true">→</i>
+              <span>
+                <small>Overall</small>
+                <strong>
+                  {institution.overallRankDisplay
+                    ? `#${institution.overallRankDisplay}`
+                    : 'Not listed'}
+                </strong>
+              </span>
+            </div>
+          </article>
+        ))}
+      </div>
+      <p class="fine-print selection-note">
+        The set balances six unlisted specialists with six listed institutions
+        showing the largest overall-to-subject rank ratios. It is illustrative,
+        not a ranking of “most underrated” universities.
+      </p>
+    </div>
+  </section>
+
+  <section class="section nature-section">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="Nature Index 2026"
+        title="Academic discipline leaders split across research systems."
+        description={`The eight latest academic views are led primarily by ${split.slice(0, 2).map(([country, count]) => `${country} (${count})`).join(' and ')}. Rank is based on fractional Share in the Nature Index journal set.`}
+      />
+      <div class="leader-grid">
+        {insights.natureSubjects.map((subject, index) => (
+          <article>
+            <header>
+              <span class="mono">{String(index + 1).padStart(2, '0')}</span>
+              <h3>{subject.label}</h3>
+            </header>
+            <ol>
+              {subject.leaders.map((leader) => (
+                <li>
+                  <span class="rank">#{leader.rank}</span>
+                  <span>
+                    <strong>{leader.name}</strong>
+                    <small>{leader.country}</small>
+                  </span>
+                  <span class="share">{decimal.format(leader.share)}</span>
+                </li>
+              ))}
+            </ol>
+          </article>
+        ))}
+      </div>
+      <p class="fine-print nature-note">
+        Share is a fractional publication contribution; Count is not used in
+        the displayed rank. Nature Index covers selected natural- and
+        health-science journals and should not be generalized to teaching,
+        access, or all scholarly fields.
+      </p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="Multi-field profile"
+        title="Broad consensus does not imply uniform subject strength."
+        description="Nature academic ranks for the leading multi-provider consensus cohort. A dash means the institution is outside that published subject table or could not be matched safely—not rank zero."
+      />
+      <SubjectMatrix subjects={insights.natureSubjects} rows={insights.subjectMatrix} />
+    </div>
+  </section>
+
+  <section class="section decision-section">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="How to use a subject table"
+        title="Turn a field rank into better questions."
+      />
+      <div class="decision-grid">
+        <article>
+          <span class="mono">01</span>
+          <h3>Check the unit</h3>
+          <p>A university-wide subject score is not a guarantee about every department, degree, or campus.</p>
+        </article>
+        <article>
+          <span class="mono">02</span>
+          <h3>Inspect the metric</h3>
+          <p>Publication Share, reputation, citations, and employer surveys answer different questions.</p>
+        </article>
+        <article>
+          <span class="mono">03</span>
+          <h3>Verify the program</h3>
+          <p>Compare faculty, curriculum, facilities, placement, accreditation, cost, and admissions directly.</p>
+        </article>
+        <article>
+          <span class="mono">04</span>
+          <h3>Look for durability</h3>
+          <p>Prefer recurring strength across years and methods to a single unusually favorable edition.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(230px, 0.5fr);
+    align-items: end;
+    gap: clamp(30px, 7vw, 90px);
+  }
+
+  .subject-stamp {
+    padding: 26px;
+    border: 1px solid var(--line-strong);
+    border-radius: 50% 50% 12px 12px;
+    text-align: center;
+  }
+
+  .subject-stamp span {
+    color: var(--muted);
+    font-size: 0.6rem;
+  }
+
+  .subject-stamp strong {
+    display: block;
+    margin: 10px 0 4px;
+    font-size: 4rem;
+    letter-spacing: -0.07em;
+    line-height: 1;
+  }
+
+  .subject-stamp p {
+    max-width: 180px;
+    margin: 0 auto;
+    color: var(--muted);
+    font-size: 0.68rem;
+  }
+
+  .outperformer-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .outperformer-grid article {
+    display: flex;
+    min-height: 270px;
+    flex-direction: column;
+    padding: 20px;
+  }
+
+  .outperformer-grid header {
+    display: flex;
+    justify-content: space-between;
+    color: var(--muted);
+    font-size: 0.62rem;
+  }
+
+  .outperformer-grid > article > p {
+    margin: 34px 0 4px;
+    color: var(--teal-dark);
+    font-size: 0.67rem;
+    font-weight: 750;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .outperformer-grid h3 {
+    margin-bottom: 22px;
+  }
+
+  .rank-compare {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: end;
+    gap: 10px;
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+  }
+
+  .rank-compare span {
+    display: grid;
+  }
+
+  .rank-compare span:last-child {
+    text-align: right;
+  }
+
+  .rank-compare small {
+    color: var(--muted);
+    font-size: 0.57rem;
+  }
+
+  .rank-compare strong {
+    font-size: 0.82rem;
+  }
+
+  .rank-compare i {
+    color: var(--coral);
+    font-style: normal;
+  }
+
+  .selection-note {
+    margin: 14px 2px 0;
+  }
+
+  .nature-section {
+    color: white;
+    background: var(--ink);
+  }
+
+  .nature-section :global(.eyebrow) {
+    color: #72ddc4;
+  }
+
+  .nature-section :global(.section-heading p:last-child) {
+    color: #9ca6aa;
+  }
+
+  .leader-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1px;
+    overflow: hidden;
+    border: 1px solid rgb(255 255 255 / 14%);
+    border-radius: var(--radius);
+    background: rgb(255 255 255 / 14%);
+  }
+
+  .leader-grid > article {
+    padding: 22px;
+    background: var(--ink);
+  }
+
+  .leader-grid header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .leader-grid header span {
+    color: #6f7c82;
+    font-size: 0.59rem;
+  }
+
+  .leader-grid h3 {
+    margin: 0;
+    font-size: 0.96rem;
+  }
+
+  .leader-grid ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .leader-grid li {
+    display: grid;
+    grid-template-columns: 26px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 0;
+    border-top: 1px solid rgb(255 255 255 / 10%);
+  }
+
+  .leader-grid .rank,
+  .leader-grid .share {
+    color: #7c898e;
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 0.61rem;
+  }
+
+  .leader-grid li > span:nth-child(2) {
+    display: grid;
+    min-width: 0;
+  }
+
+  .leader-grid li strong {
+    overflow: hidden;
+    font-size: 0.7rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .leader-grid li small {
+    color: #8f9ba0;
+    font-size: 0.58rem;
+  }
+
+  .leader-grid .share {
+    color: #73ddc4;
+  }
+
+  .nature-note {
+    margin: 14px 2px 0;
+    color: #8e999e;
+  }
+
+  .decision-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+
+  .decision-grid article {
+    padding: 23px;
+  }
+
+  .decision-grid article + article {
+    border-left: 1px solid var(--line);
+  }
+
+  .decision-grid span {
+    display: inline-grid;
+    width: 34px;
+    height: 34px;
+    margin-bottom: 30px;
+    place-items: center;
+    border-radius: 50%;
+    color: white;
+    background: var(--violet);
+    font-size: 0.59rem;
+  }
+
+  .decision-grid p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.73rem;
+  }
+
+  @media (max-width: 900px) {
+    .outperformer-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .decision-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .decision-grid article:nth-child(3) {
+      border-left: 0;
+    }
+
+    .decision-grid article:nth-child(n + 3) {
+      border-top: 1px solid var(--line);
+    }
+  }
+
+  @media (max-width: 620px) {
+    .hero-grid,
+    .outperformer-grid,
+    .leader-grid,
+    .decision-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .subject-stamp {
+      max-width: 260px;
+    }
+
+    .decision-grid article + article {
+      border-top: 1px solid var(--line);
+      border-left: 0;
+    }
+  }
+</style>

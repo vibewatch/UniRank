@@ -1,0 +1,26 @@
+{
+  "name": "university-ranking-insights",
+  "type": "module",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "data": "../.venv/bin/python ../scripts/generate_insights.py",
+    "dev": "astro dev --background",
+    "dev:status": "astro dev status",
+    "dev:stop": "astro dev stop",
+    "check": "astro check",
+    "build": "astro build",
+    "verify": "npm run check && npm run build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "astro": "^7.1.1"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.9",
+    "typescript": "^6.0.3"
+  }
+}

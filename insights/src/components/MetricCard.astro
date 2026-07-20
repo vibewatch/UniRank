@@ -1,0 +1,85 @@
+---
+interface Props {
+  label: string;
+  value: string;
+  detail: string;
+  tone?: 'teal' | 'coral' | 'violet' | 'yellow';
+  index?: string;
+}
+
+const {
+  label,
+  value,
+  detail,
+  tone = 'teal',
+  index = '01',
+} = Astro.props;
+---
+
+<article class:list={['metric-card', 'surface', tone]}>
+  <div class="metric-top">
+    <span>{label}</span>
+    <span class="mono">{index}</span>
+  </div>
+  <strong>{value}</strong>
+  <p>{detail}</p>
+</article>
+
+<style>
+  .metric-card {
+    position: relative;
+    min-height: 190px;
+    overflow: hidden;
+    padding: 22px;
+  }
+
+  .metric-card::after {
+    position: absolute;
+    right: -24px;
+    bottom: -36px;
+    width: 110px;
+    height: 110px;
+    border: 23px solid var(--accent);
+    border-radius: 50%;
+    content: "";
+    opacity: 0.14;
+  }
+
+  .teal { --accent: var(--teal); }
+  .coral { --accent: var(--coral); }
+  .violet { --accent: var(--violet); }
+  .yellow { --accent: var(--yellow); }
+
+  .metric-top {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 25px;
+    color: var(--muted);
+    font-size: 0.68rem;
+    font-weight: 750;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .metric-top span:last-child {
+    color: var(--accent);
+  }
+
+  strong {
+    display: block;
+    margin-bottom: 8px;
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 720;
+    letter-spacing: -0.055em;
+    line-height: 1;
+  }
+
+  p {
+    position: relative;
+    z-index: 1;
+    max-width: 240px;
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.78rem;
+  }
+</style>

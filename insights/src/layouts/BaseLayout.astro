@@ -1,0 +1,98 @@
+---
+import { insights } from '../lib/data';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+const path = Astro.url.pathname;
+const nav = [
+  { href: '/', label: 'Overview' },
+  { href: '/trends/', label: 'Trends' },
+  { href: '/subjects/', label: 'Subject lens' },
+  { href: '/explorer/', label: 'Explorer' },
+  { href: '/methodology/', label: 'Methodology' },
+];
+const fullTitle = title === 'Overview' ? 'University Signals' : `${title} · University Signals`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#101820" />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{fullTitle}</title>
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header">
+      <div class="shell header-inner">
+        <a class="brand" href="/" aria-label="University Signals home">
+          <span class="brand-mark" aria-hidden="true">
+            <i></i><i></i><i></i><i></i>
+          </span>
+          <span>
+            <strong>University</strong>
+            <small>Signals / 2003—2027</small>
+          </span>
+        </a>
+        <nav aria-label="Primary navigation">
+          {nav.map((item) => (
+            <a
+              href={item.href}
+              class:list={{
+                active: item.href === '/' ? path === '/' : path.startsWith(item.href),
+              }}
+              aria-current={
+                item.href === '/'
+                  ? path === '/' ? 'page' : undefined
+                  : path.startsWith(item.href) ? 'page' : undefined
+              }
+            >
+              {item.label}
+            </a>
+          ))}
+        </nav>
+      </div>
+    </header>
+    <main id="main">
+      <slot />
+    </main>
+    <footer>
+      <div class="shell footer-grid">
+        <div>
+          <a class="brand footer-brand" href="/">
+            <span class="brand-mark" aria-hidden="true">
+              <i></i><i></i><i></i><i></i>
+            </span>
+            <span><strong>University Signals</strong></span>
+          </a>
+          <p>
+            A transparent analytical layer over provider-published and open
+            bibliometric data. Not a replacement for the source rankings.
+          </p>
+        </div>
+        <div>
+          <span class="footer-label">Archive</span>
+          <strong>{insights.meta.archiveRows.toLocaleString('en-US')} rows</strong>
+          <span>{insights.meta.csvFiles} snapshots · {insights.meta.providers} providers</span>
+        </div>
+        <div>
+          <span class="footer-label">Navigate</span>
+          <a href="/methodology/">Methods & caveats</a>
+          <a href="/explorer/">Explore institutions</a>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

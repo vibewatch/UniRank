@@ -1,0 +1,141 @@
+---
+import type { Provider } from '../data/schema';
+import { compact } from '../lib/format';
+
+interface Props {
+  providers: Provider[];
+  start?: number;
+  end?: number;
+}
+
+const { providers, start = 2003, end = 2027 } = Astro.props;
+const span = end - start;
+---
+
+<div class="timeline surface">
+  <div class="axis mono">
+    <span>{start}</span><span>2011</span><span>2019</span><span>{end}</span>
+  </div>
+  {providers.map((provider) => {
+    const left = (provider.firstYear - start) / span * 100;
+    const width = Math.max(2, (provider.lastYear - provider.firstYear) / span * 100);
+    return (
+      <div class="timeline-row">
+        <div class="provider">
+          <i style={`--provider:${provider.color}`}></i>
+          <span>
+            <strong>{provider.label}</strong>
+            <small>{provider.kind}</small>
+          </span>
+        </div>
+        <div class="rail">
+          <span
+            class="range"
+            style={`--left:${left}%;--width:${width}%;--provider:${provider.color}`}
+            title={`${provider.firstYear}–${provider.lastYear}`}
+          ></span>
+        </div>
+        <span class="count mono">{compact.format(provider.records)}</span>
+      </div>
+    );
+  })}
+</div>
+
+<style>
+  .timeline {
+    overflow: hidden;
+    padding: 18px 22px 22px;
+  }
+
+  .axis,
+  .timeline-row {
+    display: grid;
+    grid-template-columns: 190px minmax(260px, 1fr) 58px;
+    gap: 18px;
+  }
+
+  .axis {
+    margin: 0 0 8px;
+    padding-left: 208px;
+    color: #8b9499;
+    font-size: 0.58rem;
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .axis span:last-child {
+    text-align: right;
+  }
+
+  .timeline-row {
+    min-width: 570px;
+    align-items: center;
+    padding: 9px 0;
+    border-top: 1px solid #e7e4dd;
+  }
+
+  .provider {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .provider i {
+    width: 8px;
+    height: 8px;
+    flex: none;
+    border-radius: 50%;
+    background: var(--provider);
+  }
+
+  .provider span {
+    display: grid;
+    min-width: 0;
+  }
+
+  .provider strong {
+    overflow: hidden;
+    font-size: 0.76rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .provider small {
+    color: var(--muted);
+    font-size: 0.6rem;
+  }
+
+  .rail {
+    position: relative;
+    height: 7px;
+    border-radius: 999px;
+    background:
+      linear-gradient(90deg, transparent 24.8%, #dcd9d1 25%, transparent 25.2%),
+      linear-gradient(90deg, transparent 49.8%, #dcd9d1 50%, transparent 50.2%),
+      linear-gradient(90deg, transparent 74.8%, #dcd9d1 75%, transparent 75.2%),
+      #ece9e2;
+  }
+
+  .range {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--left);
+    width: var(--width);
+    min-width: 8px;
+    border-radius: inherit;
+    background: var(--provider);
+  }
+
+  .count {
+    color: var(--muted);
+    font-size: 0.65rem;
+    text-align: right;
+  }
+
+  @media (max-width: 700px) {
+    .timeline {
+      overflow-x: auto;
+    }
+  }
+</style>

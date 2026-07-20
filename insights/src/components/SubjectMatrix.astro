@@ -1,0 +1,158 @@
+---
+import type { NatureSubject, SubjectMatrixRow } from '../data/schema';
+
+interface Props {
+  subjects: NatureSubject[];
+  rows: SubjectMatrixRow[];
+}
+
+const { subjects, rows } = Astro.props;
+const cellClass = (rank: number | null) => {
+  if (rank === null) return 'missing';
+  if (rank <= 10) return 'elite';
+  if (rank <= 50) return 'strong';
+  if (rank <= 100) return 'visible';
+  return 'tracked';
+};
+---
+
+<div class="matrix-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Institution</th>
+        {subjects.map((subject) => (
+          <th title={subject.label}>{subject.label.replace(' sciences', '')}</th>
+        ))}
+      </tr>
+    </thead>
+    <tbody>
+      {rows.map((row) => (
+        <tr>
+          <td>
+            <strong>{row.name}</strong>
+            <small>{row.country}</small>
+          </td>
+          {subjects.map((subject) => {
+            const rank = row.ranks[subject.subject] ?? null;
+            return (
+              <td>
+                <span
+                  class={cellClass(rank)}
+                  title={`${row.name} · ${subject.label}: ${rank ? `#${rank}` : 'outside published table'}`}
+                >
+                  {rank ? rank : '—'}
+                </span>
+              </td>
+            );
+          })}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+<div class="matrix-legend">
+  <span><i class="elite"></i>Top 10</span>
+  <span><i class="strong"></i>Top 50</span>
+  <span><i class="visible"></i>Top 100</span>
+  <span><i class="tracked"></i>Top 500</span>
+</div>
+
+<style>
+  .matrix-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+  }
+
+  table {
+    min-width: 930px;
+  }
+
+  th:not(:first-child),
+  td:not(:first-child) {
+    width: 82px;
+    text-align: center;
+  }
+
+  td:first-child {
+    width: 250px;
+  }
+
+  td:first-child strong,
+  td:first-child small {
+    display: block;
+  }
+
+  td:first-child strong {
+    max-width: 235px;
+    overflow: hidden;
+    font-size: 0.76rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  td:first-child small {
+    color: var(--muted);
+    font-size: 0.62rem;
+  }
+
+  td span {
+    display: inline-grid;
+    width: 38px;
+    height: 30px;
+    place-items: center;
+    border-radius: 8px;
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 0.66rem;
+    font-weight: 750;
+  }
+
+  .elite {
+    color: #075545;
+    background: #bdebdc;
+  }
+
+  .strong {
+    color: #4f4a9d;
+    background: #ddd9ff;
+  }
+
+  .visible {
+    color: #84572a;
+    background: #f4dfb2;
+  }
+
+  .tracked {
+    color: #5f666a;
+    background: #e6e5df;
+  }
+
+  .missing {
+    color: #a4aaad;
+    background: transparent;
+  }
+
+  .matrix-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 14px;
+    color: var(--muted);
+    font-size: 0.66rem;
+  }
+
+  .matrix-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .matrix-legend i {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+  }
+</style>
