@@ -396,42 +396,53 @@ function buildCountryAtlas(snapshots: Snapshot[], consensus: Row[]): Row {
   return { metrics: ATLAS_METRICS, countries: countriesOut };
 }
 
-function buildSubjectLeaders(snapshots: Snapshot[]): Row[] {
-  const snapshot = globalSnapshotFor(snapshots, "qs", 2026);
-  const frame = readColumns(snapshot.path, new Set(["ranking_scope", "title", "country", "rank_display", "rank"]));
+const SUBJECT_LABEL_MAPS: Record<string, Record<string, string>> = { qs: QS_SUBJECT_LABELS, scimago: SCIMAGO_SUBJECT_LABELS };
+const SUBJECT_READ_COLUMNS = new Set(["ranking_scope", "name", "title", "country", "country_code", "location", "ranking", "rank", "rank_display", "rank_order", "ranking_is_tied"]);
+const SUBJECT_PROVIDERS = ["qs", "arwu", "usnews", "times", "ntu", "scimago", "leiden"] as const;
+
+function subjectDisplayLabel(provider: string, scope: string): string {
+  const map = SUBJECT_LABEL_MAPS[provider];
+  if (map && map[scope]) return map[scope];
+  return titleCase(scope.replace(/^field-/, "").replace(/-/g, " "));
+}
+
+function buildSubjectBoards(snapshots: Snapshot[], provider: string): Row[] {
+  const candidates = snapshots.filter((s) => s.source === provider && isGlobal(s)).sort((a, b) => b.year - a.year || sortStrings(b.path.split("/").pop()!, a.path.split("/").pop()!));
+  for (const snapshot of candidates) {
+    const boards = subjectBoardsFromSnapshot(snapshot, provider);
+    if (boards.length) return boards;
+  }
+  return [];
+}
+
+function subjectBoardsFromSnapshot(snapshot: Snapshot, provider: string): Row[] {
+  const frame = readColumns(snapshot.path, SUBJECT_READ_COLUMNS);
   const bySubject = new Map<string, Row[]>();
-  for (const row of frame) { const scope = String(row.ranking_scope || ""); if (!scope || scope === "overall") continue; if (!bySubject.has(scope)) bySubject.set(scope, []); bySubject.get(scope)!.push(row); }
+  for (const row of frame) { const scope = String(row.ranking_scope || ""); if (!scope || scope === "overall" || scope.startsWith("academic-")) continue; if (!bySubject.has(scope)) bySubject.set(scope, []); bySubject.get(scope)!.push(row); }
   const boards: Row[] = [];
   for (const [scope, rows] of bySubject) {
     const ranked: Row[] = [];
-    for (const row of rows) { const [rank, display] = rowRank(row, "qs"); if (rank === null) continue; const [code, label] = rowCountry(row, "qs"); const name = String(row.title).replace(/\s+/g, " ").replace(" ,", ",").trim(); ranked.push({ rank: Math.trunc(rank), rankDisplay: display, name, country: label, countryCode: code }); }
+    const seen = new Set<string>();
+    for (const row of rows) {
+      const [rank, display] = rowRank(row, provider); if (rank === null) continue;
+      const name = rowName(row, provider).replace(/\s+/g, " ").replace(" ,", ",").replace(/\s*\*+\s*$/, "").trim(); if (!name) continue;
+      const [code, label] = rowCountry(row, provider);
+      const dedupeKey = entityKey(name, code);
+      if (seen.has(dedupeKey)) continue; seen.add(dedupeKey);
+      ranked.push({ rank: Math.trunc(rank), rankDisplay: display, name, country: label, countryCode: code });
+    }
     if (ranked.length < 5) continue;
     ranked.sort((a, b) => a.rank - b.rank || sortStrings(a.name, b.name));
     const counts = countItems(ranked.map((r) => r.countryCode).filter(Boolean) as string[]);
     const countryDist = [...counts.entries()].sort((a, b) => b[1] - a[1] || sortStrings(countryLabel(a[0]), countryLabel(b[0]))).slice(0, 8).map(([code, count]) => ({ countryCode: code, country: countryLabel(code), count }));
-    boards.push({ subject: scope, label: QS_SUBJECT_LABELS[scope] ?? titleCase(scope.replace(/-/g, " ")), provider: "qs", providerLabel: PROVIDER_META.qs.label, year: 2026, totalRanked: ranked.length, countries: countryDist, institutions: ranked.slice(0, 12) });
+    boards.push({ subject: scope, label: subjectDisplayLabel(provider, scope), provider, providerLabel: PROVIDER_META[provider].label, year: snapshot.year, totalRanked: ranked.length, countries: countryDist, institutions: ranked.slice(0, 12) });
   }
   boards.sort((a, b) => sortStrings(a.label, b.label));
   return boards;
 }
 
-function buildScimagoSubjectLeaders(snapshots: Snapshot[]): Row[] {
-  const snapshot = latestGlobalSnapshots(snapshots, ["scimago"]).scimago;
-  const frame = readColumns(snapshot.path, new Set(["ranking_scope", "ranking", "name", "country", "subject_area_code"]));
-  const bySubject = new Map<string, Row[]>();
-  for (const row of frame) { const scope = String(row.ranking_scope || ""); if (!scope || scope === "overall") continue; if (!bySubject.has(scope)) bySubject.set(scope, []); bySubject.get(scope)!.push(row); }
-  const boards: Row[] = [];
-  for (const [scope, rows] of bySubject) {
-    const ranked: Row[] = [];
-    for (const row of rows) { const [rank, display] = rowRank(row, "scimago"); if (rank === null) continue; const [code, label] = rowCountry(row, "scimago"); const name = rowName(row, "scimago").replace(/\s*\*+\s*$/, "").trim(); if (!name) continue; ranked.push({ rank: Math.trunc(rank), rankDisplay: display, name, country: label, countryCode: code }); }
-    if (ranked.length < 5) continue;
-    ranked.sort((a, b) => a.rank - b.rank || sortStrings(a.name, b.name));
-    const counts = countItems(ranked.map((r) => r.countryCode).filter(Boolean) as string[]);
-    const countryDist = [...counts.entries()].sort((a, b) => b[1] - a[1] || sortStrings(countryLabel(a[0]), countryLabel(b[0]))).slice(0, 8).map(([code, count]) => ({ countryCode: code, country: countryLabel(code), count }));
-    boards.push({ subject: scope, label: SCIMAGO_SUBJECT_LABELS[scope] ?? titleCase(scope.replace(/-/g, " ")), provider: "scimago", providerLabel: PROVIDER_META.scimago.label, year: snapshot.year, totalRanked: ranked.length, countries: countryDist, institutions: ranked.slice(0, 12) });
-  }
-  boards.sort((a, b) => sortStrings(a.label, b.label));
-  return boards;
+function buildAllSubjectBoards(snapshots: Snapshot[]): Row[] {
+  return SUBJECT_PROVIDERS.flatMap((provider) => buildSubjectBoards(snapshots, provider));
 }
 
 function uniqueCountryCount(snapshots: Snapshot[]): number { const frame = readColumns(globalSnapshotFor(snapshots, "openalex", 2025).path, new Set(["country_code", "country"])); return new Set(frame.map((row) => rowCountry(row, "openalex")[0]).filter(Boolean)).size; }
@@ -475,7 +486,7 @@ function buildInstitutionDirectory(snapshots: Snapshot[], consensus: Row[]): Row
   const countries = [...new Set(institutions.map((i) => String(i.country)))].sort(sortStrings);
   return { meta: { count: institutions.length, providerCount: providers.length, consensusCount: consensus.length, note: "Latest overall or broad edition per provider; institutions merged by normalized name and country." }, providers, countries, institutions };
 }
-function buildPayload(): { insights: Row; directory: Row } { const snapshots = loadSnapshots(); const providers = providerInventory(snapshots); const [consensus, countryFootprint, providerTop100] = buildConsensus(snapshots); const [natureSubjects, subjectMatrix] = buildNatureSubjects(snapshots, consensus); const latest = latestGlobalSnapshots(snapshots); const insights = { meta: archiveMetadata(snapshots, providers), providers, consensus, countryFootprint, providerTop100, rankingUniverse: buildRankingUniverse(snapshots), arwuConcentration: buildArwuConcentration(snapshots), arwuConcentrationTrend: buildArwuConcentrationTrend(snapshots), natureCountryShift: buildNatureCountryShift(snapshots), natureSubjects, subjectMatrix, subjectLeaders: buildSubjectLeaders(snapshots), scimagoSubjectLeaders: buildScimagoSubjectLeaders(snapshots), qsSubjectOutperformers: buildQsSubjectOutperformers(snapshots), countryAtlas: buildCountryAtlas(snapshots, consensus), openAlexGrowth: buildOpenAlexGrowth(snapshots, consensus.slice(0, 40)), openAlexCountryMomentum: buildOpenAlexCountryMomentum(snapshots), leidenScaleImpact: buildLeidenScatter(snapshots), leidenSummary: buildLeidenSummary(snapshots), institutionTrends: buildInstitutionTrends(snapshots, consensus), methodology: { consensusProviders: CONSENSUS_PROVIDERS.map((source) => ({ id: source, label: PROVIDER_META[source].label, year: latest[source].year })), consensusMinimumProviders: 4, consensusDefinition: "Mean within-table percentile across the latest available broad overall editions; it is an analytical index, not a new ranking.", natureWindow: "2016 edition (2015 output) to 2026 edition (2025 output)", openAlexWindow: "Publication years 2016 to 2025" } }; return { insights, directory: buildInstitutionDirectory(snapshots, consensus) }; }
+function buildPayload(): { insights: Row; directory: Row } { const snapshots = loadSnapshots(); const providers = providerInventory(snapshots); const [consensus, countryFootprint, providerTop100] = buildConsensus(snapshots); const [natureSubjects, subjectMatrix] = buildNatureSubjects(snapshots, consensus); const latest = latestGlobalSnapshots(snapshots); const insights = { meta: archiveMetadata(snapshots, providers), providers, consensus, countryFootprint, providerTop100, rankingUniverse: buildRankingUniverse(snapshots), arwuConcentration: buildArwuConcentration(snapshots), arwuConcentrationTrend: buildArwuConcentrationTrend(snapshots), natureCountryShift: buildNatureCountryShift(snapshots), natureSubjects, subjectMatrix, subjectBoards: buildAllSubjectBoards(snapshots), qsSubjectOutperformers: buildQsSubjectOutperformers(snapshots), countryAtlas: buildCountryAtlas(snapshots, consensus), openAlexGrowth: buildOpenAlexGrowth(snapshots, consensus.slice(0, 40)), openAlexCountryMomentum: buildOpenAlexCountryMomentum(snapshots), leidenScaleImpact: buildLeidenScatter(snapshots), leidenSummary: buildLeidenSummary(snapshots), institutionTrends: buildInstitutionTrends(snapshots, consensus), methodology: { consensusProviders: CONSENSUS_PROVIDERS.map((source) => ({ id: source, label: PROVIDER_META[source].label, year: latest[source].year })), consensusMinimumProviders: 4, consensusDefinition: "Mean within-table percentile across the latest available broad overall editions; it is an analytical index, not a new ranking.", natureWindow: "2016 edition (2015 output) to 2026 edition (2025 output)", openAlexWindow: "Publication years 2016 to 2025" } }; return { insights, directory: buildInstitutionDirectory(snapshots, consensus) }; }
 function main(): void { const { insights, directory } = buildPayload(); mkdirSync(dirname(OUTPUT_PATH), { recursive: true }); writeFileSync(OUTPUT_PATH, JSON.stringify(insights, null, 2) + "\n", "utf8"); console.log(`Wrote ${relative(ROOT, OUTPUT_PATH)} (${(readFileSync(OUTPUT_PATH).byteLength / 1024).toFixed(1)} KiB)`); const dir = directory as Row; mkdirSync(dirname(DIRECTORY_PATH), { recursive: true }); writeFileSync(DIRECTORY_PATH, JSON.stringify(dir) + "\n", "utf8"); console.log(`Wrote ${relative(ROOT, DIRECTORY_PATH)} (${(readFileSync(DIRECTORY_PATH).byteLength / 1024).toFixed(1)} KiB, ${dir.institutions.length} institutions)`); const facets = { meta: dir.meta, providers: dir.providers, countries: dir.countries }; writeFileSync(DIRECTORY_FACETS_PATH, JSON.stringify(facets, null, 2) + "\n", "utf8"); console.log(`Wrote ${relative(ROOT, DIRECTORY_FACETS_PATH)} (${(readFileSync(DIRECTORY_FACETS_PATH).byteLength / 1024).toFixed(1)} KiB)`); }
 
 main();

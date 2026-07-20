@@ -6,11 +6,24 @@ interface Props {
   boards: SubjectLeaderBoard[];
   note?: string;
   defaultSubject?: string;
+  multiProvider?: boolean;
 }
 
-const { boards, note, defaultSubject } = Astro.props;
+const { boards, note, defaultSubject, multiProvider = false } = Astro.props;
 const preferredSubject = defaultSubject ?? 'computer-science-information-systems';
-const preferred = boards.findIndex((board) => board.subject === preferredSubject);
+const providerOrder: { provider: string; providerLabel: string }[] = [];
+const seenProviders = new Set<string>();
+for (const board of boards) {
+  if (seenProviders.has(board.provider)) continue;
+  seenProviders.add(board.provider);
+  providerOrder.push({ provider: board.provider, providerLabel: board.providerLabel });
+}
+const showProvider = multiProvider && providerOrder.length > 1;
+const initialProvider = providerOrder[0]?.provider ?? '';
+const initialBoards = showProvider
+  ? boards.filter((board) => board.provider === initialProvider)
+  : boards;
+const preferred = initialBoards.findIndex((board) => board.subject === preferredSubject);
 const defaultIndex = preferred >= 0 ? preferred : 0;
 const serialized = JSON.stringify(boards).replaceAll('<', '\\u003c');
 const fineNote =
@@ -20,10 +33,22 @@ const fineNote =
 
 <section class="subject-explorer surface" data-subject-explorer>
   <div class="controls">
+    {showProvider && (
+      <label>
+        <span>Ranking source</span>
+        <CustomSelect data-provider aria-label="Choose a ranking source">
+          {providerOrder.map((entry, index) => (
+            <option value={entry.provider} selected={index === 0}>
+              {entry.providerLabel}
+            </option>
+          ))}
+        </CustomSelect>
+      </label>
+    )}
     <label>
       <span>Subject table</span>
       <CustomSelect data-subject aria-label="Choose a subject table">
-        {boards.map((board, index) => (
+        {initialBoards.map((board, index) => (
           <option value={board.subject} selected={index === defaultIndex}>
             {board.label}
           </option>
@@ -89,6 +114,7 @@ const fineNote =
     if (!dataElement || root.dataset.initialized === 'true') return;
     root.dataset.initialized = 'true';
     const boards = JSON.parse(dataElement.textContent || '[]') as Board[];
+    const providerSelect = root.querySelector<HTMLSelectElement>('[data-provider]');
     const subjectSelect = root.querySelector<HTMLSelectElement>('[data-subject]');
     const chart = root.querySelector<SVGSVGElement>('[data-chart]');
     const caption = root.querySelector<HTMLElement>('[data-chart-caption]');
@@ -108,8 +134,19 @@ const fineNote =
       return element;
     };
 
-    const selectedBoard = () =>
-      boards.find((board) => board.subject === subjectSelect?.value) ?? boards[0];
+    const boardsForProvider = () =>
+      providerSelect
+        ? boards.filter((board) => board.provider === providerSelect.value)
+        : boards;
+
+    const selectedBoard = () => {
+      const scoped = boardsForProvider();
+      return (
+        scoped.find((board) => board.subject === subjectSelect?.value) ??
+        scoped[0] ??
+        boards[0]
+      );
+    };
 
     const renderChart = (board: Board) => {
       if (!chart) return;
@@ -259,6 +296,22 @@ const fineNote =
       );
     };
 
+    const onProviderChange = () => {
+      if (!subjectSelect) return;
+      const scoped = boardsForProvider();
+      subjectSelect.replaceChildren(
+        ...scoped.map((board) => {
+          const option = document.createElement('option');
+          option.value = board.subject;
+          option.textContent = board.label;
+          return option;
+        }),
+      );
+      subjectSelect.value = scoped[0]?.subject ?? '';
+      subjectSelect.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+
+    providerSelect?.addEventListener('change', onProviderChange);
     subjectSelect?.addEventListener('change', render);
     render();
   };

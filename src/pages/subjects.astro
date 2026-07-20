@@ -14,13 +14,16 @@ subjectLeaderCountries.forEach((country) => {
   if (country) countryCounts.set(country, (countryCounts.get(country) ?? 0) + 1);
 });
 const split = [...countryCounts.entries()].sort((a, b) => b[1] - a[1]);
-const scimagoYear = insights.scimagoSubjectLeaders[0]?.year ?? 2026;
-const scimagoNote = `SCImago Institutions Rankings ${scimagoYear}, universities only. Bars count how many ranked universities each country contributes to this research area (top eight shown); the leaderboard lists the highest-placed universities. SCImago is a bibliometric measure weighted toward research output and citation impact, so large research-intensive systems dominate—treat it as a research-scale signal, not reputation or teaching quality.`;
+const subjectBoardCount = insights.subjectBoards.length;
+const subjectProviderCount = new Set(
+  insights.subjectBoards.map((board) => board.provider),
+).size;
+const subjectNote = `Subject tables from ${subjectProviderCount} rankings: QS, ShanghaiRanking (GRAS), U.S. News, Times Higher Education, NTU, SCImago research areas, and Leiden. Bars count how many ranked institutions each country contributes to the selected field (top eight shown); the leaderboard lists the highest-placed institutions. Providers differ in method—publisher rankings weight reputation and surveys while NTU, SCImago, and Leiden are bibliometric—so read each as its own lens, not a shared scale. Banded ranks use their lower bound.`;
 ---
 
 <BaseLayout
   title="Subject lens"
-  description="Compare specialist subject strengths using QS 2026, SCImago 2026 research areas, and Nature Index 2026 academic discipline tables, with transparent limits on what subject rankings can tell you."
+  description="Compare specialist subject strengths across seven rankings—QS, ShanghaiRanking GRAS, U.S. News, Times, NTU, SCImago research areas, and Leiden—plus Nature Index academic tables, with transparent limits on what subject rankings can tell you."
 >
   <section class="page-hero subject-hero">
     <div class="shell hero-grid">
@@ -87,24 +90,13 @@ const scimagoNote = `SCImago Institutions Rankings ${scimagoYear}, universities 
     <div class="shell">
       <SectionHeading
         eyebrow="Explore the field"
-        title="Open any of 60 QS subject tables and see who leads."
-        description="Pick a discipline to compare its highest-placed institutions with the countries that supply the most ranked programs. Every field concentrates differently—some in one system, others spread across many."
-      />
-      <SubjectExplorer boards={insights.subjectLeaders} />
-    </div>
-  </section>
-
-  <section class="section explorer-section scimago-section">
-    <div class="shell">
-      <SectionHeading
-        eyebrow="Bibliometric field view"
-        title="Nineteen SCImago research areas—covering every discipline."
-        description="SCImago Institutions Rankings score universities by research output and citation impact across broad Scopus areas, including arts, humanities, and social sciences that reputation and journal-set measures underweight. Pick an area to see its highest-placed universities and the systems supplying the most ranked institutions."
+        title={`${subjectBoardCount} subject tables from ${subjectProviderCount} rankings—pick a source and a discipline.`}
+        description="Switch between publisher and bibliometric rankings, then open any field to compare its highest-placed institutions with the countries supplying the most ranked programs. Coverage runs from QS's 60 subjects and ShanghaiRanking's 57 GRAS tables to U.S. News, Times, NTU, SCImago research areas, and Leiden's broad fields."
       />
       <SubjectExplorer
-        boards={insights.scimagoSubjectLeaders}
-        defaultSubject="computer-science"
-        note={scimagoNote}
+        boards={insights.subjectBoards}
+        multiProvider
+        note={subjectNote}
       />
     </div>
   </section>
