@@ -1,56 +1,70 @@
-# University Ranking Scraper
+# University Signals
 
-Collect current and historical university rankings from eleven providers. The CLI
-supports worldwide and country-filtered exports, subject/major rankings, year
-ranges, incremental CSV updates, and JSON manifests that record failures,
-retrieval methods, licenses, and required attribution.
+A static **Astro** data-insights site backed by a **Node.js/TypeScript** ranking
+scraper. The site ("University Signals") is the primary project; the scraper
+under [`scraper/`](scraper/) is the supporting tool that collects current and
+historical university rankings from eleven providers and regenerates the site's
+analytical dataset.
+
+The scraper supports worldwide and country-filtered exports, subject/major
+rankings, year ranges, incremental CSV updates, and JSON manifests that record
+failures, retrieval methods, licenses, and required attribution.
 
 ## Repository structure
 
 ```text
 .
-├── apps/
-│   └── insights/                  # Deployable Astro data-insights site
-├── data/                          # Versioned ranking snapshots and manifests
-├── scripts/                       # Repository-level data generation tools
-├── src/
-│   └── university_ranking_scraper/ # Installable Python package and CLI
-├── tests/                         # Scraper and analytics regression tests
-└── pyproject.toml                 # Python build metadata and dependencies
+├── src/                     # Astro insights site (pages, components, layouts)
+│   └── data/                # Generated insights.json + schema consumed by the site
+├── public/                  # Static assets served as-is
+├── scraper/                 # Node.js/TypeScript scraping engine (support scripts)
+│   ├── providers/           # Eleven provider adapters
+│   ├── fetch/               # ReadWise-style fetch strategy chain (bots, Chrome, proxy)
+│   ├── insights/            # insights.json generator
+│   ├── cli.ts               # Scraper command-line entry point
+│   └── tsconfig.json        # Type-check config for the scraper
+├── data/                    # Versioned ranking snapshots and manifests
+├── tests/                   # Node regression tests (node:test)
+├── astro.config.mjs         # Astro site configuration
+└── package.json             # Node dependencies and scripts (site + scraper)
 ```
 
-The boundaries are intentional: `src/` contains reusable Python behavior,
-`apps/` contains independently deployable interfaces, `scripts/` connects
-repository data to those applications, and `data/` remains separate from
-installable packages so snapshots are never bundled into Python distributions.
+Everything runs on Node.js — there is no Python toolchain. The scraper is
+executed directly with Node's native TypeScript support (Node 22+/24).
 
 ## Data insights website
 
-`apps/insights/` contains **University Signals**, a static Astro data-atlas generated
-from the committed ranking snapshots. It provides cross-provider consensus,
-historical trajectories, subject strengths, research geography, ranking-universe
-growth, and publication-scale versus citation-impact analysis.
+`src/` contains **University Signals**, a static Astro data-atlas generated from
+the committed ranking snapshots. It provides cross-provider consensus, historical
+trajectories, subject strengths, research geography, ranking-universe growth, and
+publication-scale versus citation-impact analysis.
 
 ```bash
-# Regenerate the browser-ready analytical dataset
-.venv/bin/python scripts/generate_insights.py
+# Install dependencies (site + scraper)
+npm install
 
-# Install, validate, and build the static site
-cd apps/insights
-npm ci
+# Regenerate the browser-ready analytical dataset (src/data/insights.json)
+npm run insights
+
+# Type-check and build the static site
 npm run verify
+
+# Local development server
+npm run dev
 ```
 
-See [`apps/insights/README.md`](apps/insights/README.md) for development, methodology, and
-deployment details. The generated site preserves source editions and caveats;
-it is not a replacement for provider-published tables.
+The generated site preserves source editions and caveats; it is not a
+replacement for provider-published tables.
 
 ## Installation
 
 ```bash
-python3 -m venv .venv
-.venv/bin/pip install -e .
+npm install
 ```
+
+Node's built-in type stripping runs the scraper's `.ts` sources directly, so no
+build step or transpiler is required. Type-check the scraper with
+`npm run typecheck:scraper`.
 
 ## Providers
 
@@ -136,39 +150,39 @@ manifest's `data_license` and `data_attribution` fields before reuse.
 
 ```bash
 # Leiden Open Edition: overall plus all five fields
-.venv/bin/python -m university_ranking_scraper \
+node scraper/cli.ts \
   --website leiden --worldwide --all-subjects --include-overall \
   --year 2025 --output-dir data/open
 
 # OpenAlex derived overall ranking
-.venv/bin/python -m university_ranking_scraper \
+node scraper/cli.ts \
   --website openalex --worldwide --overall-only \
   --year 2025 --output-dir data/open
 
 # Webometrics July 2025
-.venv/bin/python -m university_ranking_scraper \
+node scraper/cli.ts \
   --website webometrics --worldwide --overall-only \
   --year 2025 --output-dir data/open
 
 # Provider-controlled snapshots: collect only with appropriate permission
-.venv/bin/python -m university_ranking_scraper \
+node scraper/cli.ts \
   --website cwur --worldwide --overall-only \
   --year 2026 --output-dir data/restricted
 
-.venv/bin/python -m university_ranking_scraper \
+node scraper/cli.ts \
   --website ntu --worldwide --all-subjects --include-overall \
   --year 2025 --output-dir data/restricted
 
-.venv/bin/python -m university_ranking_scraper \
+node scraper/cli.ts \
   --website arwu --worldwide --all-subjects --include-overall \
   --year 2025 --output-dir data/restricted
 
-.venv/bin/python -m university_ranking_scraper \
+node scraper/cli.ts \
   --website scimago --worldwide --all-subjects --include-overall \
   --year 2026 --reader-proxy --request-delay 2 \
   --output-dir data/restricted
 
-.venv/bin/python -m university_ranking_scraper \
+node scraper/cli.ts \
   --website nature --worldwide --all-subjects --include-overall \
   --year 2026 --reader-proxy --request-delay 1 \
   --output-dir data/restricted
@@ -177,11 +191,11 @@ manifest's `data_license` and `data_attribution` fields before reuse.
 Country-filtered US examples:
 
 ```bash
-.venv/bin/python -m university_ranking_scraper \
+node scraper/cli.ts \
   --website usnews --country united-states \
   --all-subjects --include-overall --workers 4 --output-dir data
 
-.venv/bin/python -m university_ranking_scraper \
+node scraper/cli.ts \
   --website times --country united-states \
   --all-subjects --include-overall --year 2026 \
   --workers 3 --output-dir data
@@ -193,7 +207,7 @@ constructed public ranking URLs (never cookies or credentials) through
 `r.jina.ai`:
 
 ```bash
-.venv/bin/python -m university_ranking_scraper \
+node scraper/cli.ts \
   --website qs --worldwide --all-subjects --include-overall \
   --year 2026 --reader-proxy --output-dir data
 ```
@@ -211,7 +225,7 @@ committed):
 
 ```bash
 export JINA_API_KEY=jina_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-.venv/bin/python -m university_ranking_scraper \
+node scraper/cli.ts \
   --website qs --worldwide --all-subjects \
   --year 2025 --reader-proxy --output-dir data/historical
 ```
@@ -220,59 +234,82 @@ Without a key the scraper still works, retrying with jittered exponential
 backoff, rotating User-Agent profiles, and reader cache-busting; a key simply
 makes wide historical sweeps far more reliable.
 
+### Fetch strategy chain
+
+HTML page fetches (QS, SCImago, Nature, and other rendered pages) run through a
+layered fetch chain ported from the `ReadWise` scraper. Each layer is attempted
+in order until one returns usable HTML:
+
+1. **Direct origin request** with a realistic browser User-Agent.
+2. **User-Agent profile rotation**, including a search-bot profile fallback
+   (on by default; disable with `SCRAPER_FETCH_PROFILE_RETRY=0`).
+3. **Headless Chrome render** for JavaScript-heavy pages — opt-in via
+   `SCRAPER_FETCH_BROWSER=1`. Chrome selection is controlled by
+   `SCRAPER_CHROME_CHANNEL` (default `chrome`) or an explicit
+   `SCRAPER_CHROME_PATH`.
+4. **`r.jina.ai` reader proxy** (on by default; disable with
+   `SCRAPER_FETCH_READER=0`), authenticated with `JINA_API_KEY` when present.
+5. **Wayback Machine snapshot** as a last resort — opt-in via
+   `SCRAPER_FETCH_WAYBACK=1`.
+
+`HTTP 429` responses are retried with bounded exponential backoff, tunable with
+`SCRAPER_FETCH_429_RETRIES`, `SCRAPER_FETCH_429_BASE_MS`, and
+`SCRAPER_FETCH_429_MAX_MS`. JSON provider APIs bypass this chain and use direct
+requests with the same backoff and User-Agent handling.
+
 ## Historical collection
 
 ```bash
 # Every CWUR edition
-.venv/bin/python -m university_ranking_scraper \
+node scraper/cli.ts \
   --website cwur --worldwide --overall-only \
   --start-year 2012 --end-year 2026 \
   --output-dir data/restricted
 
 # OpenAlex annual publication-output history (one API snapshot, reused per year)
-.venv/bin/python -m university_ranking_scraper \
+node scraper/cli.ts \
   --website openalex --worldwide --overall-only \
   --start-year 2016 --end-year 2025 \
   --output-dir data/open
 
 # NTU automatically skips fields and subjects before their launch years
-.venv/bin/python -m university_ranking_scraper \
+node scraper/cli.ts \
   --website ntu --worldwide --all-subjects --include-overall \
   --start-year 2007 --end-year 2025 \
   --output-dir data/restricted
 
 # ARWU overall plus all available GRAS subjects
-.venv/bin/python -m university_ranking_scraper \
+node scraper/cli.ts \
   --website arwu --worldwide --all-subjects --include-overall \
   --start-year 2003 --end-year 2025 \
   --output-dir data/restricted
 
 # SCImago overall history plus subject areas; the adapter maps edition years to
 # data windows and automatically skips areas before their 2021 launch edition
-.venv/bin/python -m university_ranking_scraper \
+node scraper/cli.ts \
   --website scimago --worldwide --all-subjects --include-overall \
   --start-year 2009 --end-year 2026 --reader-proxy \
   --request-delay 2 --output-dir data/restricted
 
 # Nature Index all-sector and academic institution history
-.venv/bin/python -m university_ranking_scraper \
+node scraper/cli.ts \
   --website nature --worldwide --all-subjects --include-overall \
   --start-year 2016 --end-year 2026 --reader-proxy \
   --request-delay 1 --output-dir data/restricted
 
 # Existing THE and QS history
-.venv/bin/python -m university_ranking_scraper \
+node scraper/cli.ts \
   --website times --worldwide --all-subjects --include-overall \
   --start-year 2011 --end-year 2025 --workers 3 \
   --output-dir data/historical
 
-.venv/bin/python -m university_ranking_scraper \
+node scraper/cli.ts \
   --website qs --worldwide --all-subjects \
   --start-year 2023 --end-year 2025 --reader-proxy \
   --request-delay 3 --output-dir data/historical
 
 # Older QS editions publish only the five broad faculty areas
-.venv/bin/python -m university_ranking_scraper \
+node scraper/cli.ts \
   --website qs --worldwide \
   --subjects arts-humanities,engineering-technology,life-sciences-medicine,natural-sciences,social-sciences-management \
   --start-year 2018 --end-year 2022 --reader-proxy \
@@ -315,31 +352,41 @@ under separate permission contains:
 | Nature Index | All-sector and academic tables with available disciplines, 2016-2026 | 43,761 |
 | **Approved provider-controlled total** | | **759,455** |
 
-## Python API
+## Node / TypeScript API
 
-```python
-import university_ranking_scraper as rankings
+Provider adapters and the batch orchestrator can be imported directly. Each
+provider returns an array of record objects (`RankRecord[]`); options such as
+`year`, `country`, and `readerProxy` are passed via an options object.
 
-leiden = rankings.scrape_leiden(
-    "mathematics-computer-science",
-    year=2025,
-)
-openalex = rankings.scrape_openalex(year=2025)
-cwur = rankings.scrape_cwur(year=2026, country="United States")
-nature = rankings.scrape_nature(
-    "academic-chemistry",
-    year=2026,
-    reader_proxy=True,
-)
-webometrics = rankings.scrape_webometrics(year=2025)
+```ts
+import {
+  scrapeLeiden,
+  scrapeOpenalex,
+  scrapeCwur,
+  scrapeNature,
+  scrapeWebometrics,
+} from "./scraper/providers/index.ts";
+import { scrapeCountryRankings } from "./scraper/orchestrator.ts";
+
+const leiden = await scrapeLeiden("mathematics-computer-science", { year: 2025 });
+const openalex = await scrapeOpenalex({ year: 2025 });
+const cwur = await scrapeCwur({ year: 2026, country: "United States" });
+const nature = await scrapeNature("academic-chemistry", { year: 2026, readerProxy: true });
+const webometrics = await scrapeWebometrics({ year: 2025 });
+
+// Batch API returns { rows, failures } so partial provider failures stay explicit.
+const { rows, failures } = await scrapeCountryRankings("times", "Japan", {
+  year: 2025,
+  subjects: ["engineering", "computer-science"],
+  includeOverall: true,
+});
 ```
 
-All provider functions return a pandas `DataFrame`. The
-`scrape_country_rankings` batch API returns `(frame, failures)` so partial
-provider failures remain explicit.
+The `scrapeCountryRankings` batch API returns `{ rows, failures }` so partial
+provider failures remain explicit rather than silently dropped.
 
 ## Tests
 
 ```bash
-.venv/bin/python -m unittest discover -s tests -v
+npm test
 ```

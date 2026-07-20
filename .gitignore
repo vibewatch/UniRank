@@ -5,10 +5,30 @@
 !data/open/*.csv
 !data/restricted/
 !data/restricted/*.csv
-.venv/
-.tmp-smoke/
-build/
+
+# --- Node / Astro ---
+node_modules/
 dist/
+.astro/
+*.tsbuildinfo
+
+# --- Playwright ---
+test-results/
+playwright-report/
+
+# --- Scraper scratch ---
+.tmp-smoke/
+.scraper-downloads/
+.scraper-state/
+
+# --- Python (legacy; removed) ---
+.venv/
+build/
 *.egg-info/
 __pycache__/
 *.pyc
+
+# --- Editor / OS ---
+.DS_Store
+.idea/
+*.log

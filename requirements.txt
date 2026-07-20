@@ -1,3 +1,0 @@
-# Compatibility entry point for existing development workflows.
-# Runtime dependencies are defined once in pyproject.toml.
--e .
