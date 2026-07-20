@@ -66162,6 +66162,829 @@
       ]
     }
   ],
+  "arwuConcentrationTrend": {
+    "provider": "arwu",
+    "label": "ShanghaiRanking",
+    "color": "#d64c5b",
+    "firstYear": 2003,
+    "lastYear": 2025,
+    "points": [
+      {
+        "year": 2003,
+        "top100Size": 101,
+        "countryHhi": 0.348
+      },
+      {
+        "year": 2004,
+        "top100Size": 100,
+        "countryHhi": 0.287
+      },
+      {
+        "year": 2005,
+        "top100Size": 100,
+        "countryHhi": 0.305
+      },
+      {
+        "year": 2006,
+        "top100Size": 101,
+        "countryHhi": 0.311
+      },
+      {
+        "year": 2007,
+        "top100Size": 101,
+        "countryHhi": 0.312
+      },
+      {
+        "year": 2008,
+        "top100Size": 100,
+        "countryHhi": 0.316
+      },
+      {
+        "year": 2009,
+        "top100Size": 100,
+        "countryHhi": 0.326
+      },
+      {
+        "year": 2010,
+        "top100Size": 100,
+        "countryHhi": 0.315
+      },
+      {
+        "year": 2011,
+        "top100Size": 101,
+        "countryHhi": 0.299
+      },
+      {
+        "year": 2012,
+        "top100Size": 100,
+        "countryHhi": 0.302
+      },
+      {
+        "year": 2013,
+        "top100Size": 100,
+        "countryHhi": 0.292
+      },
+      {
+        "year": 2014,
+        "top100Size": 100,
+        "countryHhi": 0.291
+      },
+      {
+        "year": 2015,
+        "top100Size": 100,
+        "countryHhi": 0.282
+      },
+      {
+        "year": 2016,
+        "top100Size": 100,
+        "countryHhi": 0.27
+      },
+      {
+        "year": 2017,
+        "top100Size": 100,
+        "countryHhi": 0.254
+      },
+      {
+        "year": 2019,
+        "top100Size": 100,
+        "countryHhi": 0.227
+      },
+      {
+        "year": 2020,
+        "top100Size": 100,
+        "countryHhi": 0.196
+      },
+      {
+        "year": 2021,
+        "top100Size": 100,
+        "countryHhi": 0.189
+      },
+      {
+        "year": 2022,
+        "top100Size": 100,
+        "countryHhi": 0.182
+      },
+      {
+        "year": 2023,
+        "top100Size": 100,
+        "countryHhi": 0.177
+      },
+      {
+        "year": 2024,
+        "top100Size": 100,
+        "countryHhi": 0.181
+      },
+      {
+        "year": 2025,
+        "top100Size": 100,
+        "countryHhi": 0.174
+      }
+    ],
+    "countries": [
+      {
+        "countryCode": "US",
+        "country": "United States",
+        "latestCount": 37,
+        "points": [
+          {
+            "year": 2003,
+            "count": 58,
+            "share": 57.4
+          },
+          {
+            "year": 2004,
+            "count": 51,
+            "share": 51
+          },
+          {
+            "year": 2005,
+            "count": 53,
+            "share": 53
+          },
+          {
+            "year": 2006,
+            "count": 54,
+            "share": 53.5
+          },
+          {
+            "year": 2007,
+            "count": 54,
+            "share": 53.5
+          },
+          {
+            "year": 2008,
+            "count": 54,
+            "share": 54
+          },
+          {
+            "year": 2009,
+            "count": 55,
+            "share": 55
+          },
+          {
+            "year": 2010,
+            "count": 54,
+            "share": 54
+          },
+          {
+            "year": 2011,
+            "count": 53,
+            "share": 52.5
+          },
+          {
+            "year": 2012,
+            "count": 53,
+            "share": 53
+          },
+          {
+            "year": 2013,
+            "count": 52,
+            "share": 52
+          },
+          {
+            "year": 2014,
+            "count": 52,
+            "share": 52
+          },
+          {
+            "year": 2015,
+            "count": 51,
+            "share": 51
+          },
+          {
+            "year": 2016,
+            "count": 50,
+            "share": 50
+          },
+          {
+            "year": 2017,
+            "count": 48,
+            "share": 48
+          },
+          {
+            "year": 2019,
+            "count": 45,
+            "share": 45
+          },
+          {
+            "year": 2020,
+            "count": 41,
+            "share": 41
+          },
+          {
+            "year": 2021,
+            "count": 40,
+            "share": 40
+          },
+          {
+            "year": 2022,
+            "count": 39,
+            "share": 39
+          },
+          {
+            "year": 2023,
+            "count": 38,
+            "share": 38
+          },
+          {
+            "year": 2024,
+            "count": 38,
+            "share": 38
+          },
+          {
+            "year": 2025,
+            "count": 37,
+            "share": 37
+          }
+        ]
+      },
+      {
+        "countryCode": "CN",
+        "country": "China",
+        "latestCount": 13,
+        "points": [
+          {
+            "year": 2003,
+            "count": 0,
+            "share": 0
+          },
+          {
+            "year": 2004,
+            "count": 0,
+            "share": 0
+          },
+          {
+            "year": 2005,
+            "count": 0,
+            "share": 0
+          },
+          {
+            "year": 2006,
+            "count": 0,
+            "share": 0
+          },
+          {
+            "year": 2007,
+            "count": 0,
+            "share": 0
+          },
+          {
+            "year": 2008,
+            "count": 0,
+            "share": 0
+          },
+          {
+            "year": 2009,
+            "count": 0,
+            "share": 0
+          },
+          {
+            "year": 2010,
+            "count": 0,
+            "share": 0
+          },
+          {
+            "year": 2011,
+            "count": 0,
+            "share": 0
+          },
+          {
+            "year": 2012,
+            "count": 0,
+            "share": 0
+          },
+          {
+            "year": 2013,
+            "count": 0,
+            "share": 0
+          },
+          {
+            "year": 2014,
+            "count": 0,
+            "share": 0
+          },
+          {
+            "year": 2015,
+            "count": 0,
+            "share": 0
+          },
+          {
+            "year": 2016,
+            "count": 2,
+            "share": 2
+          },
+          {
+            "year": 2017,
+            "count": 2,
+            "share": 2
+          },
+          {
+            "year": 2019,
+            "count": 4,
+            "share": 4
+          },
+          {
+            "year": 2020,
+            "count": 6,
+            "share": 6
+          },
+          {
+            "year": 2021,
+            "count": 7,
+            "share": 7
+          },
+          {
+            "year": 2022,
+            "count": 8,
+            "share": 8
+          },
+          {
+            "year": 2023,
+            "count": 10,
+            "share": 10
+          },
+          {
+            "year": 2024,
+            "count": 13,
+            "share": 13
+          },
+          {
+            "year": 2025,
+            "count": 13,
+            "share": 13
+          }
+        ]
+      },
+      {
+        "countryCode": "GB",
+        "country": "United Kingdom",
+        "latestCount": 8,
+        "points": [
+          {
+            "year": 2003,
+            "count": 9,
+            "share": 8.9
+          },
+          {
+            "year": 2004,
+            "count": 11,
+            "share": 11
+          },
+          {
+            "year": 2005,
+            "count": 11,
+            "share": 11
+          },
+          {
+            "year": 2006,
+            "count": 11,
+            "share": 10.9
+          },
+          {
+            "year": 2007,
+            "count": 11,
+            "share": 10.9
+          },
+          {
+            "year": 2008,
+            "count": 11,
+            "share": 11
+          },
+          {
+            "year": 2009,
+            "count": 11,
+            "share": 11
+          },
+          {
+            "year": 2010,
+            "count": 11,
+            "share": 11
+          },
+          {
+            "year": 2011,
+            "count": 10,
+            "share": 9.9
+          },
+          {
+            "year": 2012,
+            "count": 9,
+            "share": 9
+          },
+          {
+            "year": 2013,
+            "count": 9,
+            "share": 9
+          },
+          {
+            "year": 2014,
+            "count": 8,
+            "share": 8
+          },
+          {
+            "year": 2015,
+            "count": 9,
+            "share": 9
+          },
+          {
+            "year": 2016,
+            "count": 8,
+            "share": 8
+          },
+          {
+            "year": 2017,
+            "count": 9,
+            "share": 9
+          },
+          {
+            "year": 2019,
+            "count": 8,
+            "share": 8
+          },
+          {
+            "year": 2020,
+            "count": 8,
+            "share": 8
+          },
+          {
+            "year": 2021,
+            "count": 8,
+            "share": 8
+          },
+          {
+            "year": 2022,
+            "count": 8,
+            "share": 8
+          },
+          {
+            "year": 2023,
+            "count": 8,
+            "share": 8
+          },
+          {
+            "year": 2024,
+            "count": 8,
+            "share": 8
+          },
+          {
+            "year": 2025,
+            "count": 8,
+            "share": 8
+          }
+        ]
+      },
+      {
+        "countryCode": "AU",
+        "country": "Australia",
+        "latestCount": 5,
+        "points": [
+          {
+            "year": 2003,
+            "count": 2,
+            "share": 2
+          },
+          {
+            "year": 2004,
+            "count": 2,
+            "share": 2
+          },
+          {
+            "year": 2005,
+            "count": 2,
+            "share": 2
+          },
+          {
+            "year": 2006,
+            "count": 2,
+            "share": 2
+          },
+          {
+            "year": 2007,
+            "count": 2,
+            "share": 2
+          },
+          {
+            "year": 2008,
+            "count": 3,
+            "share": 3
+          },
+          {
+            "year": 2009,
+            "count": 3,
+            "share": 3
+          },
+          {
+            "year": 2010,
+            "count": 3,
+            "share": 3
+          },
+          {
+            "year": 2011,
+            "count": 4,
+            "share": 4
+          },
+          {
+            "year": 2012,
+            "count": 5,
+            "share": 5
+          },
+          {
+            "year": 2013,
+            "count": 5,
+            "share": 5
+          },
+          {
+            "year": 2014,
+            "count": 4,
+            "share": 4
+          },
+          {
+            "year": 2015,
+            "count": 4,
+            "share": 4
+          },
+          {
+            "year": 2016,
+            "count": 6,
+            "share": 6
+          },
+          {
+            "year": 2017,
+            "count": 6,
+            "share": 6
+          },
+          {
+            "year": 2019,
+            "count": 7,
+            "share": 7
+          },
+          {
+            "year": 2020,
+            "count": 7,
+            "share": 7
+          },
+          {
+            "year": 2021,
+            "count": 7,
+            "share": 7
+          },
+          {
+            "year": 2022,
+            "count": 7,
+            "share": 7
+          },
+          {
+            "year": 2023,
+            "count": 6,
+            "share": 6
+          },
+          {
+            "year": 2024,
+            "count": 5,
+            "share": 5
+          },
+          {
+            "year": 2025,
+            "count": 5,
+            "share": 5
+          }
+        ]
+      },
+      {
+        "countryCode": "DE",
+        "country": "Germany",
+        "latestCount": 4,
+        "points": [
+          {
+            "year": 2003,
+            "count": 5,
+            "share": 5
+          },
+          {
+            "year": 2004,
+            "count": 7,
+            "share": 7
+          },
+          {
+            "year": 2005,
+            "count": 5,
+            "share": 5
+          },
+          {
+            "year": 2006,
+            "count": 5,
+            "share": 5
+          },
+          {
+            "year": 2007,
+            "count": 6,
+            "share": 5.9
+          },
+          {
+            "year": 2008,
+            "count": 6,
+            "share": 6
+          },
+          {
+            "year": 2009,
+            "count": 5,
+            "share": 5
+          },
+          {
+            "year": 2010,
+            "count": 5,
+            "share": 5
+          },
+          {
+            "year": 2011,
+            "count": 6,
+            "share": 5.9
+          },
+          {
+            "year": 2012,
+            "count": 4,
+            "share": 4
+          },
+          {
+            "year": 2013,
+            "count": 4,
+            "share": 4
+          },
+          {
+            "year": 2014,
+            "count": 4,
+            "share": 4
+          },
+          {
+            "year": 2015,
+            "count": 4,
+            "share": 4
+          },
+          {
+            "year": 2016,
+            "count": 3,
+            "share": 3
+          },
+          {
+            "year": 2017,
+            "count": 4,
+            "share": 4
+          },
+          {
+            "year": 2019,
+            "count": 4,
+            "share": 4
+          },
+          {
+            "year": 2020,
+            "count": 4,
+            "share": 4
+          },
+          {
+            "year": 2021,
+            "count": 4,
+            "share": 4
+          },
+          {
+            "year": 2022,
+            "count": 4,
+            "share": 4
+          },
+          {
+            "year": 2023,
+            "count": 4,
+            "share": 4
+          },
+          {
+            "year": 2024,
+            "count": 4,
+            "share": 4
+          },
+          {
+            "year": 2025,
+            "count": 4,
+            "share": 4
+          }
+        ]
+      },
+      {
+        "countryCode": "JP",
+        "country": "Japan",
+        "latestCount": 2,
+        "points": [
+          {
+            "year": 2003,
+            "count": 5,
+            "share": 5
+          },
+          {
+            "year": 2004,
+            "count": 5,
+            "share": 5
+          },
+          {
+            "year": 2005,
+            "count": 5,
+            "share": 5
+          },
+          {
+            "year": 2006,
+            "count": 6,
+            "share": 5.9
+          },
+          {
+            "year": 2007,
+            "count": 6,
+            "share": 5.9
+          },
+          {
+            "year": 2008,
+            "count": 4,
+            "share": 4
+          },
+          {
+            "year": 2009,
+            "count": 5,
+            "share": 5
+          },
+          {
+            "year": 2010,
+            "count": 5,
+            "share": 5
+          },
+          {
+            "year": 2011,
+            "count": 5,
+            "share": 5
+          },
+          {
+            "year": 2012,
+            "count": 4,
+            "share": 4
+          },
+          {
+            "year": 2013,
+            "count": 3,
+            "share": 3
+          },
+          {
+            "year": 2014,
+            "count": 3,
+            "share": 3
+          },
+          {
+            "year": 2015,
+            "count": 4,
+            "share": 4
+          },
+          {
+            "year": 2016,
+            "count": 4,
+            "share": 4
+          },
+          {
+            "year": 2017,
+            "count": 3,
+            "share": 3
+          },
+          {
+            "year": 2019,
+            "count": 3,
+            "share": 3
+          },
+          {
+            "year": 2020,
+            "count": 3,
+            "share": 3
+          },
+          {
+            "year": 2021,
+            "count": 3,
+            "share": 3
+          },
+          {
+            "year": 2022,
+            "count": 2,
+            "share": 2
+          },
+          {
+            "year": 2023,
+            "count": 2,
+            "share": 2
+          },
+          {
+            "year": 2024,
+            "count": 2,
+            "share": 2
+          },
+          {
+            "year": 2025,
+            "count": 2,
+            "share": 2
+          }
+        ]
+      }
+    ]
+  },
   "natureCountryShift": [
     {
       "countryCode": "CN",

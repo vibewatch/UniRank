@@ -1,0 +1,182 @@
+---
+import type { ArwuConcentrationTrend } from '../data/schema';
+import { decimal } from '../lib/format';
+
+interface Props {
+  trend: ArwuConcentrationTrend;
+}
+
+const { trend } = Astro.props;
+const width = 900;
+const height = 390;
+const margin = { left: 46, right: 120, top: 24, bottom: 46 };
+const innerWidth = width - margin.left - margin.right;
+const innerHeight = height - margin.top - margin.bottom;
+const colors: Record<string, string> = {
+  US: '#7168e8',
+  CN: '#f1674b',
+  GB: '#1aa88a',
+  AU: '#c68b13',
+  DE: '#7a654f',
+  JP: '#197fba',
+};
+const minYear = trend.points[0].year;
+const maxYear = trend.points[trend.points.length - 1].year;
+const maxShare = Math.ceil(
+  Math.max(...trend.countries.flatMap((country) => country.points.map((point) => point.share))) / 10,
+) * 10;
+const x = (year: number) => margin.left + ((year - minYear) / (maxYear - minYear)) * innerWidth;
+const y = (share: number) => margin.top + ((maxShare - share) / maxShare) * innerHeight;
+const ticks = Array.from({ length: maxShare / 10 + 1 }, (_, index) => index * 10);
+const xTicks = [minYear, 2008, 2013, 2019, maxYear];
+const line = (points: Array<{ year: number; share: number }>) =>
+  points.map((point, index) => `${index ? 'L' : 'M'} ${x(point.year)} ${y(point.share)}`).join(' ');
+const charted = trend.countries
+  .map((country) => ({ ...country, color: colors[country.countryCode] ?? '#647078' }))
+  .sort((a, b) => b.points[b.points.length - 1].share - a.points[a.points.length - 1].share);
+const hhiFirst = trend.points[0].countryHhi;
+const hhiLast = trend.points[trend.points.length - 1].countryHhi;
+---
+
+<div class="concentration surface">
+  <div class="legend">
+    {charted.map((country) => (
+      <span style={`--country:${country.color}`}>
+        <i></i><b>{country.country}</b>
+        {decimal.format(country.points[country.points.length - 1].share)}%
+      </span>
+    ))}
+  </div>
+  <div class="chart-scroll">
+    <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-labelledby="arwu-trend-title arwu-trend-desc">
+      <title id="arwu-trend-title">Share of the ARWU world top 100 by country, 2003 to 2025</title>
+      <desc id="arwu-trend-desc">
+        Percentage of the ShanghaiRanking ARWU top 100 held by each leading country across every
+        available edition. The 2018 overall edition was not published, so the line connects 2017 to 2019.
+      </desc>
+      {ticks.map((tick) => (
+        <g>
+          <line x1={margin.left} x2={width - margin.right} y1={y(tick)} y2={y(tick)} class="gridline" />
+          <text x={margin.left - 8} y={y(tick) + 4} text-anchor="end">{tick}</text>
+        </g>
+      ))}
+      {xTicks.map((year) => (
+        <text x={x(year)} y={height - 17} text-anchor="middle">{year}</text>
+      ))}
+      {charted.map((country) => (
+        <g>
+          <path d={line(country.points)} style={`--country:${country.color}`} />
+          <circle
+            cx={x(country.points[country.points.length - 1].year)}
+            cy={y(country.points[country.points.length - 1].share)}
+            r="4"
+            style={`--country:${country.color}`}
+          >
+            <title>{`${country.country}: ${decimal.format(country.points[country.points.length - 1].share)}% of the ${maxYear} top 100`}</title>
+          </circle>
+          <text
+            x={x(country.points[country.points.length - 1].year) + 9}
+            y={y(country.points[country.points.length - 1].share) + 3}
+            style={`--country:${country.color}`}
+            class="series-label"
+          >{country.countryCode}</text>
+        </g>
+      ))}
+      <text x={margin.left} y={14} class="axis-label">% of top 100</text>
+    </svg>
+  </div>
+  <p>
+    Country concentration (Herfindahl–Hirschman index of top-100 seats) fell from
+    {` ${hhiFirst.toFixed(3)} `}in {minYear} to {hhiLast.toFixed(3)} in {maxYear} — a more
+    distributed field. Hong Kong is counted separately from mainland China. The 2018 overall
+    edition was unavailable, so it is omitted from the line.
+  </p>
+</div>
+
+<style>
+  .concentration {
+    padding: 20px;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    margin: 0 6px 10px;
+  }
+
+  .legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--muted);
+    font-size: 0.64rem;
+  }
+
+  .legend i {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--country);
+  }
+
+  .legend b {
+    color: var(--ink);
+  }
+
+  svg {
+    width: 100%;
+    height: auto;
+  }
+
+  path {
+    fill: none;
+    stroke: var(--country);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 3;
+  }
+
+  circle {
+    fill: var(--surface);
+    stroke: var(--country);
+    stroke-width: 2.5;
+  }
+
+  .gridline {
+    stroke: #ddd9d1;
+    stroke-width: 1;
+  }
+
+  text {
+    fill: #778187;
+    font-family: var(--font-mono);
+    font-size: 10px;
+  }
+
+  .axis-label {
+    fill: #5d686e;
+  }
+
+  .series-label {
+    fill: var(--country);
+    font-size: 9px;
+    font-weight: 700;
+  }
+
+  p {
+    margin: 8px 6px 0;
+    color: var(--muted);
+    font-size: 0.68rem;
+  }
+
+  @media (max-width: 620px) {
+    .chart-scroll {
+      overflow-x: auto;
+    }
+
+    svg {
+      min-width: 720px;
+    }
+  }
+</style>

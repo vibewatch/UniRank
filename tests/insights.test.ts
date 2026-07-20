@@ -63,6 +63,21 @@ test("analytical outputs preserve publisher semantics", () => {
     payload.arwuConcentration.map((row: Record<string, any>) => row.countryHhi),
     [0.348, 0.174],
   );
+
+  const arwuTrend = payload.arwuConcentrationTrend;
+  assert.equal(arwuTrend.firstYear, 2003);
+  assert.equal(arwuTrend.lastYear, 2025);
+  assert.equal(arwuTrend.points.length, 22);
+  assert.ok(!arwuTrend.points.some((point: Record<string, any>) => point.year === 2018));
+  assert.deepEqual(
+    [arwuTrend.points[0].countryHhi, arwuTrend.points.at(-1).countryHhi],
+    [0.348, 0.174],
+  );
+  const trendUs = arwuTrend.countries.find((country: Record<string, any>) => country.countryCode === 'US');
+  const trendCn = arwuTrend.countries.find((country: Record<string, any>) => country.countryCode === 'CN');
+  assert.ok(trendUs.points.at(-1).share < trendUs.points[0].share);
+  assert.ok(trendCn.points.at(-1).share > trendCn.points[0].share);
+  assert.equal(arwuTrend.countries.every((country: Record<string, any>) => country.points.length === 22), true);
 });
 
 test("research metrics match fixed cohorts", () => {

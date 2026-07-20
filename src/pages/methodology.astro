@@ -236,17 +236,16 @@ const formatDate = new Intl.DateTimeFormat('en-US', {
         <p class="eyebrow">Reproducibility</p>
         <h2>Generated from committed snapshots.</h2>
         <p>
-          The browser never loads the source CSV archive. A Python pipeline
+          The browser never loads the source CSV archive. A Node build step
           reduces it to a typed static JSON artifact, then Astro emits static
           HTML, CSS, SVG, and small vanilla-JavaScript interactions.
         </p>
       </div>
       <div class="code-card">
         <span class="mono">FROM REPOSITORY ROOT</span>
-        <pre><code>.venv/bin/python scripts/generate_insights.py
-        cd apps/insights
-npm run check
-npm run build</code></pre>
+        <pre><code>npm run insights   # rebuild src/data/insights.json from data/
+npm test           # verify archive + consensus invariants
+npm run build      # emit the static site</code></pre>
         <p>
           One known source failure is retained explicitly: the 2018 ARWU overall
           bulk edition was unavailable, while its GRAS subject tables remain in

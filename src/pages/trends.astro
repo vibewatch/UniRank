@@ -1,7 +1,9 @@
 ---
 import BarChart from '../components/BarChart.astro';
+import ConcentrationTrend from '../components/ConcentrationTrend.astro';
 import CountryShift from '../components/CountryShift.astro';
 import MomentumChart from '../components/MomentumChart.astro';
+import OutputGrowth from '../components/OutputGrowth.astro';
 import ScaleImpactPlot from '../components/ScaleImpactPlot.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import TrendExplorer from '../components/TrendExplorer.astro';
@@ -151,6 +153,16 @@ const theExpansion = theFirst && theLatest ? theLatest.size / theFirst.size : 0;
         </aside>
       </div>
 
+      <div class="arwu-trend">
+        <p class="trend-lead">
+          Across two decades the ARWU top 100 grew less concentrated. The U.S.
+          share of seats declined while mainland China rose from none to a
+          double-digit presence—visible as a single continuous trajectory before
+          the two-edition snapshots below.
+        </p>
+        <ConcentrationTrend trend={insights.arwuConcentrationTrend} />
+      </div>
+
       <div class="arwu-grid">
         {[arwuEarly, arwuLatest].map((edition) => (
           <article class="surface">
@@ -198,6 +210,17 @@ const theExpansion = theFirst && theLatest ? theLatest.size / theFirst.size : 0;
         description={`For the fixed cohort of ${number.format(insights.openAlexCountryMomentum.cohortSize)} institutions present in all ten annual files, summed institution-work associations rose ${signedPercent(insights.openAlexCountryMomentum.totalChangePercent)} through 2022.`}
       />
       <MomentumChart momentum={insights.openAlexCountryMomentum} />
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="Institution output growth"
+        title="A handful of institutions multiplied their annual output."
+        description="Consensus-leading universities ranked by absolute growth in OpenAlex institution-work associations from 2016 to 2025. This is the institution-level counterpart to the country momentum above—scale, not citation impact."
+      />
+      <OutputGrowth items={insights.openAlexGrowth} />
     </div>
   </section>
 
@@ -404,6 +427,18 @@ const theExpansion = theFirst && theLatest ? theLatest.size / theFirst.size : 0;
     border-top: 1px solid rgb(255 255 255 / 24%);
     font-size: 0.62rem;
     opacity: 0.68;
+  }
+
+  .arwu-trend {
+    margin-top: 34px;
+  }
+
+  .trend-lead {
+    max-width: 760px;
+    margin: 0 0 16px;
+    color: var(--muted);
+    font-size: 0.82rem;
+    line-height: 1.55;
   }
 
   .arwu-grid {

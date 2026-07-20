@@ -94,6 +94,21 @@ export interface ArwuConcentration {
   countries: Array<CountryCount & { share: number }>;
 }
 
+export interface ArwuConcentrationTrend {
+  provider: string;
+  label: string;
+  color: string;
+  firstYear: number | null;
+  lastYear: number | null;
+  points: Array<{ year: number; top100Size: number; countryHhi: number }>;
+  countries: Array<{
+    countryCode: string;
+    country: string;
+    latestCount: number;
+    points: Array<{ year: number; count: number; share: number }>;
+  }>;
+}
+
 export interface NatureCountryShift {
   countryCode: string;
   country: string;
@@ -279,6 +294,7 @@ export interface InsightsData {
   providerTop100: ProviderTop100[];
   rankingUniverse: RankingUniverse[];
   arwuConcentration: ArwuConcentration[];
+  arwuConcentrationTrend: ArwuConcentrationTrend;
   natureCountryShift: NatureCountryShift[];
   natureSubjects: NatureSubject[];
   subjectMatrix: SubjectMatrixRow[];
