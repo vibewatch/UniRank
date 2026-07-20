@@ -28,6 +28,21 @@ const nav = [
   { href: '/methodology/', label: 'Methodology' },
 ];
 const fullTitle = title === 'Overview' ? 'University Signals' : `${title} · University Signals`;
+
+// Absolute URLs for canonical + social cards. `Astro.site` comes from
+// astro.config's `site`; fall back to the same placeholder so a missing config
+// never throws at build time.
+const siteOrigin = Astro.site ?? new URL('https://unirank.pages.dev');
+const canonicalURL = new URL(path, siteOrigin);
+const socialImage = new URL('/og.png', siteOrigin);
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'University Signals',
+  url: siteOrigin.href,
+  description:
+    'A transparent analytical layer over provider-published and open bibliometric university-ranking data.',
+};
 ---
 
 <!doctype html>
@@ -36,17 +51,29 @@ const fullTitle = title === 'Overview' ? 'University Signals' : `${title} · Uni
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#101820" />
+    <meta name="theme-color" content="#12171d" />
     <meta name="generator" content={Astro.generator} />
+    <link rel="canonical" href={canonicalURL} />
     <link rel="preload" href={interLatin} as="font" type="font/woff2" crossorigin="anonymous" />
     <link rel="preload" href={frauncesLatin} as="font" type="font/woff2" crossorigin="anonymous" />
     <link rel="preload" href={spaceMonoLatin400} as="font" type="font/woff2" crossorigin="anonymous" />
     <link rel="preload" href={spaceMonoLatin700} as="font" type="font/woff2" crossorigin="anonymous" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{fullTitle}</title>
+    <meta property="og:site_name" content="University Signals" />
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:image" content={socialImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="University Signals — a transparent analytical layer over university-ranking data" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={socialImage} />
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
     <ClientRouter />
   </head>
   <body>
