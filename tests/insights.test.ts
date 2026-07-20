@@ -93,11 +93,25 @@ test("analytical outputs preserve publisher semantics", () => {
   assert.ok(trendCn.points.at(-1).share > trendCn.points[0].share);
   assert.equal(arwuTrend.countries.every((country: Record<string, any>) => country.points.length === 22), true);
 
-  const scimago = payload.scimagoSubjectLeaders as Array<Record<string, any>>;
+  const subjectBoards = payload.subjectBoards as Array<Record<string, any>>;
+  const subjectProviders = new Set(subjectBoards.map((board) => board.provider));
+  for (const provider of ["qs", "arwu", "usnews", "times", "ntu", "scimago", "leiden"]) {
+    assert.ok(subjectProviders.has(provider), `subjectBoards missing provider ${provider}`);
+  }
+  assert.ok(subjectBoards.length > 200);
+  assert.ok(
+    subjectBoards.every(
+      (board) =>
+        board.institutions.length >= 5 &&
+        board.institutions.length <= 12 &&
+        board.countries.length >= 1 &&
+        board.countries.length <= 8,
+    ),
+  );
+
+  const scimago = subjectBoards.filter((board) => board.provider === "scimago");
   assert.equal(scimago.length, 19);
-  assert.ok(scimago.every((board) => board.provider === "scimago" && board.year >= 2021));
-  assert.ok(scimago.every((board) => board.institutions.length >= 5 && board.institutions.length <= 12));
-  assert.ok(scimago.every((board) => board.countries.length >= 1 && board.countries.length <= 8));
+  assert.ok(scimago.every((board) => board.year >= 2021));
   assert.deepEqual(
     scimago.map((board) => board.label),
     [...scimago.map((board) => board.label)].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)),
