@@ -340,8 +340,17 @@ const serialized = JSON.stringify(trends).replaceAll('<', '\\u003c');
   .point-list {
     display: flex;
     overflow-x: auto;
+    overflow-y: hidden;
     gap: 7px;
     padding: 12px 2px 4px;
+    scrollbar-width: none;
+    scroll-snap-type: inline proximity;
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .point-list::-webkit-scrollbar {
+    display: none;
   }
 
   .point-list :global(span) {
@@ -354,6 +363,7 @@ const serialized = JSON.stringify(trends).replaceAll('<', '\\u003c');
     color: var(--muted);
     font-family: var(--font-mono);
     font-size: 0.59rem;
+    scroll-snap-align: start;
   }
 
   .point-list :global(b) {
@@ -392,6 +402,13 @@ const serialized = JSON.stringify(trends).replaceAll('<', '\\u003c');
 
     .chart-frame {
       overflow-x: auto;
+      scrollbar-width: none;
+      overscroll-behavior-inline: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .chart-frame::-webkit-scrollbar {
+      display: none;
     }
 
     svg {
