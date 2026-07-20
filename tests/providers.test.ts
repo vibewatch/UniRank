@@ -10,6 +10,7 @@ import { parseNatureMarkdown } from "../scraper/providers/nature.ts";
 import { rankMin } from "../scraper/providers/shared.ts";
 import { normalizeUsnews, normalizeQs, normalizeTimes } from "../scraper/normalizers.ts";
 import { QS_SUBJECT_NIDS } from "../scraper/constants.ts";
+import { buildWaybackUrl } from "../scraper/fetch/strategies.ts";
 import type { RankRecord } from "../scraper/types.ts";
 
 const NATURE_URL =
@@ -131,4 +132,23 @@ test("qs historical node map covers the five broad subject areas (2022-2025)", (
     const map = QS_SUBJECT_NIDS[year] ?? {};
     for (const subject of broad) assert.ok(subject in map, `${subject} missing for ${year}`);
   }
+});
+
+test("buildWaybackUrl selects the requested edition-year snapshot", () => {
+  const url = "https://www.nature.com/nature-index/annual-tables/2018/institution/all/all/global";
+  assert.equal(
+    buildWaybackUrl(url, 2018),
+    `https://web.archive.org/web/2018id_/${url}`,
+  );
+  // Distinct editions must resolve to distinct captures (the fixed hard-coding bug).
+  assert.notEqual(buildWaybackUrl(url, 2018), buildWaybackUrl(url, 2024));
+});
+
+test("buildWaybackUrl falls back to the current year for missing/invalid years", () => {
+  const url = "https://example.org/ranking";
+  const currentYear = new Date().getUTCFullYear();
+  const expected = `https://web.archive.org/web/${currentYear}id_/${url}`;
+  assert.equal(buildWaybackUrl(url), expected);
+  assert.equal(buildWaybackUrl(url, 0), expected);
+  assert.equal(buildWaybackUrl(url, Number.NaN), expected);
 });

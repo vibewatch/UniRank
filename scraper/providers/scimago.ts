@@ -20,7 +20,7 @@ export async function scrapeScimago(subject = "", opts: ProviderOptions = {}): P
   const client = new ScraperClient({ headers: options.readerProxy ? readerProxyHeaders(HEADERS.scimago) : HEADERS.scimago, timeoutMs: 120_000 });
   let csvText = options.readerProxy
     ? (await request(client, targetUrl, { params: null, provider: "scimago", maxRetries: options.maxRetries, baseDelay: options.baseDelay })).text
-    : await getHtml(client, originUrl, { provider: "scimago", readerFormat: "text" });
+    : await getHtml(client, originUrl, { provider: "scimago", readerFormat: "text", snapshotYear: options.year });
   if (csvText.includes("Markdown Content:\n")) csvText = csvText.split("Markdown Content:\n", 2)[1] ?? "";
   if (csvText.includes("Area rankings were included in")) throw new ScraperError(`SCImago has no area ranking for ${subject || "overall"} in the ${options.year} edition; subject-area rankings start with the 2021 edition`);
   const headerMatch = csvText.match(/^Rank;/m);
