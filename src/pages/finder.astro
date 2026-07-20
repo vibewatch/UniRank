@@ -331,13 +331,47 @@ const searchableBeyondConsensus = totalInstitutions - consensusCount;
           ? `Showing the top ${RESULT_CAP} by ${sortValue.startsWith('rank:') ? 'provider rank' : 'the selected sort'}. Refine your search to narrow the field.`
           : '';
       }
+      writeUrl();
     };
 
-    search?.addEventListener('input', render);
-    country?.addEventListener('change', render);
-    provider?.addEventListener('change', render);
-    coverage?.addEventListener('change', render);
-    sort?.addEventListener('change', render);
+    const DEFAULTS: Record<string, string> = { q: '', country: '', provider: '', coverage: '1', sort: 'relevance' };
+    const controls: Record<string, HTMLInputElement | HTMLSelectElement | null> = { q: search, country, provider, coverage, sort };
+    let suppress = false;
+
+    const writeUrl = (): void => {
+      const params = new URLSearchParams();
+      for (const [key, element] of Object.entries(controls)) {
+        const value = element?.value ?? '';
+        if (value && value !== DEFAULTS[key]) params.set(key, value);
+      }
+      const query = params.toString();
+      const next = `${location.pathname}${query ? `?${query}` : ''}${location.hash}`;
+      if (next !== `${location.pathname}${location.search}${location.hash}`) history.replaceState(null, '', next);
+    };
+
+    const readUrl = (): void => {
+      const params = new URLSearchParams(location.search);
+      suppress = true;
+      for (const [key, element] of Object.entries(controls)) {
+        if (!element) continue;
+        const value = params.get(key) ?? DEFAULTS[key];
+        if (element.value === value) continue;
+        element.value = value;
+        // Re-sync the enhanced CustomSelect label; input elements need no event.
+        if (element instanceof HTMLSelectElement) element.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      suppress = false;
+    };
+
+    const onControlChange = (): void => { if (!suppress) render(); };
+    search?.addEventListener('input', onControlChange);
+    country?.addEventListener('change', onControlChange);
+    provider?.addEventListener('change', onControlChange);
+    coverage?.addEventListener('change', onControlChange);
+    sort?.addEventListener('change', onControlChange);
+    window.addEventListener('popstate', () => { readUrl(); render(); });
+
+    readUrl();
     render();
   };
 

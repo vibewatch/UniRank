@@ -124,11 +124,45 @@ const providerShort: Record<string, string> = {
             if (matches) visible += 1;
           });
           if (count) count.textContent = `${visible} institution${visible === 1 ? '' : 's'}`;
+          writeUrl();
         };
 
-        search?.addEventListener('input', filter);
-        country?.addEventListener('change', filter);
-        coverage?.addEventListener('change', filter);
+        const DEFAULTS: Record<string, string> = { q: '', country: '', coverage: '4' };
+        const controls: Record<string, HTMLInputElement | HTMLSelectElement | null> = { q: search, country, coverage };
+        let suppress = false;
+
+        const writeUrl = () => {
+          const params = new URLSearchParams();
+          for (const [key, element] of Object.entries(controls)) {
+            const value = element?.value ?? '';
+            if (value && value !== DEFAULTS[key]) params.set(key, value);
+          }
+          const query = params.toString();
+          const next = `${location.pathname}${query ? `?${query}` : ''}${location.hash}`;
+          if (next !== `${location.pathname}${location.search}${location.hash}`) history.replaceState(null, '', next);
+        };
+
+        const readUrl = () => {
+          const params = new URLSearchParams(location.search);
+          suppress = true;
+          for (const [key, element] of Object.entries(controls)) {
+            if (!element) continue;
+            const value = params.get(key) ?? DEFAULTS[key];
+            if (element.value === value) continue;
+            element.value = value;
+            if (element instanceof HTMLSelectElement) element.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+          suppress = false;
+        };
+
+        const onControlChange = () => { if (!suppress) filter(); };
+        search?.addEventListener('input', onControlChange);
+        country?.addEventListener('change', onControlChange);
+        coverage?.addEventListener('change', onControlChange);
+        window.addEventListener('popstate', () => { readUrl(); filter(); });
+
+        readUrl();
+        filter();
       });
   };
 
