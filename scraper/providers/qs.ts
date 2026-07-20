@@ -47,7 +47,7 @@ export async function scrapeQs(subject: string, opts: ProviderOptions = {}): Pro
     for (let attempt = 0; attempt < attempts; attempt += 1) {
       const text = options.readerProxy
         ? (await request(pageClient, target, { params: null, provider: "qs-reader", maxRetries: options.maxRetries, baseDelay: options.baseDelay })).text
-        : await getHtml(pageClient, target, { provider: "qs", readerFormat: "html" });
+        : await getHtml(pageClient, target, { provider: "qs", readerFormat: "html", snapshotYear: options.year });
       const match = text.match(/data-history-node-id=["'](\d+)["']/);
       if (match) { nodeId = match[1]; break; }
       if (attempt < attempts - 1) {

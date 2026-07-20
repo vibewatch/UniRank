@@ -183,6 +183,12 @@ export interface StrategyRequestOptions {
   params?: QueryParams | null;
   /** Format hint forwarded to the reader proxy (`html` | `text`). */
   readerFormat?: "html" | "text";
+  /**
+   * Edition year used to select the Wayback snapshot. Pass the year of the
+   * ranking edition being scraped so historical pages resolve to the correct
+   * capture; defaults to the current UTC year for live pages.
+   */
+  snapshotYear?: number;
 }
 
 const hostStrategyMemory = new Map<string, string>();
@@ -254,13 +260,26 @@ function readerStrategy(originalUrl: string, format: "html" | "text"): Strategy 
   };
 }
 
-function waybackStrategy(originalUrl: string): Strategy {
+/**
+ * Builds a Wayback Machine raw-snapshot (`id_`) URL. `year` selects the capture:
+ * pass the edition year being scraped so historical rankings resolve to the
+ * correct snapshot. A missing/invalid/non-positive year falls back to the
+ * current UTC year (the right choice for live pages).
+ */
+export function buildWaybackUrl(originalUrl: string, year?: number): string {
+  const snapshotYear =
+    typeof year === "number" && Number.isFinite(year) && year > 0
+      ? Math.trunc(year)
+      : new Date().getUTCFullYear();
+  return `https://web.archive.org/web/${snapshotYear}id_/${originalUrl}`;
+}
+
+function waybackStrategy(originalUrl: string, snapshotYear?: number): Strategy {
   return {
     id: "wayback",
     isOrigin: false,
     run: async (_url, timeoutMs) => {
-      const year = new Date().getUTCFullYear();
-      const proxyUrl = `https://web.archive.org/web/${year}id_/${originalUrl}`;
+      const proxyUrl = buildWaybackUrl(originalUrl, snapshotYear);
       assertAllowedFallbackHost(proxyUrl);
       return fetchCore(proxyUrl, {}, timeoutMs);
     },
@@ -302,7 +321,7 @@ function buildChain(originalUrl: string, host: string, opts: StrategyRequestOpti
   if (envFlag("SCRAPER_FETCH_READER", true)) {
     chain.push(readerStrategy(originalUrl, opts.readerFormat ?? "html"));
   }
-  if (envFlag("SCRAPER_FETCH_WAYBACK", false)) chain.push(waybackStrategy(originalUrl));
+  if (envFlag("SCRAPER_FETCH_WAYBACK", false)) chain.push(waybackStrategy(originalUrl, opts.snapshotYear));
 
   preferRememberedStrategy(chain, host);
   return chain;

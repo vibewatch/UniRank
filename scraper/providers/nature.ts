@@ -69,7 +69,7 @@ export async function scrapeNature(subject = "", opts: ProviderOptions = {}): Pr
   const client = new ScraperClient({ headers: options.readerProxy ? readerProxyHeaders(HEADERS.nature) : HEADERS.nature, timeoutMs: 180_000 });
   let result: RankRecord[] | null = null;
   for (let attempt = 0; attempt < options.maxRetries; attempt += 1) {
-    const text = options.readerProxy ? (await request(client, targetUrl, { params: null, provider: "nature-reader", maxRetries: options.maxRetries, baseDelay: options.baseDelay })).text : await getHtml(client, targetUrl, { provider: "nature", readerFormat: "html" });
+    const text = options.readerProxy ? (await request(client, targetUrl, { params: null, provider: "nature-reader", maxRetries: options.maxRetries, baseDelay: options.baseDelay })).text : await getHtml(client, targetUrl, { provider: "nature", readerFormat: "html", snapshotYear: options.year });
     try {
       result = parseNatureMarkdown(text);
       const maxRanking = Math.max(...result.map((row) => Number(row.ranking)));

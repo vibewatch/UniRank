@@ -227,12 +227,13 @@ export async function requestJson(
 export async function getHtml(
   client: ScraperClient,
   url: string,
-  opts: { provider: string; params?: QueryParams | null; readerFormat?: "html" | "text" },
+  opts: { provider: string; params?: QueryParams | null; readerFormat?: "html" | "text"; snapshotYear?: number },
 ): Promise<string> {
   const strategyOpts: StrategyRequestOptions = {
     headers: client.headers,
     params: opts.params ?? null,
     readerFormat: opts.readerFormat ?? "html",
+    snapshotYear: opts.snapshotYear,
   };
   try {
     const text = await fetchWithStrategies(url, client.timeoutMs, strategyOpts);
