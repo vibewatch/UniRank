@@ -12,10 +12,12 @@
   --violet: #6c63e6;
   --yellow: #f2b943;
   --blue: #1a7cb8;
+  --radius-sm: 10px;
+  --radius-md: 14px;
   --radius: 20px;
   --radius-lg: 28px;
-  --shadow: 0 26px 68px -28px rgb(16 24 32 / 22%);
-  --shadow-sm: 0 8px 24px -14px rgb(16 24 32 / 26%);
+  --ring: 0 0 0 3px rgb(23 160 133 / 22%);
+  --shadow-pop: 0 12px 32px -18px rgb(16 24 32 / 24%);
   --shell: min(1240px, calc(100vw - 48px));
   --font-sans:
     "Inter Variable", ui-sans-serif, -apple-system, BlinkMacSystemFont,
@@ -194,8 +196,7 @@ nav a {
 nav a:hover,
 nav a.active {
   color: var(--ink);
-  background: rgb(255 255 255 / 78%);
-  box-shadow: 0 1px 2px rgb(16 24 32 / 6%);
+  background: rgb(255 255 255 / 82%);
 }
 
 main {
@@ -285,10 +286,9 @@ h3 {
 }
 
 .surface {
-  border: 1px solid rgb(16 24 32 / 9%);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: rgb(255 253 248 / 92%);
-  box-shadow: var(--shadow);
+  background: var(--surface);
 }
 
 .grid {
@@ -329,17 +329,23 @@ h3 {
   font-size: 0.86rem;
   font-weight: 700;
   text-decoration: none;
-  transition: transform 160ms ease, box-shadow 160ms ease;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
 }
 
 .button:hover {
-  box-shadow: 0 8px 24px rgb(16 24 32 / 16%);
-  transform: translateY(-1px);
+  background: var(--teal-dark);
+  border-color: var(--teal-dark);
 }
 
 .button.secondary {
   color: var(--ink);
   background: transparent;
+}
+
+.button.secondary:hover {
+  color: white;
+  background: var(--ink);
+  border-color: var(--ink);
 }
 
 .fine-print {
@@ -377,7 +383,7 @@ h3 {
 .table-wrap {
   overflow-x: auto;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   background: var(--surface);
 }
 

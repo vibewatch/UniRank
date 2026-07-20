@@ -31,12 +31,12 @@ const {
     min-height: 190px;
     overflow: hidden;
     padding: 24px;
-    transition: transform 200ms ease, box-shadow 200ms ease;
+    transition: transform 200ms ease, border-color 200ms ease;
   }
 
   .metric-card:hover {
-    box-shadow: 0 34px 70px -26px rgb(16 24 32 / 30%);
-    transform: translateY(-3px);
+    border-color: var(--accent);
+    transform: translateY(-2px);
   }
 
   .metric-card::after {

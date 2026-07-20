@@ -53,7 +53,7 @@ const { class: className, placeholder, ...rest } = Astro.props;
     min-height: 44px;
     padding: 9px 12px 9px 14px;
     border: 1px solid var(--line-strong);
-    border-radius: 10px;
+    border-radius: var(--radius-sm);
     color: var(--ink);
     background: var(--surface);
     font-family: var(--font-sans);
@@ -72,12 +72,12 @@ const { class: className, placeholder, ...rest } = Astro.props;
   .cs-trigger:focus-visible {
     outline: none;
     border-color: var(--teal);
-    box-shadow: 0 0 0 3px rgb(23 160 133 / 22%);
+    box-shadow: var(--ring);
   }
 
   .custom-select[data-open] .cs-trigger {
     border-color: var(--teal);
-    box-shadow: 0 0 0 3px rgb(23 160 133 / 20%);
+    box-shadow: var(--ring);
   }
 
   .cs-trigger:disabled {
@@ -121,9 +121,9 @@ const { class: className, placeholder, ...rest } = Astro.props;
     overflow-y: auto;
     list-style: none;
     border: 1px solid var(--line-strong);
-    border-radius: 14px;
+    border-radius: var(--radius-md);
     background: var(--surface);
-    box-shadow: var(--shadow);
+    box-shadow: var(--shadow-pop);
     scrollbar-width: thin;
   }
 

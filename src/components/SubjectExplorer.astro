@@ -340,8 +340,8 @@ const serialized = JSON.stringify(boards).replaceAll('<', '\\u003c');
 
   .chart-frame {
     padding: 10px;
-    border: 1px solid #e3e0d8;
-    border-radius: 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
     background:
       linear-gradient(rgb(255 253 248 / 94%), rgb(255 253 248 / 94%)),
       radial-gradient(circle, #bdbab1 1px, transparent 1px);

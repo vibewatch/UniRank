@@ -435,7 +435,7 @@ const serialized = JSON.stringify({ metrics: atlas.metrics, countries: atlas.cou
   .map-frame {
     position: relative;
     border: 1px solid var(--line);
-    border-radius: 16px;
+    border-radius: var(--radius-md);
     background: linear-gradient(180deg, #fdfbf6, #f3efe6);
     overflow: hidden;
   }
@@ -457,9 +457,9 @@ const serialized = JSON.stringify({ metrics: atlas.metrics, countries: atlas.cou
     width: 210px;
     padding: 12px 13px;
     border: 1px solid rgb(16 24 32 / 12%);
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     background: rgb(255 253 248 / 97%);
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-pop);
     pointer-events: none;
     z-index: 5;
   }

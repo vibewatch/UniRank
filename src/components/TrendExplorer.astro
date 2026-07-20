@@ -288,7 +288,7 @@ const serialized = JSON.stringify(trends).replaceAll('<', '\\u003c');
     min-height: 44px;
     padding: 9px 38px 9px 12px;
     border: 1px solid var(--line-strong);
-    border-radius: 10px;
+    border-radius: var(--radius-sm);
     color: var(--ink);
     background: #fffdf8;
     font-size: 0.8rem;
@@ -324,8 +324,8 @@ const serialized = JSON.stringify(trends).replaceAll('<', '\\u003c');
   .chart-frame {
     margin-top: 20px;
     padding: 10px;
-    border: 1px solid #e3e0d8;
-    border-radius: 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
     background:
       linear-gradient(rgb(255 253 248 / 94%), rgb(255 253 248 / 94%)),
       radial-gradient(circle, #bdbab1 1px, transparent 1px);

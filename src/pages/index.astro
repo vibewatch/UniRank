@@ -359,12 +359,17 @@ const dominantSubjectCountry = [...leaderCountryCount.entries()]
     padding: 28px;
     border: 1px solid rgb(255 255 255 / 12%);
     border-radius: var(--radius);
-    transition: transform 220ms ease, box-shadow 220ms ease;
+    transition: transform 220ms ease, border-color 220ms ease;
   }
 
   .insight-card:hover {
-    box-shadow: 0 30px 60px -30px rgb(0 0 0 / 55%);
-    transform: translateY(-4px);
+    border-color: rgb(255 255 255 / 42%);
+    transform: translateY(-3px);
+  }
+
+  .insight-card.light:hover,
+  .insight-card.color:hover {
+    border-color: rgb(16 24 32 / 26%);
   }
 
   .insight-card .card-index {
@@ -432,7 +437,6 @@ const dominantSubjectCountry = [...leaderCountryCount.entries()]
     border-radius: var(--radius);
     color: white;
     background: var(--violet);
-    box-shadow: var(--shadow);
   }
 
   .context-card .eyebrow {
