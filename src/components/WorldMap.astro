@@ -13,7 +13,7 @@ const serialized = JSON.stringify({ metrics: atlas.metrics, countries: atlas.cou
 );
 ---
 
-<figure class="worldmap surface" data-worldmap>
+<figure class="worldmap" data-worldmap>
   <div class="map-controls" data-metric-buttons role="tablist" aria-label="Choose a country metric">
     {atlas.metrics.map((metric) => (
       <button
@@ -33,7 +33,7 @@ const serialized = JSON.stringify({ metrics: atlas.metrics, countries: atlas.cou
   <div class="map-stage">
     <div class="map-frame">
       <svg data-map viewBox="0 0 960 500" role="img" aria-label="World choropleth of the selected university metric">
-        <rect x="0" y="0" width="960" height="500" fill="transparent"></rect>
+        <rect x="0" y="0" width="960" height="500" fill="#f7f4ec"></rect>
       </svg>
       <div class="map-tooltip" data-tooltip hidden aria-hidden="true"></div>
     </div>
@@ -122,12 +122,16 @@ const serialized = JSON.stringify({ metrics: atlas.metrics, countries: atlas.cou
       topology as never,
       (topology as never as { objects: { countries: never } }).objects.countries,
     ) as unknown as { features: Feature<Geometry>[] };
+    const mapFeatures = geo.features.filter((shape) => {
+      const id = String(shape.id ?? '').padStart(3, '0');
+      return id !== '010' && shape.properties?.name !== 'Antarctica';
+    });
     const projection = geoNaturalEarth1().fitExtent(
       [
         [8, 8],
         [952, 492],
       ],
-      geo as never,
+      { type: 'FeatureCollection', features: mapFeatures } as never,
     );
     const path = geoPath(projection);
 
@@ -141,15 +145,7 @@ const serialized = JSON.stringify({ metrics: atlas.metrics, countries: atlas.cou
     };
 
     const paths = new Map<string, SVGPathElement>();
-    const graticuleFrame = svgElement('path', {
-      d: path({ type: 'Sphere' } as never) || '',
-      fill: '#f7f4ec',
-      stroke: '#d8d3c8',
-      'stroke-width': 0.6,
-    });
-    svg?.append(graticuleFrame);
-
-    for (const shape of geo.features) {
+    for (const shape of mapFeatures) {
       const id = String(shape.id ?? '');
       const element = svgElement('path', { d: path(shape) || '', fill: NEUTRAL, stroke: '#ffffff', 'stroke-width': 0.4 });
       element.dataset.id = id;
@@ -324,7 +320,7 @@ const serialized = JSON.stringify({ metrics: atlas.metrics, countries: atlas.cou
       highlight(id, true);
       const country = byId.get(id);
       const geoName =
-        geo.features.find((shape) => String(shape.id ?? '') === id)?.properties?.name ?? 'Unknown';
+        mapFeatures.find((shape) => String(shape.id ?? '') === id)?.properties?.name ?? 'Unknown';
       const rows = country
         ? metrics
             .map((metric) => {
@@ -389,7 +385,9 @@ const serialized = JSON.stringify({ metrics: atlas.metrics, countries: atlas.cou
 
 <style>
   .worldmap {
-    padding: 20px;
+    width: 100%;
+    margin: 0;
+    padding: 0;
   }
 
   .map-controls {
@@ -447,7 +445,7 @@ const serialized = JSON.stringify({ metrics: atlas.metrics, countries: atlas.cou
     height: auto;
   }
 
-  .map-frame path {
+  .map-frame :global(path) {
     transition: fill 220ms ease;
     cursor: pointer;
   }
@@ -466,7 +464,7 @@ const serialized = JSON.stringify({ metrics: atlas.metrics, countries: atlas.cou
     z-index: 5;
   }
 
-  .map-tooltip strong {
+  .map-tooltip :global(strong) {
     display: block;
     margin-bottom: 7px;
     font-size: 0.82rem;
@@ -519,7 +517,7 @@ const serialized = JSON.stringify({ metrics: atlas.metrics, countries: atlas.cou
     gap: 18px;
   }
 
-  .legend-title,
+  .legend :global(.legend-title),
   .ranklist-title {
     display: block;
     margin-bottom: 9px;
@@ -529,25 +527,25 @@ const serialized = JSON.stringify({ metrics: atlas.metrics, countries: atlas.cou
     text-transform: uppercase;
   }
 
-  .legend-scale {
+  .legend :global(.legend-scale) {
     display: grid;
     gap: 3px;
   }
 
-  .legend-band {
+  .legend :global(.legend-band) {
     display: flex;
     align-items: center;
     gap: 8px;
   }
 
-  .legend-band i {
+  .legend :global(.legend-band i) {
     display: block;
     width: 20px;
     height: 12px;
     border-radius: 3px;
   }
 
-  .legend-band b {
+  .legend :global(.legend-band b) {
     color: var(--muted);
     font-family: var(--font-mono);
     font-size: 0.6rem;
@@ -563,7 +561,7 @@ const serialized = JSON.stringify({ metrics: atlas.metrics, countries: atlas.cou
     counter-reset: rank;
   }
 
-  .ranklist li {
+  .ranklist :global(li) {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
@@ -573,11 +571,11 @@ const serialized = JSON.stringify({ metrics: atlas.metrics, countries: atlas.cou
     cursor: default;
   }
 
-  .ranklist li:first-child {
+  .ranklist :global(li:first-child) {
     border-top: 0;
   }
 
-  .rank-country {
+  .ranklist :global(.rank-country) {
     overflow: hidden;
     font-size: 0.72rem;
     font-weight: 620;
@@ -585,7 +583,7 @@ const serialized = JSON.stringify({ metrics: atlas.metrics, countries: atlas.cou
     white-space: nowrap;
   }
 
-  .ranklist li b {
+  .ranklist :global(li b) {
     color: var(--teal-dark);
     font-family: var(--font-mono);
     font-size: 0.68rem;
