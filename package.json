@@ -18,6 +18,7 @@
     "scrape": "node scraper/cli.ts",
     "insights": "node scraper/insights/generate.ts",
     "data": "npm run insights",
+    "check:data": "npm run insights && git diff --exit-code -- src/data/insights.json public/data/directory.json src/data/directory-facets.json",
     "typecheck:scraper": "tsc -p scraper/tsconfig.json",
     "test": "node --test tests/*.test.ts"
   },

@@ -15,8 +15,8 @@ failures, retrieval methods, licenses, and required attribution.
 ```text
 .
 ├── src/                     # Astro insights site (pages, components, layouts)
-│   └── data/                # Generated insights.json + schema consumed by the site
-├── public/                  # Static assets served as-is
+│   └── data/                # Generated insights/facets + schema consumed by the site
+├── public/                  # Static assets, including the generated institution directory
 ├── scraper/                 # Node.js/TypeScript scraping engine (support scripts)
 │   ├── providers/           # Eleven provider adapters
 │   ├── fetch/               # ReadWise-style fetch strategy chain (bots, Chrome, proxy)
@@ -43,8 +43,11 @@ publication-scale versus citation-impact analysis.
 # Install dependencies (site + scraper)
 npm install
 
-# Regenerate the browser-ready analytical dataset (src/data/insights.json)
+# Regenerate every browser-ready analytical artifact
 npm run insights
+
+# Confirm committed artifacts are reproducible from the current snapshots
+npm run check:data
 
 # Type-check and build the static site
 npm run verify
@@ -52,6 +55,12 @@ npm run verify
 # Local development server
 npm run dev
 ```
+
+The generator writes `src/data/insights.json`, `public/data/directory.json`, and
+`src/data/directory-facets.json`. The institution directory combines the ten
+providers whose snapshots carry a usable country field. Webometrics remains
+part of the broader archive and analytical insights, but is excluded from the
+directory because its snapshot has no country field for entity grouping.
 
 The generated site preserves source editions and caveats; it is not a
 replacement for provider-published tables.
