@@ -1,5 +1,7 @@
 ---
 import BarChart from '../components/BarChart.astro';
+import CountryDetail from '../components/CountryDetail.astro';
+import NationalSpotlight from '../components/NationalSpotlight.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import WorldMap from '../components/WorldMap.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
@@ -26,19 +28,19 @@ const topGainer = gainers[0];
 ---
 
 <BaseLayout
-  title="Research atlas"
-  description="An interactive world map of university strength and research output: consensus top-100 placements, Nature Index share and its shift, ARWU seats, and OpenAlex output, joined to country geometry."
+  title="Destinations"
+  description="Choose where to study. An interactive world map plus a country-by-country drill-down: top-100 placements, the strongest universities, and the fields each country is known for."
 >
   <section class="page-hero">
     <div class="shell hero-grid">
       <div>
-        <p class="eyebrow">Where the signal concentrates</p>
-        <h1>The world map behind the tables.</h1>
+        <p class="eyebrow">Choose where to study</p>
+        <h1>Start with the country, not the campus.</h1>
         <p class="lede">
-          Rankings are geographic before they are institutional. This atlas joins
-          six country-level measures to a world basemap so you can switch lenses—
-          elite placements, research output, and how the balance is shifting—
-          without mistaking any single one for the whole story.
+          Where you study shapes cost, visas, language, and job markets long
+          before any single campus does. Switch the map between elite placements
+          and research output, then open any country to see its top universities
+          and the fields it is known for.
         </p>
       </div>
       <aside class="hero-note">
@@ -58,9 +60,20 @@ const topGainer = gainers[0];
       <SectionHeading
         eyebrow="Interactive choropleth"
         title="Switch the lens; watch the map redraw."
-        description="Each measure answers a different question. Elite placements reward a few dense systems; research-output measures spread wider; the Nature share shift exposes a decade of change that the static tables hide."
+        description="Each measure answers a different question. Elite placements reward a few dense systems; research-output measures spread wider; the Nature share shift exposes a decade of change that the static tables hide. Click any country to open its profile below."
       />
       <WorldMap atlas={atlas} />
+    </div>
+  </section>
+
+  <section class="section country-detail-section">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="Country profile"
+        title="Open a country; see where it is strong."
+        description="Pick a destination—or click it on the map—to compare its top-100 depth, read its highest-consensus universities, and see which fields it supplies to the world's subject tables."
+      />
+      <CountryDetail atlas={atlas} consensus={insights.consensus} subjectBoards={insights.subjectBoards} />
     </div>
   </section>
 
@@ -110,6 +123,17 @@ const topGainer = gainers[0];
         mainland China; the 110m basemap cannot draw every small territory even
         when it is present in the underlying data.
       </p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="National lens"
+        title="Inside one system: the United States up close."
+        description="The global map blends methods worldwide. Here the two largest publisher rankings are restricted to U.S. institutions and combined into a mean rank—an example of reading a single system without the noise of cross-border comparison."
+      />
+      <NationalSpotlight data={insights.nationalRankings} />
     </div>
   </section>
 </BaseLayout>

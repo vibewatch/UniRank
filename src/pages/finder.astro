@@ -4,6 +4,7 @@ import MetricCard from '../components/MetricCard.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import facets from '../data/directory-facets.json';
+import { insights } from '../lib/data';
 import type { DirectoryFacets } from '../data/schema';
 
 const directory = facets as DirectoryFacets;
@@ -11,22 +12,29 @@ const totalInstitutions = directory.meta.count;
 const providerCount = directory.meta.providerCount;
 const consensusCount = directory.meta.consensusCount;
 const searchableBeyondConsensus = totalInstitutions - consensusCount;
+
+// Schools that sit inside every one of the six broad providers' displayed top
+// 20 — the strongest "everyone agrees" trust anchor for an overwhelmed student.
+const universalTop20 = insights.consensus.filter(
+  (institution) =>
+    institution.providerCount === 6 && institution.ranks.every((rank) => rank.rank <= 20),
+);
 ---
 
 <BaseLayout
-  title="Finder"
+  title="Find"
   description="Search and query every ranked institution across ten worldwide ranking providers — not only the multi-provider consensus. Filter by country, provider, and coverage, then read the source ranks behind each name."
 >
   <section class="page-hero finder-hero">
     <div class="shell">
-      <p class="eyebrow">Institution finder</p>
-      <h1>Query every ranked institution.</h1>
+      <p class="eyebrow">Find a university</p>
+      <h1>Search every ranked university.</h1>
       <p class="lede">
-        The consensus explorer only surfaces institutions ranked by four or more
-        broad providers. This finder indexes all
+        This is the one place to look up any school. It indexes all
         {totalInstitutions.toLocaleString('en-US')} institutions across
         {providerCount} providers — so any university that appears in even one
-        table is searchable, filterable, and sortable here.
+        table is searchable, filterable, and sortable. Schools every major
+        ranking agrees on are flagged as consensus.
       </p>
       <div class="grid three metric-grid">
         <MetricCard
@@ -128,12 +136,44 @@ const searchableBeyondConsensus = totalInstitutions - consensusCount;
                 <th scope="col">Institution</th>
                 <th scope="col">Coverage</th>
                 <th scope="col">Provider ranks</th>
+                <th scope="col" class="compare-col">Compare</th>
               </tr>
             </thead>
             <tbody data-results></tbody>
           </table>
           <p class="empty" data-empty hidden>No institution matches these filters. Try a broader search or clear a filter.</p>
         </div>
+      </div>
+
+      <div class="compare-tray" data-compare-tray hidden>
+        <span data-tray-count>0 selected</span>
+        <a class="button" href="/compare/">Compare shortlist <span aria-hidden="true">&rarr;</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section elite-section">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="Not sure where to start?"
+        title="Schools every major ranking calls elite."
+        description="These institutions sit inside all six broad providers' displayed top 20 at once. It is a strict agreement test, not another weighted score — a safe anchor before you branch into subject and country fit."
+        href="/subjects/"
+        linkLabel="Then match your subject"
+      />
+      <div class="elite-cloud">
+        {universalTop20.map((institution, index) => (
+          <article class="surface">
+            <span class="mono">{String(index + 1).padStart(2, '0')}</span>
+            <div>
+              <strong>{institution.name}</strong>
+              <small>{institution.country}</small>
+            </div>
+            <span class="range" title="Best–worst rank across the six broad providers">
+              {`${Math.min(...institution.ranks.map((rank) => rank.rank))}–${Math.max(...institution.ranks.map((rank) => rank.rank))}`}
+            </span>
+          </article>
+        ))}
       </div>
     </div>
   </section>
@@ -166,6 +206,13 @@ const searchableBeyondConsensus = totalInstitutions - consensusCount;
 </BaseLayout>
 
 <script>
+  import {
+    SHORTLIST_MAX,
+    readShortlist,
+    toggleShortlist,
+    subscribeShortlist,
+  } from '../lib/shortlist';
+
   const PROVIDER_ABBR: Record<string, string> = {
     usnews: 'USN', times: 'THE', qs: 'QS', cwur: 'CWUR', ntu: 'NTU',
     arwu: 'ARWU', scimago: 'SCI', nature: 'NAT', openalex: 'OA', leiden: 'LEI',
@@ -202,6 +249,8 @@ const searchableBeyondConsensus = totalInstitutions - consensusCount;
     const note = root.querySelector<HTMLElement>('[data-result-note]');
     const body = root.querySelector<HTMLTableSectionElement>('[data-results]');
     const empty = root.querySelector<HTMLElement>('[data-empty]');
+    const tray = document.querySelector<HTMLElement>('[data-compare-tray]');
+    const trayCount = document.querySelector<HTMLElement>('[data-tray-count]');
     if (!body || !count) return;
 
     let directory: Directory;
@@ -251,9 +300,8 @@ const searchableBeyondConsensus = totalInstitutions - consensusCount;
       place.textContent = institution.country;
       nameCell.append(name, place);
       if (institution.consensusRank !== null) {
-        const badge = document.createElement('a');
+        const badge = document.createElement('span');
         badge.className = 'consensus-badge';
-        badge.href = '/explorer/';
         badge.textContent = `Consensus #${institution.consensusRank}`;
         nameCell.append(badge);
       }
@@ -271,6 +319,19 @@ const searchableBeyondConsensus = totalInstitutions - consensusCount;
       const chipCell = document.createElement('td');
       chipCell.append(buildChips(institution));
       row.append(chipCell);
+
+      const compareCell = document.createElement('td');
+      compareCell.className = 'compare-cell';
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.className = 'compare-check';
+      checkbox.dataset.compareId = institution.id;
+      checkbox.setAttribute('aria-label', `Add ${institution.name} to your comparison`);
+      checkbox.addEventListener('change', () => {
+        toggleShortlist(institution.id);
+      });
+      compareCell.append(checkbox);
+      row.append(compareCell);
       return row;
     };
 
@@ -287,6 +348,21 @@ const searchableBeyondConsensus = totalInstitutions - consensusCount;
       },
       name: compareName,
       providers: (a, b) => (b.providerCount - a.providerCount) || compareName(a, b),
+    };
+
+    const syncCompareUI = (): void => {
+      const selected = readShortlist();
+      const full = selected.length >= SHORTLIST_MAX;
+      root.querySelectorAll<HTMLInputElement>('[data-compare-id]').forEach((box) => {
+        const id = box.dataset.compareId ?? '';
+        const checked = selected.includes(id);
+        box.checked = checked;
+        box.disabled = full && !checked;
+      });
+      if (tray && trayCount) {
+        tray.hidden = selected.length === 0;
+        trayCount.textContent = `${selected.length} of ${SHORTLIST_MAX} selected`;
+      }
     };
 
     const render = (): void => {
@@ -322,6 +398,7 @@ const searchableBeyondConsensus = totalInstitutions - consensusCount;
       const fragment = document.createDocumentFragment();
       for (const institution of shown) fragment.append(buildRow(institution));
       body.replaceChildren(fragment);
+      syncCompareUI();
 
       const total = matches.length;
       count.textContent = `${total.toLocaleString('en-US')} institution${total === 1 ? '' : 's'}`;
@@ -370,6 +447,7 @@ const searchableBeyondConsensus = totalInstitutions - consensusCount;
     coverage?.addEventListener('change', onControlChange);
     sort?.addEventListener('change', onControlChange);
     window.addEventListener('popstate', () => { readUrl(); render(); });
+    subscribeShortlist(() => syncCompareUI());
 
     readUrl();
     render();
@@ -618,5 +696,59 @@ const searchableBeyondConsensus = totalInstitutions - consensusCount;
     .filters {
       grid-template-columns: 1fr;
     }
+  }
+
+  .compare-col { text-align: center; width: 4.5rem; }
+  tbody :global(.compare-cell) { text-align: center; vertical-align: middle; }
+  tbody :global(.compare-check) {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--teal);
+    cursor: pointer;
+  }
+  tbody :global(.compare-check:disabled) { cursor: not-allowed; opacity: 0.4; }
+
+  .compare-tray {
+    position: sticky;
+    bottom: 16px;
+    z-index: 15;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin: 18px auto 0;
+    padding: 12px 16px;
+    max-width: 520px;
+    border: 1px solid var(--line-strong, var(--line));
+    border-radius: var(--radius-md);
+    background: var(--ink);
+    color: white;
+    box-shadow: var(--shadow-pop);
+  }
+  .compare-tray span { font-family: var(--font-mono); font-size: 0.8rem; }
+  .compare-tray .button { padding: 8px 16px; font-size: 0.82rem; }
+
+  .elite-section { padding-top: 8px; }
+  .elite-cloud {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
+    margin-top: 22px;
+  }
+  .elite-cloud article {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+  }
+  .elite-cloud .mono { color: var(--muted); font-size: 0.72rem; }
+  .elite-cloud div { flex: 1; min-width: 0; }
+  .elite-cloud strong { display: block; font-size: 0.9rem; }
+  .elite-cloud small { color: var(--muted); font-size: 0.72rem; }
+  .elite-cloud .range {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--teal-dark);
+    white-space: nowrap;
   }
 </style>

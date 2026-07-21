@@ -1,0 +1,285 @@
+---
+import type { CountryAtlas, CountryAtlasValues, ConsensusInstitution, SubjectLeaderBoard } from '../data/schema';
+
+interface Props {
+  atlas: CountryAtlas;
+  consensus: ConsensusInstitution[];
+  subjectBoards: SubjectLeaderBoard[];
+}
+
+const { atlas, consensus, subjectBoards } = Astro.props;
+
+// Top consensus schools per country (the consensus array is already ordered by
+// consensusRank, so first-seen order is correct).
+const schoolsByCountry = new Map<string, { name: string; consensusRank: number; score: number }[]>();
+for (const inst of consensus) {
+  const code = inst.countryCode;
+  if (!code) continue;
+  const list = schoolsByCountry.get(code) ?? [];
+  if (list.length < 8) list.push({ name: inst.name, consensusRank: inst.consensusRank, score: inst.score });
+  schoolsByCountry.set(code, list);
+}
+
+// Fields where a country is most represented, aggregated across every subject
+// table (a country only surfaces here when it is a top-eight supplier for that
+// subject). Dedupe by subject label, keeping the strongest count.
+const subjectsByCountry = new Map<string, Map<string, { label: string; count: number }>>();
+for (const board of subjectBoards) {
+  for (const entry of board.countries) {
+    const code = entry.countryCode;
+    if (!code) continue;
+    const map = subjectsByCountry.get(code) ?? new Map();
+    const existing = map.get(board.label);
+    if (!existing || entry.count > existing.count) map.set(board.label, { label: board.label, count: entry.count });
+    subjectsByCountry.set(code, map);
+  }
+}
+
+type CountryEntry = {
+  iso2: string;
+  numericId: string | null;
+  country: string;
+  values: CountryAtlasValues;
+  topSchools: { name: string; consensusRank: number; score: number }[];
+  topSubjects: { label: string; count: number }[];
+};
+
+const countryData: CountryEntry[] = atlas.countries
+  .map((country) => ({
+    iso2: country.iso2,
+    numericId: country.numericId,
+    country: country.country,
+    values: country.values,
+    topSchools: schoolsByCountry.get(country.iso2) ?? [],
+    topSubjects: [...(subjectsByCountry.get(country.iso2)?.values() ?? [])]
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 6),
+  }))
+  .filter((entry) => entry.topSchools.length > 0)
+  .sort((a, b) => (b.values.consensusTop100 ?? 0) - (a.values.consensusTop100 ?? 0));
+
+const serialized = JSON.stringify({ metrics: atlas.metrics, countries: countryData }).replaceAll('<', '\\u003c');
+const defaultIso = countryData[0]?.iso2 ?? '';
+---
+
+<section class="country-detail surface" data-country-detail>
+  <div class="cd-head">
+    <label class="cd-picker">
+      <span>Choose a destination</span>
+      <select data-country-picker aria-label="Choose a country to inspect">
+        {countryData.map((entry) => (
+          <option value={entry.iso2} selected={entry.iso2 === defaultIso}>{entry.country}</option>
+        ))}
+      </select>
+    </label>
+    <p class="cd-hint mono" data-cd-hint>Or click a country on the map above.</p>
+  </div>
+
+  <div class="cd-body" data-cd-body>
+    <div class="cd-stats" data-cd-stats></div>
+    <div class="cd-columns">
+      <div class="cd-block">
+        <p class="cd-block-title mono">Top universities</p>
+        <ol class="cd-schools" data-cd-schools></ol>
+      </div>
+      <div class="cd-block">
+        <p class="cd-block-title mono">Strongest fields</p>
+        <ul class="cd-subjects" data-cd-subjects></ul>
+        <p class="cd-subjects-empty" data-cd-subjects-empty hidden>
+          This country is not a top-eight supplier in any single subject table,
+          even where its overall placements are strong.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script type="application/json" is:inline data-country-detail-data set:html={serialized}></script>
+</section>
+
+<script>
+  interface Metric { id: string; label: string; short: string; unit: string; format: string }
+  interface School { name: string; consensusRank: number; score: number }
+  interface Subject { label: string; count: number }
+  interface CountryEntry {
+    iso2: string;
+    numericId: string | null;
+    country: string;
+    values: Record<string, number>;
+    topSchools: School[];
+    topSubjects: Subject[];
+  }
+  interface Payload { metrics: Metric[]; countries: CountryEntry[] }
+
+  const numberFmt = new Intl.NumberFormat('en-US');
+  const compactFmt = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 });
+
+  // Student-facing labels for the measures a destination decision cares about.
+  const STAT_SPECS: { id: string; label: string; compact?: boolean; suffix?: string }[] = [
+    { id: 'consensusTop100', label: 'Top-100 universities' },
+    { id: 'providerReach', label: 'Rankings reaching top 100', suffix: '/6' },
+    { id: 'arwuTop100', label: 'ARWU top-100 seats' },
+    { id: 'openAlexWorks', label: 'Research output (works)', compact: true },
+  ];
+
+  const initializeCountryDetail = (root: HTMLElement): void => {
+    const dataElement = root.querySelector<HTMLScriptElement>('[data-country-detail-data]');
+    if (!dataElement || root.dataset.initialized === 'true') return;
+    root.dataset.initialized = 'true';
+    const payload = JSON.parse(dataElement.textContent || '{}') as Payload;
+    const byIso = new Map(payload.countries.map((entry) => [entry.iso2, entry]));
+    const byNumeric = new Map(payload.countries.filter((entry) => entry.numericId).map((entry) => [entry.numericId as string, entry]));
+
+    const picker = root.querySelector<HTMLSelectElement>('[data-country-picker]');
+    const stats = root.querySelector<HTMLElement>('[data-cd-stats]');
+    const schools = root.querySelector<HTMLOListElement>('[data-cd-schools]');
+    const subjects = root.querySelector<HTMLUListElement>('[data-cd-subjects]');
+    const subjectsEmpty = root.querySelector<HTMLElement>('[data-cd-subjects-empty]');
+    if (!picker || !stats || !schools || !subjects) return;
+
+    const render = (iso2: string): void => {
+      const entry = byIso.get(iso2);
+      if (!entry) return;
+
+      stats.replaceChildren(
+        ...STAT_SPECS.map((spec) => {
+          const value = entry.values[spec.id] ?? 0;
+          const tile = document.createElement('div');
+          tile.className = 'cd-stat';
+          const strong = document.createElement('strong');
+          strong.textContent = `${spec.compact ? compactFmt.format(value) : numberFmt.format(Math.round(value))}${spec.suffix ?? ''}`;
+          const label = document.createElement('span');
+          label.textContent = spec.label;
+          tile.append(strong, label);
+          return tile;
+        }),
+      );
+
+      schools.replaceChildren(
+        ...entry.topSchools.map((school) => {
+          const li = document.createElement('li');
+          const rank = document.createElement('span');
+          rank.className = 'cd-rank mono';
+          rank.textContent = `#${school.consensusRank}`;
+          const name = document.createElement('strong');
+          name.textContent = school.name;
+          li.append(rank, name);
+          return li;
+        }),
+      );
+
+      subjects.replaceChildren(
+        ...entry.topSubjects.map((subject) => {
+          const li = document.createElement('li');
+          const label = document.createElement('span');
+          label.textContent = subject.label;
+          const count = document.createElement('b');
+          count.textContent = `${numberFmt.format(subject.count)} ranked`;
+          li.append(label, count);
+          return li;
+        }),
+      );
+      if (subjectsEmpty) {
+        const empty = entry.topSubjects.length === 0;
+        subjectsEmpty.hidden = !empty;
+        subjects.hidden = empty;
+      }
+    };
+
+    picker.addEventListener('change', () => render(picker.value));
+
+    // Let a click on the world map above drive this panel.
+    window.addEventListener('atlas:country', (event) => {
+      const numericId = (event as CustomEvent<string>).detail;
+      const entry = byNumeric.get(numericId);
+      if (!entry) return;
+      picker.value = entry.iso2;
+      render(entry.iso2);
+      root.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+
+    render(picker.value);
+  };
+
+  const boot = (): void => {
+    document.querySelectorAll<HTMLElement>('[data-country-detail]').forEach((root) => initializeCountryDetail(root));
+  };
+  boot();
+  document.addEventListener('astro:page-load', boot);
+</script>
+
+<style>
+  .country-detail { padding: clamp(1.25rem, 3vw, 2rem); display: grid; gap: 1.5rem; }
+  .cd-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 0.75rem 1.5rem;
+  }
+  .cd-picker { display: grid; gap: 6px; min-width: 240px; }
+  .cd-picker > span {
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.61rem;
+    font-weight: 750;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .cd-picker select {
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    font: inherit;
+  }
+  .cd-hint { color: var(--muted); font-size: 0.72rem; margin: 0; }
+
+  .cd-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.75rem;
+  }
+  .cd-stat {
+    display: grid;
+    gap: 0.2rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface-2, transparent);
+  }
+  .cd-stat strong { font-size: 1.5rem; letter-spacing: -0.03em; line-height: 1; }
+  .cd-stat span { color: var(--muted); font-size: 0.72rem; }
+
+  .cd-columns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+  }
+  .cd-block-title { color: var(--muted); font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase; margin: 0 0 0.6rem; }
+  .cd-schools { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; }
+  .cd-schools li {
+    display: grid;
+    grid-template-columns: 3rem 1fr;
+    align-items: baseline;
+    gap: 0.75rem;
+    padding: 0.4rem 0;
+    border-top: 1px solid var(--line);
+  }
+  .cd-schools li:first-child { border-top: 0; }
+  .cd-rank { color: var(--teal-dark); font-size: 0.82rem; }
+  .cd-schools strong { font-size: 0.9rem; font-weight: 600; }
+
+  .cd-subjects { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; }
+  .cd-subjects li {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.4rem 0;
+    border-top: 1px solid var(--line);
+  }
+  .cd-subjects li:first-child { border-top: 0; }
+  .cd-subjects span { font-size: 0.88rem; }
+  .cd-subjects b { color: var(--muted); font-family: var(--font-mono); font-size: 0.74rem; white-space: nowrap; }
+  .cd-subjects-empty { color: var(--muted); font-size: 0.8rem; margin: 0; }
+</style>

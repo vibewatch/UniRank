@@ -103,7 +103,7 @@ test("analytical outputs preserve publisher semantics", () => {
     subjectBoards.every(
       (board) =>
         board.institutions.length >= 5 &&
-        board.institutions.length <= 12 &&
+        board.institutions.length <= 25 &&
         board.countries.length >= 1 &&
         board.countries.length <= 8,
     ),

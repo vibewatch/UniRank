@@ -20,11 +20,11 @@ const { title, description } = Astro.props;
 const path = Astro.url.pathname;
 const nav = [
   { href: '/', label: 'Overview' },
+  { href: '/subjects/', label: 'Study' },
+  { href: '/atlas/', label: 'Destinations' },
+  { href: '/finder/', label: 'Find' },
+  { href: '/compare/', label: 'Compare' },
   { href: '/trends/', label: 'Trends' },
-  { href: '/atlas/', label: 'Atlas' },
-  { href: '/subjects/', label: 'Subject lens' },
-  { href: '/explorer/', label: 'Explorer' },
-  { href: '/finder/', label: 'Finder' },
   { href: '/methodology/', label: 'Methodology' },
 ];
 const fullTitle = title === 'Overview' ? 'University Signals' : `${title} · University Signals`;
@@ -133,7 +133,7 @@ const jsonLd = {
         <div>
           <span class="footer-label">Navigate</span>
           <a href="/methodology/">Methods & caveats</a>
-          <a href="/explorer/">Explore institutions</a>
+          <a href="/finder/">Find a university</a>
         </div>
       </div>
     </footer>

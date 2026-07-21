@@ -156,6 +156,10 @@ const serialized = JSON.stringify({ metrics: atlas.metrics, countries: atlas.cou
       element.addEventListener('pointerenter', () => showTooltip(id));
       element.addEventListener('pointermove', (event) => moveTooltip(event));
       element.addEventListener('pointerleave', () => hideTooltip());
+      element.style.cursor = 'pointer';
+      element.addEventListener('click', () => {
+        window.dispatchEvent(new CustomEvent('atlas:country', { detail: id }));
+      });
     }
 
     let activeMetric = metrics.find((m) => m.id === payload.initialMetric) ?? metrics[0];

@@ -28,17 +28,18 @@ const dominantSubjectCountry = [...leaderCountryCount.entries()]
   <section class="page-hero home-hero">
     <div class="shell hero-grid">
       <div>
-        <p class="eyebrow">A multi-source evidence atlas</p>
-        <h1>See the signal behind the rank.</h1>
+        <p class="eyebrow">For students &amp; families</p>
+        <h1>See past the rank to the right fit.</h1>
         <p class="lede">
           One league table gives a position. This archive connects{' '}
           <strong>{number.format(insights.meta.archiveRows)} rows</strong> across
           reputation, research scale, citation impact, subject strength, and
-          web visibility—without pretending those measures are interchangeable.
+          web visibility—so you can shortlist by what you want to study and
+          where, not by a single number.
         </p>
         <div class="button-row">
-          <a class="button" href="/explorer/">Explore institutions <span aria-hidden="true">→</span></a>
-          <a class="button secondary" href="/trends/">Follow the trajectories</a>
+          <a class="button" href="/finder/">Find a university <span aria-hidden="true">→</span></a>
+          <a class="button secondary" href="/subjects/">Explore by subject</a>
         </div>
       </div>
       <aside class="signal-panel surface" aria-label="Leading multi-provider signals">
@@ -61,6 +62,42 @@ const dominantSubjectCountry = [...leaderCountryCount.entries()]
         </ol>
         <a href="/methodology/#consensus">How the signal is calculated <span aria-hidden="true">↗</span></a>
       </aside>
+    </div>
+  </section>
+
+  <section class="section start-section">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="Start here"
+        title="Four ways to use the data."
+        description="Every path leads back to the same evidence. Pick the question that matches where you are in the decision."
+      />
+      <div class="grid four start-grid">
+        <a class="start-card surface" href="/subjects/">
+          <span class="start-index mono">01 / STUDY</span>
+          <strong>Discover schools by major</strong>
+          <p>See the best universities for a subject, then narrow to a single country.</p>
+          <span class="start-go">Explore by subject →</span>
+        </a>
+        <a class="start-card surface" href="/atlas/">
+          <span class="start-index mono">02 / DESTINATIONS</span>
+          <strong>Choose where to study</strong>
+          <p>Use the world map to compare countries, then open one for its top schools.</p>
+          <span class="start-go">Open the map →</span>
+        </a>
+        <a class="start-card surface" href="/finder/">
+          <span class="start-index mono">03 / FIND</span>
+          <strong>Look up any university</strong>
+          <p>Search every ranked institution and read the provider ranks behind it.</p>
+          <span class="start-go">Search all schools →</span>
+        </a>
+        <a class="start-card surface" href="/compare/">
+          <span class="start-index mono">04 / COMPARE</span>
+          <strong>Compare your shortlist</strong>
+          <p>Put up to four universities side by side across every ranking provider.</p>
+          <span class="start-go">Build a shortlist →</span>
+        </a>
+      </div>
     </div>
   </section>
 
@@ -129,7 +166,7 @@ const dominantSubjectCountry = [...leaderCountryCount.entries()]
             broad publisher rankings. The top five all have evidence from every
             included source.
           </p>
-          <a href="/explorer/">Compare provider evidence →</a>
+          <a href="/finder/">Compare provider evidence →</a>
         </article>
         <article class="insight-card color">
           <span class="card-index mono">03 / SUBJECT FIT</span>
@@ -152,7 +189,7 @@ const dominantSubjectCountry = [...leaderCountryCount.entries()]
         eyebrow="Consensus, not certainty"
         title="Where independent broad rankings overlap."
         description="Institutions must appear in at least four of six latest broad editions. The score is the mean within-table percentile, so it measures agreement—not educational fit."
-        href="/explorer/"
+        href="/finder/"
         linkLabel={`Search all ${number.format(insights.consensus.length)} signals`}
       />
       <ConsensusTable institutions={insights.consensus} limit={10} />
@@ -227,7 +264,7 @@ const dominantSubjectCountry = [...leaderCountryCount.entries()]
           <span class="step mono">01</span>
           <h3>Shortlist on durable signal</h3>
           <p>Look for repeated strength across methods and years, not a one-edition jump.</p>
-          <a href="/explorer/">Start with consensus</a>
+          <a href="/finder/">Start with consensus</a>
         </article>
         <article>
           <span class="step mono">02</span>
@@ -419,6 +456,50 @@ const dominantSubjectCountry = [...leaderCountryCount.entries()]
 
   .table-note {
     margin: 13px 4px 0;
+  }
+
+  .start-grid {
+    margin-top: 8px;
+  }
+
+  .start-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 200px;
+    padding: 24px;
+    color: inherit;
+    text-decoration: none;
+    transition: border-color 200ms ease, transform 200ms ease;
+  }
+
+  .start-card:hover {
+    border-color: var(--teal);
+    transform: translateY(-3px);
+  }
+
+  .start-index {
+    color: var(--muted);
+    font-size: 0.61rem;
+    letter-spacing: 0.04em;
+  }
+
+  .start-card strong {
+    font-size: 1.08rem;
+    letter-spacing: -0.01em;
+  }
+
+  .start-card p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.78rem;
+  }
+
+  .start-go {
+    margin-top: auto;
+    color: var(--teal-dark);
+    font-size: 0.72rem;
+    font-weight: 750;
   }
 
   .country-grid {

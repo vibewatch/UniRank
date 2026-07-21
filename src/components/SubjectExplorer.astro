@@ -33,28 +33,36 @@ const fineNote =
 
 <section class="subject-explorer surface" data-subject-explorer>
   <div class="controls">
-    {showProvider && (
+    <div class="control-fields">
+      {showProvider && (
+        <label>
+          <span>Ranking source</span>
+          <CustomSelect data-provider aria-label="Choose a ranking source">
+            {providerOrder.map((entry, index) => (
+              <option value={entry.provider} selected={index === 0}>
+                {entry.providerLabel}
+              </option>
+            ))}
+          </CustomSelect>
+        </label>
+      )}
       <label>
-        <span>Ranking source</span>
-        <CustomSelect data-provider aria-label="Choose a ranking source">
-          {providerOrder.map((entry, index) => (
-            <option value={entry.provider} selected={index === 0}>
-              {entry.providerLabel}
+        <span>Subject table</span>
+        <CustomSelect data-subject aria-label="Choose a subject table">
+          {initialBoards.map((board, index) => (
+            <option value={board.subject} selected={index === defaultIndex}>
+              {board.label}
             </option>
           ))}
         </CustomSelect>
       </label>
-    )}
-    <label>
-      <span>Subject table</span>
-      <CustomSelect data-subject aria-label="Choose a subject table">
-        {initialBoards.map((board, index) => (
-          <option value={board.subject} selected={index === defaultIndex}>
-            {board.label}
-          </option>
-        ))}
-      </CustomSelect>
-    </label>
+      <label>
+        <span>Country</span>
+        <CustomSelect data-subject-country aria-label="Filter the leaderboard by country">
+          <option value="">All countries</option>
+        </CustomSelect>
+      </label>
+    </div>
     <div class="subject-summary" data-summary aria-live="polite"></div>
   </div>
   <div class="explorer-grid">
@@ -70,8 +78,9 @@ const fineNote =
       </div>
     </figure>
     <div class="leaders-block">
-      <p class="leaders-title">Top institutions</p>
+      <p class="leaders-title" data-leaders-title>Top institutions</p>
       <ol data-institutions class="leaders"></ol>
+      <p class="leaders-empty" data-leaders-empty hidden></p>
     </div>
   </div>
   <p class="fine-print">{fineNote}</p>
@@ -116,10 +125,13 @@ const fineNote =
     const boards = JSON.parse(dataElement.textContent || '[]') as Board[];
     const providerSelect = root.querySelector<HTMLSelectElement>('[data-provider]');
     const subjectSelect = root.querySelector<HTMLSelectElement>('[data-subject]');
+    const countrySelect = root.querySelector<HTMLSelectElement>('[data-subject-country]');
     const chart = root.querySelector<SVGSVGElement>('[data-chart]');
     const caption = root.querySelector<HTMLElement>('[data-chart-caption]');
     const summary = root.querySelector<HTMLElement>('[data-summary]');
     const institutions = root.querySelector<HTMLElement>('[data-institutions]');
+    const leadersTitle = root.querySelector<HTMLElement>('[data-leaders-title]');
+    const leadersEmpty = root.querySelector<HTMLElement>('[data-leaders-empty]');
     const svgNamespace = 'http://www.w3.org/2000/svg';
     const number = new Intl.NumberFormat('en-US');
 
@@ -148,7 +160,7 @@ const fineNote =
       );
     };
 
-    const renderChart = (board: Board) => {
+    const renderChart = (board: Board, highlightCode: string) => {
       if (!chart) return;
       chart.replaceChildren();
       const rows = board.countries;
@@ -213,7 +225,7 @@ const fineNote =
           width: barWidth,
           height: barHeight,
           rx: 5,
-          fill: index === 0 ? '#0f766e' : '#17a085',
+          fill: highlightCode && row.countryCode === highlightCode ? '#ef6146' : index === 0 ? '#0f766e' : '#17a085',
         });
         const barTitle = svgElement('title', {});
         barTitle.textContent = `${row.country}: ${number.format(row.count)} ranked`;
@@ -247,19 +259,46 @@ const fineNote =
       });
     };
 
+    const renderCountryOptions = (board: Board) => {
+      if (!countrySelect) return;
+      const previous = countrySelect.value;
+      const seen = new Map<string, { country: string; count: number }>();
+      for (const institution of board.institutions) {
+        const code = institution.countryCode || institution.country;
+        if (!code) continue;
+        const entry = seen.get(code) ?? { country: institution.country, count: 0 };
+        entry.count += 1;
+        seen.set(code, entry);
+      }
+      const entries = [...seen.entries()].sort(
+        (a, b) => b[1].count - a[1].count || (a[1].country < b[1].country ? -1 : 1),
+      );
+      const options: HTMLOptionElement[] = [];
+      const all = document.createElement('option');
+      all.value = '';
+      all.textContent = 'All countries';
+      options.push(all);
+      for (const [code, info] of entries) {
+        const option = document.createElement('option');
+        option.value = code;
+        option.textContent = `${info.country} (${info.count})`;
+        options.push(option);
+      }
+      countrySelect.replaceChildren(...options);
+      countrySelect.value = entries.some(([code]) => code === previous) ? previous : '';
+    };
+
     const render = () => {
       if (!summary || !institutions) return;
       const board = selectedBoard();
       if (!board) return;
+      const selectedCountry = countrySelect?.value ?? '';
 
       if (caption) {
         caption.textContent = `Ranked institutions by home system · ${board.providerLabel} ${board.year}`;
       }
       if (chart) {
-        chart.setAttribute(
-          'aria-label',
-          `${board.label}: ranked institutions by country`,
-        );
+        chart.setAttribute('aria-label', `${board.label}: ranked institutions by country`);
       }
 
       const leadCountry = board.countries[0];
@@ -275,10 +314,21 @@ const fineNote =
         : 'No country breakdown available';
       summary.replaceChildren(summaryField, summaryTotal, summaryLead);
 
-      renderChart(board);
+      renderChart(board, selectedCountry);
+
+      const filtered = selectedCountry
+        ? board.institutions.filter((institution) => (institution.countryCode || institution.country) === selectedCountry)
+        : board.institutions;
+
+      if (leadersTitle) {
+        const countryName = filtered[0]?.country ?? '';
+        leadersTitle.textContent = selectedCountry
+          ? `Top ${countryName} institutions in ${board.label}`
+          : `Top institutions in ${board.label}`;
+      }
 
       institutions.replaceChildren(
-        ...board.institutions.map((institution) => {
+        ...filtered.map((institution) => {
           const item = document.createElement('li');
           const rank = document.createElement('span');
           rank.className = 'rank';
@@ -294,6 +344,21 @@ const fineNote =
           return item;
         }),
       );
+
+      if (leadersEmpty) {
+        const empty = filtered.length === 0;
+        leadersEmpty.hidden = !empty;
+        institutions.hidden = empty;
+        if (empty) {
+          leadersEmpty.textContent = `No institution from this country appears in the top ${board.institutions.length} of ${board.label}.`;
+        }
+      }
+    };
+
+    const onSubjectChange = () => {
+      const board = selectedBoard();
+      if (board) renderCountryOptions(board);
+      render();
     };
 
     const onProviderChange = () => {
@@ -312,7 +377,11 @@ const fineNote =
     };
 
     providerSelect?.addEventListener('change', onProviderChange);
-    subjectSelect?.addEventListener('change', render);
+    subjectSelect?.addEventListener('change', onSubjectChange);
+    countrySelect?.addEventListener('change', render);
+
+    const initialBoard = selectedBoard();
+    if (initialBoard) renderCountryOptions(initialBoard);
     render();
   };
 
@@ -333,9 +402,16 @@ const fineNote =
 
   .controls {
     display: grid;
-    grid-template-columns: minmax(240px, 1fr) 1.3fr;
+    grid-template-columns: minmax(0, 2.2fr) minmax(200px, 1fr);
     align-items: end;
     gap: 16px;
+  }
+
+  .control-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 14px;
+    align-items: end;
   }
 
   label {
@@ -430,6 +506,14 @@ const fineNote =
     margin: 0;
     padding: 0;
     list-style: none;
+    max-height: 420px;
+    overflow-y: auto;
+  }
+
+  .leaders-empty {
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-size: 0.78rem;
   }
 
   .leaders :global(li) {

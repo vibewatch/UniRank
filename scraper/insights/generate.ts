@@ -435,7 +435,7 @@ function subjectBoardsFromSnapshot(snapshot: Snapshot, provider: string): Row[] 
     ranked.sort((a, b) => a.rank - b.rank || sortStrings(a.name, b.name));
     const counts = countItems(ranked.map((r) => r.countryCode).filter(Boolean) as string[]);
     const countryDist = [...counts.entries()].sort((a, b) => b[1] - a[1] || sortStrings(countryLabel(a[0]), countryLabel(b[0]))).slice(0, 8).map(([code, count]) => ({ countryCode: code, country: countryLabel(code), count }));
-    boards.push({ subject: scope, label: subjectDisplayLabel(provider, scope), provider, providerLabel: PROVIDER_META[provider].label, year: snapshot.year, totalRanked: ranked.length, countries: countryDist, institutions: ranked.slice(0, 12) });
+    boards.push({ subject: scope, label: subjectDisplayLabel(provider, scope), provider, providerLabel: PROVIDER_META[provider].label, year: snapshot.year, totalRanked: ranked.length, countries: countryDist, institutions: ranked.slice(0, 25) });
   }
   boards.sort((a, b) => sortStrings(a.label, b.label));
   return boards;

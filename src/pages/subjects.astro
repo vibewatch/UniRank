@@ -14,7 +14,6 @@ subjectLeaderCountries.forEach((country) => {
   if (country) countryCounts.set(country, (countryCounts.get(country) ?? 0) + 1);
 });
 const split = [...countryCounts.entries()].sort((a, b) => b[1] - a[1]);
-const subjectBoardCount = insights.subjectBoards.length;
 const subjectProviderCount = new Set(
   insights.subjectBoards.map((board) => board.provider),
 ).size;
@@ -22,7 +21,7 @@ const subjectNote = `Subject tables from ${subjectProviderCount} rankings: QS, S
 ---
 
 <BaseLayout
-  title="Subject lens"
+  title="Study"
   description="Compare specialist subject strengths across seven rankings—QS, ShanghaiRanking GRAS, U.S. News, Times, NTU, SCImago research areas, and Leiden—plus Nature Index academic tables, with transparent limits on what subject rankings can tell you."
 >
   <section class="page-hero subject-hero">
@@ -89,9 +88,9 @@ const subjectNote = `Subject tables from ${subjectProviderCount} rankings: QS, S
   <section class="section explorer-section">
     <div class="shell">
       <SectionHeading
-        eyebrow="Explore the field"
-        title={`${subjectBoardCount} subject tables from ${subjectProviderCount} rankings—pick a source and a discipline.`}
-        description="Switch between publisher and bibliometric rankings, then open any field to compare its highest-placed institutions with the countries supplying the most ranked programs. Coverage runs from QS's 60 subjects and ShanghaiRanking's 57 GRAS tables to U.S. News, Times, NTU, SCImago research areas, and Leiden's broad fields."
+        eyebrow="Find schools by what you want to study"
+        title="Pick your subject, then see the top schools&mdash;and narrow to a country you&rsquo;d actually consider."
+        description="Choose a discipline to reveal its highest-ranked universities, then filter the leaderboard to a single country to build a realistic list (for example, the best computer-science schools in Canada). The bars show which countries supply the most ranked programs in that field, so you can also let strength point you toward a destination."
       />
       <SubjectExplorer
         boards={insights.subjectBoards}
