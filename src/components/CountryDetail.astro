@@ -199,7 +199,7 @@ const defaultIso = countryData[0]?.iso2 ?? '';
       root.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     };
     window.addEventListener('atlas:country', onCountry);
-    onPageLeave(() => window.removeEventListener('atlas:country', onCountry));
+    onPageLeave(document, () => window.removeEventListener('atlas:country', onCountry));
 
     render(picker.value);
   };

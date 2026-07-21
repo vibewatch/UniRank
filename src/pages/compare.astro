@@ -153,7 +153,7 @@ import { SHORTLIST_MAX } from '../lib/shortlist';
 
     const lifecycle = new AbortController();
     let unsubscribeShortlist = (): void => {};
-    onPageLeave(() => {
+    onPageLeave(document, () => {
       lifecycle.abort();
       unsubscribeShortlist();
     });

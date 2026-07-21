@@ -5,8 +5,8 @@ const BEFORE_SWAP_EVENT = 'astro:before-swap';
  * or when the returned function is called directly.
  */
 export function onPageLeave(
+  target: EventTarget,
   cleanup: () => void,
-  target: EventTarget = document,
 ): () => void {
   let active = true;
 

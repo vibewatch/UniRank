@@ -6,9 +6,9 @@ import { onPageLeave } from "../src/lib/client-lifecycle.ts";
 test("page cleanup runs once when Astro swaps the document", () => {
   const target = new EventTarget();
   let calls = 0;
-  const cleanup = onPageLeave(() => {
+  const cleanup = onPageLeave(target, () => {
     calls += 1;
-  }, target);
+  });
 
   target.dispatchEvent(new Event("astro:before-swap"));
   target.dispatchEvent(new Event("astro:before-swap"));
@@ -20,9 +20,9 @@ test("page cleanup runs once when Astro swaps the document", () => {
 test("page cleanup can run early and unregister from the swap event", () => {
   const target = new EventTarget();
   let calls = 0;
-  const cleanup = onPageLeave(() => {
+  const cleanup = onPageLeave(target, () => {
     calls += 1;
-  }, target);
+  });
 
   cleanup();
   target.dispatchEvent(new Event("astro:before-swap"));

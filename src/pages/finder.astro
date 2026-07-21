@@ -256,7 +256,7 @@ const universalTop20 = insights.consensus.filter(
 
     const lifecycle = new AbortController();
     let unsubscribeShortlist = (): void => {};
-    onPageLeave(() => {
+    onPageLeave(document, () => {
       lifecycle.abort();
       unsubscribeShortlist();
     });
