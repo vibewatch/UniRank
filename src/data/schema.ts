@@ -202,6 +202,30 @@ export interface NationalRankings {
   consensus: NationalConsensusEntry[];
 }
 
+export interface WebVisibilityLeader {
+  rank: number;
+  name: string;
+}
+
+export interface WebVisibilityEntry {
+  name: string;
+  country: string;
+  academicPos: number;
+  webPos: number;
+  webRank: number;
+  webAdvantage: number;
+}
+
+export interface WebVisibility {
+  total: number;
+  year: number;
+  matched: number;
+  cohortSize: number;
+  leaders: WebVisibilityLeader[];
+  webForward: WebVisibilityEntry[];
+  webQuiet: WebVisibilityEntry[];
+}
+
 export interface CountryAtlasMetric {
   id: string;
   label: string;
@@ -333,6 +357,7 @@ export interface InsightsData {
   subjectMatrix: SubjectMatrixRow[];
   subjectBoards: SubjectLeaderBoard[];
   nationalRankings: NationalRankings;
+  webVisibility: WebVisibility;
   qsSubjectOutperformers: QsSubjectOutperformer[];
   countryAtlas: CountryAtlas;
   openAlexGrowth: OpenAlexGrowth[];

@@ -130,6 +130,27 @@ test("analytical outputs preserve publisher semantics", () => {
     national.consensus.map((entry: Record<string, any>) => entry.meanRank),
     [...national.consensus.map((entry: Record<string, any>) => entry.meanRank)].sort((a, b) => a - b),
   );
+
+  const web = payload.webVisibility as Record<string, any>;
+  assert.equal(web.total, 32053);
+  assert.equal(web.year, 2025);
+  assert.ok(web.matched > 0 && web.matched <= web.cohortSize);
+  assert.equal(web.cohortSize, payload.consensus.length);
+  assert.ok(web.leaders.length === 12 && web.leaders.every((leader: Record<string, any>) => typeof leader.rank === "number" && leader.name));
+  for (const key of ["webForward", "webQuiet"] as const) {
+    const list = web[key] as Array<Record<string, any>>;
+    assert.equal(list.length, 8);
+    assert.ok(list.every((entry) => entry.name && entry.country && typeof entry.webAdvantage === "number" && entry.webAdvantage === entry.academicPos - entry.webPos));
+  }
+  assert.deepEqual(
+    web.webForward.map((entry: Record<string, any>) => entry.webAdvantage),
+    [...web.webForward.map((entry: Record<string, any>) => entry.webAdvantage)].sort((a, b) => b - a),
+  );
+  assert.deepEqual(
+    web.webQuiet.map((entry: Record<string, any>) => entry.webAdvantage),
+    [...web.webQuiet.map((entry: Record<string, any>) => entry.webAdvantage)].sort((a, b) => a - b),
+  );
+  assert.ok(web.webForward[0].webAdvantage > 0 && web.webQuiet[0].webAdvantage < 0);
 });
 
 test("research metrics match fixed cohorts", () => {

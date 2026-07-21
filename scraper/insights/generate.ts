@@ -495,6 +495,37 @@ function buildNationalRankings(snapshots: Snapshot[]): Row {
   return { country, providers: boards, consensus: consensus.slice(0, 15) };
 }
 
+function buildWebVisibility(snapshots: Snapshot[], consensus: Row[]): Row {
+  const snapshot = snapshots.filter((s) => s.source === "webometrics" && isGlobal(s)).sort((a, b) => b.year - a.year || sortStrings(b.path.split("/").pop()!, a.path.split("/").pop()!))[0];
+  if (!snapshot) return { total: 0, year: 0, matched: 0, cohortSize: consensus.length, leaders: [], webForward: [], webQuiet: [] };
+  const frame = readColumns(snapshot.path, new Set(["ranking_scope", "ranking", "name"])).filter((row) => String(row.ranking_scope || "") === "overall");
+  const allRanked: Row[] = [];
+  for (const row of frame) {
+    const rank = rankNumber(row.ranking);
+    const name = String(row.name || "").replace(/\s+/g, " ").trim();
+    if (rank === null || !name) continue;
+    allRanked.push({ rank: Math.trunc(rank), name });
+  }
+  allRanked.sort((a, b) => a.rank - b.rank || sortStrings(a.name, b.name));
+  const webByKey = new Map<string, number>();
+  for (const row of allRanked) { const key = normalizeName(row.name); if (!webByKey.has(key)) webByKey.set(key, row.rank); }
+  const leaders = allRanked.slice(0, 12).map((row) => ({ rank: row.rank, name: row.name }));
+
+  const matched: Row[] = [];
+  for (const inst of consensus) {
+    const webRank = webByKey.get(inst.canonical);
+    if (webRank === undefined) continue;
+    matched.push({ name: inst.name, country: inst.country, academicRank: inst.consensusRank, webRank });
+  }
+  [...matched].sort((a, b) => a.academicRank - b.academicRank).forEach((entry, index) => { entry.academicPos = index + 1; });
+  [...matched].sort((a, b) => a.webRank - b.webRank).forEach((entry, index) => { entry.webPos = index + 1; });
+  for (const entry of matched) entry.webAdvantage = entry.academicPos - entry.webPos;
+  const shape = (entry: Row): Row => ({ name: entry.name, country: entry.country, academicPos: entry.academicPos, webPos: entry.webPos, webRank: entry.webRank, webAdvantage: entry.webAdvantage });
+  const webForward = [...matched].sort((a, b) => b.webAdvantage - a.webAdvantage || a.webPos - b.webPos).slice(0, 8).map(shape);
+  const webQuiet = [...matched].sort((a, b) => a.webAdvantage - b.webAdvantage || b.webPos - a.webPos).slice(0, 8).map(shape);
+  return { total: allRanked.length, year: snapshot.year, matched: matched.length, cohortSize: consensus.length, leaders, webForward, webQuiet };
+}
+
 function uniqueCountryCount(snapshots: Snapshot[]): number { const frame = readColumns(globalSnapshotFor(snapshots, "openalex", 2025).path, new Set(["country_code", "country"])); return new Set(frame.map((row) => rowCountry(row, "openalex")[0]).filter(Boolean)).size; }
 function archiveMetadata(snapshots: Snapshot[], providers: Row[]): Row { const years = snapshots.filter(isGlobal).map((s) => s.year); const scopes = new Set<string>(); for (const s of snapshots) for (const scope of Object.keys(s.manifest.records_by_scope ?? {})) if (scope !== "overall") scopes.add(`${s.source}\u0000${scope}`); const retrieved = snapshots.map((s) => s.manifest.retrieved_at).filter(Boolean).map(String); return { archiveRows: snapshots.reduce((a, s) => a + s.records, 0), globalRows: snapshots.filter(isGlobal).reduce((a, s) => a + s.records, 0), csvFiles: snapshots.length, providers: providers.length, firstYear: Math.min(...years), lastYear: Math.max(...years), countries: uniqueCountryCount(snapshots), subjectViews: scopes.size, failedScopes: snapshots.reduce((a, s) => a + ((s.manifest.failures ?? []) as unknown[]).length, 0), latestRetrieval: retrieved.sort(sortStrings).at(-1) } }
 function buildInstitutionDirectory(snapshots: Snapshot[], consensus: Row[]): Row {
@@ -536,7 +567,7 @@ function buildInstitutionDirectory(snapshots: Snapshot[], consensus: Row[]): Row
   const countries = [...new Set(institutions.map((i) => String(i.country)))].sort(sortStrings);
   return { meta: { count: institutions.length, providerCount: providers.length, consensusCount: consensus.length, note: "Latest overall or broad edition per provider; institutions merged by normalized name and country." }, providers, countries, institutions };
 }
-function buildPayload(): { insights: Row; directory: Row } { const snapshots = loadSnapshots(); const providers = providerInventory(snapshots); const [consensus, countryFootprint, providerTop100] = buildConsensus(snapshots); const [natureSubjects, subjectMatrix] = buildNatureSubjects(snapshots, consensus); const latest = latestGlobalSnapshots(snapshots); const insights = { meta: archiveMetadata(snapshots, providers), providers, consensus, countryFootprint, providerTop100, rankingUniverse: buildRankingUniverse(snapshots), arwuConcentration: buildArwuConcentration(snapshots), arwuConcentrationTrend: buildArwuConcentrationTrend(snapshots), natureCountryShift: buildNatureCountryShift(snapshots), natureSubjects, subjectMatrix, subjectBoards: buildAllSubjectBoards(snapshots), nationalRankings: buildNationalRankings(snapshots), qsSubjectOutperformers: buildQsSubjectOutperformers(snapshots), countryAtlas: buildCountryAtlas(snapshots, consensus), openAlexGrowth: buildOpenAlexGrowth(snapshots, consensus.slice(0, 40)), openAlexCountryMomentum: buildOpenAlexCountryMomentum(snapshots), leidenScaleImpact: buildLeidenScatter(snapshots), leidenSummary: buildLeidenSummary(snapshots), institutionTrends: buildInstitutionTrends(snapshots, consensus), methodology: { consensusProviders: CONSENSUS_PROVIDERS.map((source) => ({ id: source, label: PROVIDER_META[source].label, year: latest[source].year })), consensusMinimumProviders: 4, consensusDefinition: "Mean within-table percentile across the latest available broad overall editions; it is an analytical index, not a new ranking.", natureWindow: "2016 edition (2015 output) to 2026 edition (2025 output)", openAlexWindow: "Publication years 2016 to 2025" } }; return { insights, directory: buildInstitutionDirectory(snapshots, consensus) }; }
+function buildPayload(): { insights: Row; directory: Row } { const snapshots = loadSnapshots(); const providers = providerInventory(snapshots); const [consensus, countryFootprint, providerTop100] = buildConsensus(snapshots); const [natureSubjects, subjectMatrix] = buildNatureSubjects(snapshots, consensus); const latest = latestGlobalSnapshots(snapshots); const insights = { meta: archiveMetadata(snapshots, providers), providers, consensus, countryFootprint, providerTop100, rankingUniverse: buildRankingUniverse(snapshots), arwuConcentration: buildArwuConcentration(snapshots), arwuConcentrationTrend: buildArwuConcentrationTrend(snapshots), natureCountryShift: buildNatureCountryShift(snapshots), natureSubjects, subjectMatrix, subjectBoards: buildAllSubjectBoards(snapshots), nationalRankings: buildNationalRankings(snapshots), webVisibility: buildWebVisibility(snapshots, consensus), qsSubjectOutperformers: buildQsSubjectOutperformers(snapshots), countryAtlas: buildCountryAtlas(snapshots, consensus), openAlexGrowth: buildOpenAlexGrowth(snapshots, consensus.slice(0, 40)), openAlexCountryMomentum: buildOpenAlexCountryMomentum(snapshots), leidenScaleImpact: buildLeidenScatter(snapshots), leidenSummary: buildLeidenSummary(snapshots), institutionTrends: buildInstitutionTrends(snapshots, consensus), methodology: { consensusProviders: CONSENSUS_PROVIDERS.map((source) => ({ id: source, label: PROVIDER_META[source].label, year: latest[source].year })), consensusMinimumProviders: 4, consensusDefinition: "Mean within-table percentile across the latest available broad overall editions; it is an analytical index, not a new ranking.", natureWindow: "2016 edition (2015 output) to 2026 edition (2025 output)", openAlexWindow: "Publication years 2016 to 2025" } }; return { insights, directory: buildInstitutionDirectory(snapshots, consensus) }; }
 function main(): void { const { insights, directory } = buildPayload(); mkdirSync(dirname(OUTPUT_PATH), { recursive: true }); writeFileSync(OUTPUT_PATH, JSON.stringify(insights, null, 2) + "\n", "utf8"); console.log(`Wrote ${relative(ROOT, OUTPUT_PATH)} (${(readFileSync(OUTPUT_PATH).byteLength / 1024).toFixed(1)} KiB)`); const dir = directory as Row; mkdirSync(dirname(DIRECTORY_PATH), { recursive: true }); writeFileSync(DIRECTORY_PATH, JSON.stringify(dir) + "\n", "utf8"); console.log(`Wrote ${relative(ROOT, DIRECTORY_PATH)} (${(readFileSync(DIRECTORY_PATH).byteLength / 1024).toFixed(1)} KiB, ${dir.institutions.length} institutions)`); const facets = { meta: dir.meta, providers: dir.providers, countries: dir.countries }; writeFileSync(DIRECTORY_FACETS_PATH, JSON.stringify(facets, null, 2) + "\n", "utf8"); console.log(`Wrote ${relative(ROOT, DIRECTORY_FACETS_PATH)} (${(readFileSync(DIRECTORY_FACETS_PATH).byteLength / 1024).toFixed(1)} KiB)`); }
 
 main();

@@ -8,6 +8,7 @@ import ScaleImpactPlot from '../components/ScaleImpactPlot.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import TrendExplorer from '../components/TrendExplorer.astro';
 import UniverseGrowth from '../components/UniverseGrowth.astro';
+import WebVisibility from '../components/WebVisibility.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { insights } from '../lib/data';
 import { decimal, number, signedPercent } from '../lib/format';
@@ -254,6 +255,19 @@ const theExpansion = theFirst && theLatest ? theLatest.size / theFirst.size : 0;
           </p>
         </aside>
       </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="Web presence vs. academic standing"
+        title="A large web footprint is its own signal, distinct from scholarly rank."
+        description={`Webometrics ranks ${number.format(insights.webVisibility.total)} institutions by web visibility. Against the academic consensus for the ${number.format(insights.webVisibility.matched)} shared universities, some punch far above their scholarly weight online while others stay comparatively quiet.`}
+        href="/methodology/#providers"
+        linkLabel="See data sources"
+      />
+      <WebVisibility data={insights.webVisibility} />
     </div>
   </section>
 </BaseLayout>

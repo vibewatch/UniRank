@@ -106314,6 +106314,194 @@
       }
     ]
   },
+  "webVisibility": {
+    "total": 32053,
+    "year": 2025,
+    "matched": 752,
+    "cohortSize": 1140,
+    "leaders": [
+      {
+        "rank": 1,
+        "name": "Harvard University"
+      },
+      {
+        "rank": 2,
+        "name": "Stanford University"
+      },
+      {
+        "rank": 3,
+        "name": "Massachusetts Institute of Technology"
+      },
+      {
+        "rank": 4,
+        "name": "University of Oxford"
+      },
+      {
+        "rank": 5,
+        "name": "University of Washington"
+      },
+      {
+        "rank": 6,
+        "name": "University of Michigan"
+      },
+      {
+        "rank": 7,
+        "name": "Cornell University"
+      },
+      {
+        "rank": 8,
+        "name": "University of California Berkeley"
+      },
+      {
+        "rank": 9,
+        "name": "Johns Hopkins University"
+      },
+      {
+        "rank": 10,
+        "name": "Columbia University New York"
+      },
+      {
+        "rank": 11,
+        "name": "University of Pennsylvania"
+      },
+      {
+        "rank": 12,
+        "name": "University of Cambridge"
+      }
+    ],
+    "webForward": [
+      {
+        "name": "Brigham Young University",
+        "country": "United States",
+        "academicPos": 644,
+        "webPos": 207,
+        "webRank": 343,
+        "webAdvantage": 437
+      },
+      {
+        "name": "Loyola University Chicago",
+        "country": "United States",
+        "academicPos": 650,
+        "webPos": 302,
+        "webRank": 526,
+        "webAdvantage": 348
+      },
+      {
+        "name": "Michigan Technological University",
+        "country": "United States",
+        "academicPos": 678,
+        "webPos": 337,
+        "webRank": 582,
+        "webAdvantage": 341
+      },
+      {
+        "name": "North Dakota State University",
+        "country": "United States",
+        "academicPos": 734,
+        "webPos": 404,
+        "webRank": 718,
+        "webAdvantage": 330
+      },
+      {
+        "name": "University of Idaho",
+        "country": "United States",
+        "academicPos": 697,
+        "webPos": 373,
+        "webRank": 657,
+        "webAdvantage": 324
+      },
+      {
+        "name": "Portland State University",
+        "country": "United States",
+        "academicPos": 654,
+        "webPos": 339,
+        "webRank": 590,
+        "webAdvantage": 315
+      },
+      {
+        "name": "University of New Brunswick",
+        "country": "Canada",
+        "academicPos": 659,
+        "webPos": 358,
+        "webRank": 627,
+        "webAdvantage": 301
+      },
+      {
+        "name": "Kent State University",
+        "country": "United States",
+        "academicPos": 624,
+        "webPos": 327,
+        "webRank": 564,
+        "webAdvantage": 297
+      }
+    ],
+    "webQuiet": [
+      {
+        "name": "Institut Polytechnique de Paris",
+        "country": "France",
+        "academicPos": 79,
+        "webPos": 748,
+        "webRank": 7504,
+        "webAdvantage": -669
+      },
+      {
+        "name": "Sungkyunkwan University",
+        "country": "South Korea",
+        "academicPos": 109,
+        "webPos": 752,
+        "webRank": 27865,
+        "webAdvantage": -643
+      },
+      {
+        "name": "Western University",
+        "country": "Canada",
+        "academicPos": 133,
+        "webPos": 750,
+        "webRank": 13064,
+        "webAdvantage": -617
+      },
+      {
+        "name": "Queen’s University",
+        "country": "Canada",
+        "academicPos": 179,
+        "webPos": 751,
+        "webRank": 17525,
+        "webAdvantage": -572
+      },
+      {
+        "name": "Institut Agro",
+        "country": "France",
+        "academicPos": 294,
+        "webPos": 749,
+        "webRank": 10410,
+        "webAdvantage": -455
+      },
+      {
+        "name": "Rush University",
+        "country": "United States",
+        "academicPos": 296,
+        "webPos": 746,
+        "webRank": 3657,
+        "webAdvantage": -450
+      },
+      {
+        "name": "Yeshiva University",
+        "country": "United States",
+        "academicPos": 273,
+        "webPos": 668,
+        "webRank": 1469,
+        "webAdvantage": -395
+      },
+      {
+        "name": "Institute of Science Tokyo",
+        "country": "Japan",
+        "academicPos": 171,
+        "webPos": 561,
+        "webRank": 1071,
+        "webAdvantage": -390
+      }
+    ]
+  },
   "qsSubjectOutperformers": [
     {
       "name": "EHL Hospitality Business School",

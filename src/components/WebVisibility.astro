@@ -1,0 +1,241 @@
+---
+import type { WebVisibility, WebVisibilityEntry } from '../data/schema';
+import { number } from '../lib/format';
+
+interface Props {
+  data: WebVisibility;
+}
+
+const { data } = Astro.props;
+
+const columns: { key: 'webForward' | 'webQuiet'; eyebrow: string; title: string; blurb: string; entries: WebVisibilityEntry[] }[] = [
+  {
+    key: 'webForward',
+    eyebrow: 'Web-forward',
+    title: 'Louder online than the rankings suggest',
+    blurb: 'Universities whose Webometrics web-presence rank sits far ahead of their academic consensus rank.',
+    entries: data.webForward,
+  },
+  {
+    key: 'webQuiet',
+    eyebrow: 'Web-quiet',
+    title: 'Academic strength the web understates',
+    blurb: 'Universities the consensus rates highly but whose public web footprint trails their peers.',
+    entries: data.webQuiet,
+  },
+];
+
+const matchPct = data.cohortSize ? Math.round((data.matched / data.cohortSize) * 100) : 0;
+---
+
+<section class="web-visibility surface" aria-label="Web presence versus academic standing">
+  <header class="wv-head">
+    <div>
+      <p class="mono">Webometrics {data.year}</p>
+      <h3>Where web presence and academic standing diverge.</h3>
+      <p class="wv-lede">
+        Webometrics ranks {number.format(data.total)} institutions by the size and
+        visibility of their web footprint. Comparing that with the academic
+        consensus across the {number.format(data.matched)} shared universities
+        ({matchPct}% of the {number.format(data.cohortSize)}-strong cohort) shows
+        who is over- and under-represented online relative to scholarly standing.
+      </p>
+    </div>
+    <ol class="wv-leaders" aria-label="Webometrics global leaders">
+      {data.leaders.slice(0, 6).map((leader) => (
+        <li>
+          <span class="rank mono">{String(leader.rank).padStart(2, '0')}</span>
+          <span>{leader.name}</span>
+        </li>
+      ))}
+    </ol>
+  </header>
+
+  <div class="wv-grid">
+    {columns.map((column) => (
+      <article class="wv-column">
+        <header class="wv-col-head">
+          <p class="mono">{column.eyebrow}</p>
+          <h4>{column.title}</h4>
+          <p>{column.blurb}</p>
+        </header>
+        <ol class="wv-list">
+          {column.entries.map((entry) => (
+            <li>
+              <span class="identity">
+                <strong>{entry.name}</strong>
+                <span class="meta">{entry.country}</span>
+              </span>
+              <span class="positions">
+                <b class="chip">Web #{number.format(entry.webPos)}</b>
+                <b class="chip">Academic #{number.format(entry.academicPos)}</b>
+              </span>
+              <span class={`delta ${entry.webAdvantage >= 0 ? 'up' : 'down'}`} title="Web position minus academic position within the shared cohort">
+                {entry.webAdvantage >= 0 ? '+' : ''}{number.format(entry.webAdvantage)}
+              </span>
+            </li>
+          ))}
+        </ol>
+      </article>
+    ))}
+  </div>
+
+  <p class="fine-print">
+    Positions are ranks within the {number.format(data.matched)} universities that
+    appear in both Webometrics and the multi-source academic consensus, so the two
+    scales are directly comparable. A positive delta means the web footprint ranks
+    ahead of academic standing; a negative delta means the reverse.
+  </p>
+</section>
+
+<style>
+  .web-visibility {
+    padding: clamp(1.5rem, 3vw, 2.25rem);
+    display: grid;
+    gap: 1.75rem;
+  }
+  .wv-head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem 2.5rem;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+  .wv-head .mono {
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    margin: 0 0 0.4rem;
+  }
+  .wv-head h3 {
+    margin: 0 0 0.75rem;
+    font-size: clamp(1.15rem, 2.4vw, 1.5rem);
+    max-width: 26ch;
+  }
+  .wv-lede {
+    margin: 0;
+    color: var(--muted);
+    max-width: 60ch;
+    font-size: 0.92rem;
+  }
+  .wv-leaders {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.4rem;
+    min-width: 240px;
+  }
+  .wv-leaders li {
+    display: grid;
+    grid-template-columns: 1.75rem 1fr;
+    gap: 0.6rem;
+    align-items: baseline;
+    font-size: 0.85rem;
+  }
+  .wv-leaders .rank {
+    color: var(--muted);
+    font-size: 0.78rem;
+  }
+  .wv-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.25rem;
+  }
+  .wv-column {
+    display: grid;
+    gap: 1rem;
+    align-content: start;
+  }
+  .wv-col-head p.mono {
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    margin: 0 0 0.35rem;
+  }
+  .wv-col-head h4 {
+    margin: 0 0 0.35rem;
+    font-size: 1.02rem;
+  }
+  .wv-col-head p:not(.mono) {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.82rem;
+    max-width: 40ch;
+  }
+  .wv-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.5rem;
+  }
+  .wv-list li {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 0.6rem 0.9rem;
+    padding: 0.7rem 0.9rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface-2, transparent);
+  }
+  .identity {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+  }
+  .identity strong {
+    font-size: 0.92rem;
+  }
+  .identity .meta {
+    color: var(--muted);
+    font-size: 0.74rem;
+  }
+  .positions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    align-items: flex-end;
+  }
+  .chip {
+    font-weight: 600;
+    font-size: 0.68rem;
+    color: var(--muted);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0.1rem 0.5rem;
+    white-space: nowrap;
+  }
+  .delta {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    font-size: 0.95rem;
+    min-width: 3.2ch;
+    text-align: right;
+  }
+  .delta.up {
+    color: var(--teal-dark);
+  }
+  .delta.down {
+    color: #b64738;
+  }
+  @media (max-width: 520px) {
+    .wv-list li {
+      grid-template-columns: 1fr auto;
+    }
+    .positions {
+      grid-row: 2;
+      grid-column: 1;
+      flex-direction: row;
+      align-items: center;
+    }
+    .delta {
+      grid-row: 1;
+      grid-column: 2;
+    }
+  }
+</style>
