@@ -112,6 +112,53 @@ function isHttpError(error: unknown): boolean {
 }
 
 /**
+ * Runs independent scopes with bounded concurrency.
+ *
+ * A provider block is batch-wide: after the first worker observes one, already
+ * running scopes may finish but no worker claims another scope.
+ *
+ * @internal Exported so the concurrency contract can be tested without live
+ * provider requests.
+ */
+export async function runParallelScopes(
+  scopes: readonly string[],
+  workerCount: number,
+  collect: (index: number, scope: string) => Promise<void>,
+  recordFailure: (scope: string, error: Error) => void,
+): Promise<void> {
+  let next = 0;
+  let blocked = false;
+
+  const runWorker = async (): Promise<void> => {
+    for (;;) {
+      if (blocked) return;
+      const index = next;
+      next += 1;
+      if (index >= scopes.length) return;
+      const scope = scopes[index]!;
+      try {
+        await collect(index, scope);
+      } catch (error) {
+        if (error instanceof ProviderBlockedError) {
+          if (!blocked) {
+            blocked = true;
+            recordFailure(scope, error);
+          }
+          return;
+        }
+        if (isHttpError(error)) {
+          recordFailure(scope, error as Error);
+        } else {
+          throw error;
+        }
+      }
+    }
+  };
+
+  await Promise.all(Array.from({ length: Math.max(1, workerCount) }, () => runWorker()));
+}
+
+/**
  * Scrapes every requested provider ranking (overall + subjects), optionally
  * filtered by country. Mirrors `scrape_country_rankings`: protected/streaming
  * sources run serially and abort the remaining scopes on a block, while other
@@ -178,26 +225,12 @@ export async function scrapeCountryRankings(
       }
     }
   } else {
-    let next = 0;
-    const runWorker = async (): Promise<void> => {
-      for (;;) {
-        const index = next;
-        next += 1;
-        if (index >= scopes.length) return;
-        const scope = scopes[index]!;
-        try {
-          await collect(index, scope);
-        } catch (error) {
-          if (isHttpError(error)) {
-            console.error(`${source} ${scope} failed: ${(error as Error).message}`);
-            failures.push({ source, ranking_scope: scope, error: String((error as Error).message) });
-          } else {
-            throw error;
-          }
-        }
+    await runParallelScopes(scopes, effectiveWorkers, collect, (scope, error) => {
+      if (!(error instanceof ProviderBlockedError)) {
+        console.error(`${source} ${scope} failed: ${error.message}`);
       }
-    };
-    await Promise.all(Array.from({ length: effectiveWorkers }, () => runWorker()));
+      failures.push({ source, ranking_scope: scope, error: String(error.message) });
+    });
   }
 
   const rows: RankRecord[] = [];

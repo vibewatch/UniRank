@@ -9,6 +9,8 @@ import { readerProxyHeaders, looksLikeChallenge, looksLikeBotChallenge } from ".
 import { retryDelaySeconds, jitteredExponentialBackoff } from "../scraper/fetch/backoff.ts";
 import { pyJson, readCsv, toCsv, writeBatch, readManifest } from "../scraper/io.ts";
 import { SCIMAGO_AREA_CODES, QS_SUBJECT_NIDS, QS_OVERALL_NIDS, SUBJECTS } from "../scraper/constants.ts";
+import { runParallelScopes } from "../scraper/orchestrator.ts";
+import { ProviderBlockedError, ScraperError } from "../scraper/types.ts";
 
 test("country matching handles current and legacy names", () => {
   assert.ok(countryMatches("turkey", "TR", "Türkiye"));
@@ -78,6 +80,72 @@ test("QS 2026 node map covers every configured subject", () => {
   const expected = Array.from({ length: 60 }, (_, i) => 4114613 + i);
   assert.deepEqual(ids, expected);
   assert.equal(QS_OVERALL_NIDS[2027], "4153156");
+});
+
+test("parallel scope workers stop claiming work after a provider block", async () => {
+  const attempted: string[] = [];
+  const failures: string[] = [];
+  let releaseSlow!: () => void;
+  let reportBlocked!: () => void;
+  const slow = new Promise<void>((resolve) => {
+    releaseSlow = resolve;
+  });
+  const blocked = new Promise<void>((resolve) => {
+    reportBlocked = resolve;
+  });
+
+  const running = runParallelScopes(
+    ["slow", "blocked", "after-1", "after-2"],
+    2,
+    async (_index, scope) => {
+      attempted.push(scope);
+      if (scope === "slow") await slow;
+      if (scope === "blocked") {
+        reportBlocked();
+        throw new ProviderBlockedError("provider denied access");
+      }
+    },
+    (scope) => failures.push(scope),
+  );
+
+  await blocked;
+  releaseSlow();
+  await running;
+
+  assert.deepEqual(attempted, ["slow", "blocked"]);
+  assert.deepEqual(failures, ["blocked"]);
+});
+
+test("parallel scope workers continue after ordinary scraper failures", async () => {
+  const attempted: string[] = [];
+  const failures: string[] = [];
+
+  await runParallelScopes(
+    ["first", "failed", "last"],
+    2,
+    async (_index, scope) => {
+      attempted.push(scope);
+      if (scope === "failed") throw new ScraperError("temporary failure");
+    },
+    (scope) => failures.push(scope),
+  );
+
+  assert.deepEqual(attempted.sort(), ["failed", "first", "last"]);
+  assert.deepEqual(failures, ["failed"]);
+});
+
+test("parallel scope workers reject unexpected errors", async () => {
+  await assert.rejects(
+    runParallelScopes(
+      ["broken"],
+      2,
+      async () => {
+        throw new TypeError("unexpected parser bug");
+      },
+      () => assert.fail("unexpected errors must not be recorded as scope failures"),
+    ),
+    /unexpected parser bug/,
+  );
 });
 
 test("writeBatch preserves scopes from previous runs and merges the manifest", () => {
