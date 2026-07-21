@@ -1,10 +1,12 @@
 ---
 import SectionHeading from '../components/SectionHeading.astro';
+import SpecialistExamples from '../components/SpecialistExamples.astro';
 import SubjectExplorer from '../components/SubjectExplorer.astro';
 import SubjectMatrix from '../components/SubjectMatrix.astro';
+import NatureLeaderboards from '../components/NatureLeaderboards.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { insights } from '../lib/data';
-import { decimal, number } from '../lib/format';
+import { number } from '../lib/format';
 
 const subjectLeaderCountries = insights.natureSubjects.map(
   (subject) => subject.leaders[0]?.country,
@@ -17,7 +19,14 @@ const split = [...countryCounts.entries()].sort((a, b) => b[1] - a[1]);
 const subjectProviderCount = new Set(
   insights.subjectBoards.map((board) => board.provider),
 ).size;
-const subjectNote = `Subject tables from ${subjectProviderCount} rankings: QS, ShanghaiRanking (GRAS), U.S. News, Times Higher Education, NTU, SCImago research areas, and Leiden. Bars count how many ranked institutions each country contributes to the selected field (top eight shown); the leaderboard lists the highest-placed institutions. Providers differ in method—publisher rankings weight reputation and surveys while NTU, SCImago, and Leiden are bibliometric—so read each as its own lens, not a shared scale. Banded ranks use their lower bound.`;
+const outperformerSubjectCount = new Set(
+  insights.qsSubjectOutperformers.map((institution) => institution.subject),
+).size;
+const natureLeaderCount = insights.natureSubjects.reduce(
+  (total, subject) => total + subject.leaders.length,
+  0,
+);
+const subjectNote = `Subject tables from ${subjectProviderCount} rankings: QS, ShanghaiRanking (GRAS), U.S. News, Times Higher Education, NTU, SCImago research areas, and Leiden. The chart summarizes the eight largest country groups; the country menu and paginated school list use every institution with a resolved country in the selected source table. Providers differ in method—publisher rankings weight reputation and surveys while NTU, SCImago, and Leiden are bibliometric—so read each as its own lens, not a shared scale. Banded ranks use their lower bound.`;
 ---
 
 <BaseLayout
@@ -48,39 +57,13 @@ const subjectNote = `Subject tables from ${subjectProviderCount} rankings: QS, S
       <SectionHeading
         eyebrow="Hidden strengths"
         title="A specialist can lead its field without appearing broadly elite."
-        description="QS 2026 examples are selected reproducibly: subject rank 10 or better, plus an overall rank of 300 or lower—or no overall listing. “Not listed” is a distinct status, never a rank of zero."
+        description={`All ${number.format(insights.qsSubjectOutperformers.length)} QS 2026 subject placements meeting one reproducible rule: subject top 10, plus an overall position of #300 or worse—or no overall listing. They span ${outperformerSubjectCount} subjects; subjects with no qualifying institution do not appear.`}
       />
-      <div class="outperformer-grid">
-        {insights.qsSubjectOutperformers.map((institution, index) => (
-          <article class="surface">
-            <header>
-              <span class="mono">{String(index + 1).padStart(2, '0')}</span>
-              <span>{institution.country}</span>
-            </header>
-            <p>{institution.subjectLabel}</p>
-            <h3>{institution.name}</h3>
-            <div class="rank-compare">
-              <span>
-                <small>Subject</small>
-                <strong>#{institution.subjectRankDisplay}</strong>
-              </span>
-              <i aria-hidden="true">→</i>
-              <span>
-                <small>Overall</small>
-                <strong>
-                  {institution.overallRankDisplay
-                    ? `#${institution.overallRankDisplay}`
-                    : 'Not listed'}
-                </strong>
-              </span>
-            </div>
-          </article>
-        ))}
-      </div>
+      <SpecialistExamples items={insights.qsSubjectOutperformers} />
       <p class="fine-print selection-note">
-        The set balances six unlisted specialists with six listed institutions
-        showing the largest overall-to-subject rank ratios. It is illustrative,
-        not a ranking of “most underrated” universities.
+        This is the complete set of placements matching the rule above, not a
+        new “most underrated” ranking. A university can appear in more than one
+        subject because each subject-table result is a separate observation.
       </p>
     </div>
   </section>
@@ -89,7 +72,7 @@ const subjectNote = `Subject tables from ${subjectProviderCount} rankings: QS, S
     <div class="shell">
       <SectionHeading
         eyebrow="Find schools by what you want to study"
-        title="Pick your subject, then see the top schools&mdash;and narrow to a country you&rsquo;d actually consider."
+        title="Pick your subject, then see the top schools—and narrow to a country you’d actually consider."
         description="Choose a discipline to reveal its highest-ranked universities, then filter the leaderboard to a single country to build a realistic list (for example, the best computer-science schools in Canada). The bars show which countries supply the most ranked programs in that field, so you can also let strength point you toward a destination."
       />
       <SubjectExplorer
@@ -105,35 +88,15 @@ const subjectNote = `Subject tables from ${subjectProviderCount} rankings: QS, S
       <SectionHeading
         eyebrow="Nature Index 2026"
         title="Academic discipline leaders split across research systems."
-        description={`The eight latest academic views are led primarily by ${split.slice(0, 2).map(([country, count]) => `${country} (${count})`).join(' and ')}. Rank is based on fractional Share in the Nature Index journal set.`}
+        description={`All eight latest academic discipline tables are included, with ${number.format(natureLeaderCount)} published rows in total. Their #1 positions are led primarily by ${split.slice(0, 2).map(([country, count]) => `${country} (${count})`).join(' and ')}. Browse one complete table at a time below.`}
       />
-      <div class="leader-grid">
-        {insights.natureSubjects.map((subject, index) => (
-          <article>
-            <header>
-              <span class="mono">{String(index + 1).padStart(2, '0')}</span>
-              <h3>{subject.label}</h3>
-            </header>
-            <ol>
-              {subject.leaders.map((leader) => (
-                <li>
-                  <span class="rank">#{leader.rank}</span>
-                  <span>
-                    <strong>{leader.name}</strong>
-                    <small>{leader.country}</small>
-                  </span>
-                  <span class="share">{decimal.format(leader.share)}</span>
-                </li>
-              ))}
-            </ol>
-          </article>
-        ))}
-      </div>
+      <NatureLeaderboards subjects={insights.natureSubjects} />
       <p class="fine-print nature-note">
+        These are all rows in the eight Nature Index 2026 academic discipline
+        tables in the archive (500 per discipline; Social sciences has 548).
         Share is a fractional publication contribution; Count is not used in
-        the displayed rank. Nature Index covers selected natural- and
-        health-science journals and should not be generalized to teaching,
-        access, or all scholarly fields.
+        the displayed rank. Nature Index covers a selected journal set and
+        should not be generalized to teaching, access, or all scholarly fields.
       </p>
     </div>
   </section>
@@ -186,7 +149,7 @@ const subjectNote = `Subject tables from ${subjectProviderCount} rankings: QS, S
     display: grid;
     grid-template-columns: minmax(0, 1.5fr) minmax(230px, 0.5fr);
     align-items: end;
-    gap: clamp(30px, 7vw, 90px);
+    gap: clamp(28px, 5vw, 64px);
   }
 
   .subject-stamp {
@@ -216,71 +179,6 @@ const subjectNote = `Subject tables from ${subjectProviderCount} rankings: QS, S
     font-size: 0.68rem;
   }
 
-  .outperformer-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 16px;
-  }
-
-  .outperformer-grid article {
-    display: flex;
-    min-height: 270px;
-    flex-direction: column;
-    padding: 20px;
-  }
-
-  .outperformer-grid header {
-    display: flex;
-    justify-content: space-between;
-    color: var(--muted);
-    font-size: 0.62rem;
-  }
-
-  .outperformer-grid > article > p {
-    margin: 34px 0 4px;
-    color: var(--teal-dark);
-    font-size: 0.67rem;
-    font-weight: 750;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-  }
-
-  .outperformer-grid h3 {
-    margin-bottom: 22px;
-  }
-
-  .rank-compare {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: end;
-    gap: 10px;
-    margin-top: auto;
-    padding-top: 16px;
-    border-top: 1px solid var(--line);
-  }
-
-  .rank-compare span {
-    display: grid;
-  }
-
-  .rank-compare span:last-child {
-    text-align: right;
-  }
-
-  .rank-compare small {
-    color: var(--muted);
-    font-size: 0.57rem;
-  }
-
-  .rank-compare strong {
-    font-size: 0.82rem;
-  }
-
-  .rank-compare i {
-    color: var(--coral);
-    font-style: normal;
-  }
-
   .selection-note {
     margin: 14px 2px 0;
   }
@@ -296,81 +194,6 @@ const subjectNote = `Subject tables from ${subjectProviderCount} rankings: QS, S
 
   .nature-section :global(.section-heading p:last-child) {
     color: #9ca6aa;
-  }
-
-  .leader-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1px;
-    overflow: hidden;
-    border: 1px solid rgb(255 255 255 / 14%);
-    border-radius: var(--radius);
-    background: rgb(255 255 255 / 14%);
-  }
-
-  .leader-grid > article {
-    padding: 22px;
-    background: var(--ink);
-  }
-
-  .leader-grid header {
-    display: flex;
-    align-items: baseline;
-    gap: 12px;
-    margin-bottom: 16px;
-  }
-
-  .leader-grid header span {
-    color: #6f7c82;
-    font-size: 0.59rem;
-  }
-
-  .leader-grid h3 {
-    margin: 0;
-    font-size: 0.96rem;
-  }
-
-  .leader-grid ol {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .leader-grid li {
-    display: grid;
-    grid-template-columns: 26px minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 10px;
-    padding: 9px 0;
-    border-top: 1px solid rgb(255 255 255 / 10%);
-  }
-
-  .leader-grid .rank,
-  .leader-grid .share {
-    color: #7c898e;
-    font-family: var(--font-mono);
-    font-size: 0.61rem;
-  }
-
-  .leader-grid li > span:nth-child(2) {
-    display: grid;
-    min-width: 0;
-  }
-
-  .leader-grid li strong {
-    overflow: hidden;
-    font-size: 0.7rem;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .leader-grid li small {
-    color: #8f9ba0;
-    font-size: 0.58rem;
-  }
-
-  .leader-grid .share {
-    color: #73ddc4;
   }
 
   .nature-note {
@@ -413,10 +236,6 @@ const subjectNote = `Subject tables from ${subjectProviderCount} rankings: QS, S
   }
 
   @media (max-width: 900px) {
-    .outperformer-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
     .decision-grid {
       grid-template-columns: repeat(2, 1fr);
     }
@@ -432,8 +251,6 @@ const subjectNote = `Subject tables from ${subjectProviderCount} rankings: QS, S
 
   @media (max-width: 620px) {
     .hero-grid,
-    .outperformer-grid,
-    .leader-grid,
     .decision-grid {
       grid-template-columns: 1fr;
     }

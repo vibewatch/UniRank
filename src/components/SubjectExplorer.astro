@@ -81,6 +81,11 @@ const fineNote =
       <p class="leaders-title" data-leaders-title>Top institutions</p>
       <ol data-institutions class="leaders"></ol>
       <p class="leaders-empty" data-leaders-empty hidden></p>
+      <nav class="leaders-pagination" data-leaders-pagination aria-label="Subject leaderboard pages" hidden>
+        <button type="button" data-leaders-previous>Previous</button>
+        <span data-leaders-page></span>
+        <button type="button" data-leaders-next>Next</button>
+      </nav>
     </div>
   </div>
   <p class="fine-print">{fineNote}</p>
@@ -94,6 +99,7 @@ const fineNote =
 
 <script>
   import { scaleLinear } from 'd3-scale';
+  import { decodeSubjectDetail } from '../lib/subject-detail';
 
   interface LeaderInstitution {
     rank: number;
@@ -101,11 +107,13 @@ const fineNote =
     name: string;
     country: string;
     countryCode: string | null;
+    countryKey?: string;
   }
   interface LeaderCountry {
-    countryCode: string;
+    countryCode: string | null;
     country: string;
     count: number;
+    key?: string;
   }
   interface Board {
     subject: string;
@@ -116,6 +124,7 @@ const fineNote =
     totalRanked: number;
     countries: LeaderCountry[];
     institutions: LeaderInstitution[];
+    detailPath: string;
   }
 
   const initializeExplorer = (root: HTMLElement) => {
@@ -132,8 +141,17 @@ const fineNote =
     const institutions = root.querySelector<HTMLElement>('[data-institutions]');
     const leadersTitle = root.querySelector<HTMLElement>('[data-leaders-title]');
     const leadersEmpty = root.querySelector<HTMLElement>('[data-leaders-empty]');
+    const leadersPagination = root.querySelector<HTMLElement>('[data-leaders-pagination]');
+    const leadersPage = root.querySelector<HTMLElement>('[data-leaders-page]');
+    const leadersPrevious = root.querySelector<HTMLButtonElement>('[data-leaders-previous]');
+    const leadersNext = root.querySelector<HTMLButtonElement>('[data-leaders-next]');
     const svgNamespace = 'http://www.w3.org/2000/svg';
     const number = new Intl.NumberFormat('en-US');
+    const pageSize = 10;
+    const detailCache = new Map<string, Promise<Board>>();
+    let activeBoard: Board | null = null;
+    let leaderPage = 0;
+    let requestVersion = 0;
 
     const svgElement = <K extends keyof SVGElementTagNameMap>(
       name: K,
@@ -160,10 +178,31 @@ const fineNote =
       );
     };
 
+    const countryKey = (country: LeaderCountry): string =>
+      country.key ?? country.countryCode ?? `uncoded:${country.country}`;
+    const institutionCountryKey = (institution: LeaderInstitution): string =>
+      institution.countryKey ?? institution.countryCode ?? `uncoded:${institution.country}`;
+
+    const loadBoard = (board: Board): Promise<Board> => {
+      if (!board.detailPath) return Promise.resolve(board);
+      const cached = detailCache.get(board.detailPath);
+      if (cached) return cached;
+      const pending = fetch(board.detailPath, { cache: 'force-cache' })
+        .then((response) => {
+          if (!response.ok) throw new Error(`Unable to load ${board.detailPath}: ${response.status}`);
+          return response.json() as Promise<unknown>;
+        })
+        .then(decodeSubjectDetail)
+        .then((detail) => ({ ...board, countries: detail.countries, institutions: detail.institutions }))
+        .catch(() => board);
+      detailCache.set(board.detailPath, pending);
+      return pending;
+    };
+
     const renderChart = (board: Board, highlightCode: string) => {
       if (!chart) return;
       chart.replaceChildren();
-      const rows = board.countries;
+      const rows = board.countries.slice(0, 8);
       if (rows.length === 0) return;
       const width = 900;
       const height = 360;
@@ -225,7 +264,7 @@ const fineNote =
           width: barWidth,
           height: barHeight,
           rx: 5,
-          fill: highlightCode && row.countryCode === highlightCode ? '#ef6146' : index === 0 ? '#0f766e' : '#17a085',
+          fill: highlightCode && countryKey(row) === highlightCode ? '#ef6146' : index === 0 ? '#0f766e' : '#17a085',
         });
         const barTitle = svgElement('title', {});
         barTitle.textContent = `${row.country}: ${number.format(row.count)} ranked`;
@@ -262,36 +301,23 @@ const fineNote =
     const renderCountryOptions = (board: Board) => {
       if (!countrySelect) return;
       const previous = countrySelect.value;
-      const seen = new Map<string, { country: string; count: number }>();
-      for (const institution of board.institutions) {
-        const code = institution.countryCode || institution.country;
-        if (!code) continue;
-        const entry = seen.get(code) ?? { country: institution.country, count: 0 };
-        entry.count += 1;
-        seen.set(code, entry);
-      }
-      const entries = [...seen.entries()].sort(
-        (a, b) => b[1].count - a[1].count || (a[1].country < b[1].country ? -1 : 1),
-      );
       const options: HTMLOptionElement[] = [];
       const all = document.createElement('option');
       all.value = '';
       all.textContent = 'All countries';
       options.push(all);
-      for (const [code, info] of entries) {
+      for (const country of board.countries) {
         const option = document.createElement('option');
-        option.value = code;
-        option.textContent = `${info.country} (${info.count})`;
+        option.value = countryKey(country);
+        option.textContent = `${country.country} (${country.count})`;
         options.push(option);
       }
       countrySelect.replaceChildren(...options);
-      countrySelect.value = entries.some(([code]) => code === previous) ? previous : '';
+      countrySelect.value = board.countries.some((country) => countryKey(country) === previous) ? previous : '';
     };
 
-    const render = () => {
+    const render = (board: Board) => {
       if (!summary || !institutions) return;
-      const board = selectedBoard();
-      if (!board) return;
       const selectedCountry = countrySelect?.value ?? '';
 
       if (caption) {
@@ -317,18 +343,22 @@ const fineNote =
       renderChart(board, selectedCountry);
 
       const filtered = selectedCountry
-        ? board.institutions.filter((institution) => (institution.countryCode || institution.country) === selectedCountry)
+        ? board.institutions.filter((institution) => institutionCountryKey(institution) === selectedCountry)
         : board.institutions;
+      const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
+      leaderPage = Math.min(leaderPage, pageCount - 1);
+      const pageStart = leaderPage * pageSize;
+      const shown = filtered.slice(pageStart, pageStart + pageSize);
 
       if (leadersTitle) {
-        const countryName = filtered[0]?.country ?? '';
+        const countryName = board.countries.find((country) => countryKey(country) === selectedCountry)?.country ?? '';
         leadersTitle.textContent = selectedCountry
           ? `Top ${countryName} institutions in ${board.label}`
           : `Top institutions in ${board.label}`;
       }
 
       institutions.replaceChildren(
-        ...filtered.map((institution) => {
+        ...shown.map((institution) => {
           const item = document.createElement('li');
           const rank = document.createElement('span');
           rank.className = 'rank';
@@ -353,12 +383,31 @@ const fineNote =
           leadersEmpty.textContent = `No institution from this country appears in the top ${board.institutions.length} of ${board.label}.`;
         }
       }
+      if (leadersPagination) leadersPagination.hidden = filtered.length <= pageSize;
+      if (leadersPage) {
+        const first = filtered.length ? pageStart + 1 : 0;
+        const last = Math.min(pageStart + pageSize, filtered.length);
+        leadersPage.textContent = `${first}–${last} of ${number.format(filtered.length)}`;
+      }
+      if (leadersPrevious) leadersPrevious.disabled = leaderPage === 0;
+      if (leadersNext) leadersNext.disabled = leaderPage >= pageCount - 1;
     };
 
-    const onSubjectChange = () => {
-      const board = selectedBoard();
-      if (board) renderCountryOptions(board);
-      render();
+    const activateSelectedBoard = async () => {
+      const summaryBoard = selectedBoard();
+      if (!summaryBoard) return;
+      const version = ++requestVersion;
+      leaderPage = 0;
+      activeBoard = summaryBoard;
+      renderCountryOptions(summaryBoard);
+      render(summaryBoard);
+      root.setAttribute('aria-busy', 'true');
+      const completeBoard = await loadBoard(summaryBoard);
+      if (version !== requestVersion) return;
+      activeBoard = completeBoard;
+      renderCountryOptions(completeBoard);
+      render(completeBoard);
+      root.removeAttribute('aria-busy');
     };
 
     const onProviderChange = () => {
@@ -377,12 +426,21 @@ const fineNote =
     };
 
     providerSelect?.addEventListener('change', onProviderChange);
-    subjectSelect?.addEventListener('change', onSubjectChange);
-    countrySelect?.addEventListener('change', render);
+    subjectSelect?.addEventListener('change', () => { void activateSelectedBoard(); });
+    countrySelect?.addEventListener('change', () => {
+      leaderPage = 0;
+      if (activeBoard) render(activeBoard);
+    });
+    leadersPrevious?.addEventListener('click', () => {
+      leaderPage = Math.max(0, leaderPage - 1);
+      if (activeBoard) render(activeBoard);
+    });
+    leadersNext?.addEventListener('click', () => {
+      leaderPage += 1;
+      if (activeBoard) render(activeBoard);
+    });
 
-    const initialBoard = selectedBoard();
-    if (initialBoard) renderCountryOptions(initialBoard);
-    render();
+    void activateSelectedBoard();
   };
 
   const initializeSubjectExplorers = () => {
@@ -405,6 +463,7 @@ const fineNote =
     grid-template-columns: minmax(0, 2.2fr) minmax(200px, 1fr);
     align-items: end;
     gap: 16px;
+    min-width: 0;
   }
 
   .control-fields {
@@ -412,10 +471,12 @@ const fineNote =
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 14px;
     align-items: end;
+    min-width: 0;
   }
 
   label {
     display: grid;
+    min-width: 0;
     gap: 6px;
   }
 
@@ -459,6 +520,7 @@ const fineNote =
 
   .chart-block {
     margin: 0;
+    min-width: 0;
   }
 
   figcaption {
@@ -490,6 +552,7 @@ const fineNote =
     display: grid;
     align-content: start;
     gap: 10px;
+    min-width: 0;
   }
 
   .leaders-title {
@@ -506,14 +569,49 @@ const fineNote =
     margin: 0;
     padding: 0;
     list-style: none;
-    max-height: 420px;
-    overflow-y: auto;
   }
 
   .leaders-empty {
     margin: 8px 0 0;
     color: var(--muted);
     font-size: 0.78rem;
+  }
+
+  .leaders-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
+  }
+
+  .leaders-pagination[hidden] {
+    display: none;
+  }
+
+  .leaders-pagination span {
+    min-width: 86px;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    text-align: center;
+  }
+
+  .leaders-pagination button {
+    min-height: 34px;
+    padding: 6px 11px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    color: var(--ink);
+    background: var(--surface);
+    font-size: 0.68rem;
+    font-weight: 700;
+  }
+
+  .leaders-pagination button:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
   }
 
   .leaders :global(li) {
@@ -584,6 +682,11 @@ const fineNote =
 
     svg {
       min-width: 520px;
+    }
+
+    .leaders-pagination {
+      justify-content: space-between;
+      gap: 5px;
     }
   }
 </style>

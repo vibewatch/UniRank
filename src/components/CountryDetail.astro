@@ -1,5 +1,6 @@
 ---
 import type { CountryAtlas, CountryAtlasValues, ConsensusInstitution, SubjectLeaderBoard } from '../data/schema';
+import CustomSelect from './CustomSelect.astro';
 
 interface Props {
   atlas: CountryAtlas;
@@ -66,11 +67,11 @@ const defaultIso = countryData[0]?.iso2 ?? '';
   <div class="cd-head">
     <label class="cd-picker">
       <span>Choose a destination</span>
-      <select data-country-picker aria-label="Choose a country to inspect">
+      <CustomSelect data-country-picker aria-label="Choose a country to inspect">
         {countryData.map((entry) => (
           <option value={entry.iso2} selected={entry.iso2 === defaultIso}>{entry.country}</option>
         ))}
-      </select>
+      </CustomSelect>
     </label>
     <p class="cd-hint mono" data-cd-hint>Or click a country on the map above.</p>
   </div>
@@ -195,7 +196,7 @@ const defaultIso = countryData[0]?.iso2 ?? '';
       const entry = byNumeric.get(numericId);
       if (!entry) return;
       picker.value = entry.iso2;
-      render(entry.iso2);
+      picker.dispatchEvent(new Event('change', { bubbles: true }));
       root.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     };
     window.addEventListener('atlas:country', onCountry);
@@ -212,15 +213,22 @@ const defaultIso = countryData[0]?.iso2 ?? '';
 </script>
 
 <style>
-  .country-detail { padding: clamp(1.25rem, 3vw, 2rem); display: grid; gap: 1.5rem; }
+  .country-detail {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    min-width: 0;
+    gap: 1.5rem;
+    padding: clamp(1.25rem, 3vw, 2rem);
+  }
   .cd-head {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-end;
     justify-content: space-between;
+    min-width: 0;
     gap: 0.75rem 1.5rem;
   }
-  .cd-picker { display: grid; gap: 6px; min-width: 240px; }
+  .cd-picker { display: grid; width: 100%; max-width: 280px; min-width: 0; gap: 6px; }
   .cd-picker > span {
     color: var(--muted);
     font-family: var(--font-mono);
@@ -243,7 +251,7 @@ const defaultIso = countryData[0]?.iso2 ?? '';
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
     gap: 0.75rem;
   }
-  .cd-stat {
+  .cd-stats :global(.cd-stat) {
     display: grid;
     gap: 0.2rem;
     padding: 0.9rem 1rem;
@@ -251,30 +259,32 @@ const defaultIso = countryData[0]?.iso2 ?? '';
     border-radius: var(--radius-sm);
     background: var(--surface-2, transparent);
   }
-  .cd-stat strong { font-size: 1.5rem; letter-spacing: -0.03em; line-height: 1; }
-  .cd-stat span { color: var(--muted); font-size: 0.72rem; }
+  .cd-stats :global(.cd-stat strong) { font-size: 1.5rem; letter-spacing: -0.03em; line-height: 1; }
+  .cd-stats :global(.cd-stat span) { color: var(--muted); font-size: 0.72rem; }
 
   .cd-columns {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+    min-width: 0;
     gap: 1.5rem;
   }
+  .cd-block { min-width: 0; }
   .cd-block-title { color: var(--muted); font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase; margin: 0 0 0.6rem; }
   .cd-schools { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; }
-  .cd-schools li {
+  .cd-schools :global(li) {
     display: grid;
-    grid-template-columns: 3rem 1fr;
+    grid-template-columns: 3rem minmax(0, 1fr);
     align-items: baseline;
     gap: 0.75rem;
     padding: 0.4rem 0;
     border-top: 1px solid var(--line);
   }
-  .cd-schools li:first-child { border-top: 0; }
-  .cd-rank { color: var(--teal-dark); font-size: 0.82rem; }
-  .cd-schools strong { font-size: 0.9rem; font-weight: 600; }
+  .cd-schools :global(li:first-child) { border-top: 0; }
+  .cd-schools :global(.cd-rank) { color: var(--teal-dark); font-size: 0.82rem; }
+  .cd-schools :global(strong) { font-size: 0.9rem; font-weight: 600; }
 
   .cd-subjects { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; }
-  .cd-subjects li {
+  .cd-subjects :global(li) {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
@@ -282,8 +292,8 @@ const defaultIso = countryData[0]?.iso2 ?? '';
     padding: 0.4rem 0;
     border-top: 1px solid var(--line);
   }
-  .cd-subjects li:first-child { border-top: 0; }
-  .cd-subjects span { font-size: 0.88rem; }
-  .cd-subjects b { color: var(--muted); font-family: var(--font-mono); font-size: 0.74rem; white-space: nowrap; }
+  .cd-subjects :global(li:first-child) { border-top: 0; }
+  .cd-subjects :global(span) { min-width: 0; font-size: 0.88rem; overflow-wrap: anywhere; }
+  .cd-subjects :global(b) { flex: none; color: var(--muted); font-family: var(--font-mono); font-size: 0.74rem; white-space: nowrap; }
   .cd-subjects-empty { color: var(--muted); font-size: 0.8rem; margin: 0; }
 </style>

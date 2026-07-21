@@ -10,8 +10,15 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
+import {
+  decodeSubjectDetail,
+  SUBJECT_DETAIL_VERSION,
+} from "../src/lib/subject-detail.ts";
+
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const payload = JSON.parse(readFileSync(join(ROOT, "src/data/insights.json"), "utf8"));
+const subjectFilePath = (url: string): string =>
+  join(ROOT, "public", url.split("?")[0]!.replace(/^\//, ""));
 
 test("archive inventory and consensus invariants", () => {
   const meta = payload.meta;
@@ -105,7 +112,113 @@ test("analytical outputs preserve publisher semantics", () => {
         board.institutions.length >= 5 &&
         board.institutions.length <= 25 &&
         board.countries.length >= 1 &&
-        board.countries.length <= 8,
+        board.countries.length <= 8 &&
+        board.detailPath.startsWith(`/data/subjects/${board.provider}/`) &&
+        board.detailPath.endsWith(`?v=${SUBJECT_DETAIL_VERSION}`),
+    ),
+  );
+
+  const subjectIndex = JSON.parse(
+    readFileSync(join(ROOT, "public/data/subjects/index.json"), "utf8"),
+  ) as Array<Record<string, any>>;
+  assert.equal(subjectIndex.length, subjectBoards.length);
+  assert.equal(
+    subjectIndex.reduce((total, entry) => total + entry.institutions, 0),
+    157_369,
+  );
+  assert.equal(
+    subjectIndex.reduce((total, entry) => total + entry.institutions, 0),
+    subjectBoards.reduce((total, board) => total + board.totalRanked, 0),
+  );
+
+  let subjectBytes = 0;
+  let decodedInstitutions = 0;
+  let uncodedInstitutions = 0;
+  for (const entry of subjectIndex) {
+    const text = readFileSync(subjectFilePath(entry.path), "utf8");
+    subjectBytes += Buffer.byteLength(text);
+    const compact = JSON.parse(text) as Record<string, any>;
+    assert.equal(compact.version, SUBJECT_DETAIL_VERSION, entry.path);
+    assert.equal(entry.version, SUBJECT_DETAIL_VERSION, entry.path);
+    assert.ok(compact.countries.every((row: unknown) => Array.isArray(row) && row.length === 3), entry.path);
+    assert.ok(compact.institutions.every((row: unknown) => Array.isArray(row) && (row.length === 3 || row.length === 4)), entry.path);
+    assert.ok(compact.institutions.every((row: unknown[]) => !row.includes(undefined)), entry.path);
+
+    const decoded = decodeSubjectDetail(compact);
+    assert.equal(decoded.countries.length, entry.countries, entry.path);
+    assert.equal(decoded.institutions.length, entry.institutions, entry.path);
+    assert.equal(
+      decoded.countries.reduce((total, country) => total + country.count, 0),
+      decoded.institutions.length,
+      entry.path,
+    );
+    assert.ok(
+      decoded.institutions.every(
+        (institution, index, institutions) =>
+          index === 0 || institutions[index - 1]!.rank <= institution.rank,
+      ),
+      entry.path,
+    );
+    decodedInstitutions += decoded.institutions.length;
+    uncodedInstitutions += decoded.institutions.filter(
+      (institution) => institution.countryCode === null,
+    ).length;
+  }
+  assert.equal(decodedInstitutions, 157_369);
+  assert.equal(uncodedInstitutions, 83);
+  assert.ok(subjectBytes < 7_500_000, `subject detail payloads too large: ${subjectBytes}`);
+
+  const computerScience = subjectBoards.find(
+    (board) => board.provider === "qs" && board.subject === "computer-science-information-systems",
+  )!;
+  const computerScienceCompact = JSON.parse(
+    readFileSync(subjectFilePath(computerScience.detailPath), "utf8"),
+  );
+  const computerScienceDetail = decodeSubjectDetail(computerScienceCompact);
+  assert.equal(computerScienceDetail.institutions.length, computerScience.totalRanked);
+  assert.ok(computerScienceDetail.institutions.length > computerScience.institutions.length);
+  assert.ok(computerScienceDetail.countries.length > computerScience.countries.length);
+  assert.equal(
+    computerScienceDetail.institutions.find((institution) => institution.rank === 4)?.rankDisplay,
+    "=4",
+  );
+
+  const agriculturalSciences = subjectBoards.find(
+    (board) => board.provider === "arwu" && board.subject === "agricultural-sciences",
+  )!;
+  const agriculturalDetail = decodeSubjectDetail(
+    JSON.parse(readFileSync(subjectFilePath(agriculturalSciences.detailPath), "utf8")),
+  );
+  assert.equal(
+    agriculturalDetail.institutions.find((institution) => institution.rank === 51)?.rankDisplay,
+    "51-75",
+  );
+
+  const outperformers = payload.qsSubjectOutperformers as Array<Record<string, any>>;
+  assert.equal(outperformers.length, 76);
+  assert.equal(new Set(outperformers.map((entry) => entry.subject)).size, 25);
+  assert.ok(
+    outperformers.every(
+      (entry) => entry.subjectRank <= 10 && (entry.overallRank === null || entry.overallRank >= 300),
+    ),
+  );
+  assert.equal(
+    outperformers.length,
+    new Set(outperformers.map((entry) => `${entry.name}\u0000${entry.subject}`)).size,
+  );
+
+  const natureSubjects = payload.natureSubjects as Array<Record<string, any>>;
+  assert.equal(natureSubjects.length, 8);
+  assert.deepEqual(
+    natureSubjects.map((subject) => subject.leaders.length),
+    [500, 500, 500, 500, 500, 500, 500, 548],
+  );
+  assert.ok(
+    natureSubjects.every((subject) =>
+      subject.leaders.every(
+        (leader: Record<string, any>, index: number, leaders: Array<Record<string, any>>) =>
+          index === 0 || leaders[index - 1].rank <= leader.rank,
+      ),
     ),
   );
 
@@ -169,6 +282,27 @@ test("payload is strict JSON with no NaN or Infinity", () => {
   const rendered = JSON.stringify(payload);
   assert.ok(rendered.length > 1_000_000);
   assert.ok(!/\bNaN\b|\b-?Infinity\b/.test(rendered));
+});
+
+test("subject detail decoder accepts the legacy object format", () => {
+  const decoded = decodeSubjectDetail({
+    countries: [{ countryCode: null, country: "Northern Cyprus", count: 1 }],
+    institutions: [{
+      rank: 701,
+      rankDisplay: "701-750",
+      name: "Example University",
+      country: "Northern Cyprus",
+      countryCode: null,
+    }],
+  });
+  assert.deepEqual(decoded.countries[0], {
+    countryCode: null,
+    country: "Northern Cyprus",
+    count: 1,
+    key: "uncoded:Northern Cyprus",
+  });
+  assert.equal(decoded.institutions[0]!.rankDisplay, "701-750");
+  assert.equal(decoded.institutions[0]!.countryKey, "uncoded:Northern Cyprus");
 });
 
 test("institution directory spans every provider and stays query-ready", () => {

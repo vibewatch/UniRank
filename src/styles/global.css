@@ -40,7 +40,6 @@ html {
 }
 
 body {
-  min-width: 320px;
   margin: 0;
   color: var(--ink);
   background:
@@ -208,7 +207,7 @@ main {
 }
 
 .page-hero {
-  padding: clamp(52px, 7vw, 92px) 0 44px;
+  padding: clamp(30px, 3.6vw, 48px) 0 24px;
 }
 
 .eyebrow {
@@ -302,7 +301,7 @@ h3 {
 }
 
 .section {
-  padding: clamp(56px, 6vw, 84px) 0;
+  padding: clamp(28px, 3vw, 44px) 0;
 }
 
 .section + .section {
@@ -336,7 +335,7 @@ h3 {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-top: 28px;
+  margin-top: 18px;
 }
 
 .button {
@@ -442,8 +441,8 @@ tbody tr:hover {
 }
 
 footer {
-  margin-top: 70px;
-  padding: 50px 0;
+  margin-top: 40px;
+  padding: 36px 0;
   color: #d8dedf;
   background: var(--ink);
 }
@@ -451,7 +450,7 @@ footer {
 .footer-grid {
   display: grid;
   grid-template-columns: 1.7fr 1fr 1fr;
-  gap: 60px;
+  gap: 40px;
 }
 
 .footer-grid > div {
@@ -542,15 +541,15 @@ footer {
   }
 
   .page-hero {
-    padding-top: 48px;
+    padding-top: 26px;
   }
 
   h1 {
-    font-size: clamp(2.65rem, 15vw, 4.1rem);
+    font-size: clamp(2.3rem, 11vw, 3.4rem);
   }
 
   .section {
-    padding: 46px 0;
+    padding: 24px 0;
   }
 
   .grid.two,

@@ -264,7 +264,7 @@ npm run build      # emit the static site</code></pre>
   .provenance-strip {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    margin: 48px 0 0;
+    margin: 22px 0 0;
     border: 1px solid var(--line-strong);
     border-radius: var(--radius);
     background: rgb(255 253 248 / 55%);
@@ -298,8 +298,14 @@ npm run build      # emit the static site</code></pre>
   .entity-grid,
   .reproducibility-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
-    gap: clamp(30px, 7vw, 90px);
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    gap: clamp(28px, 5vw, 64px);
+  }
+
+  .method-grid > div,
+  .entity-grid > div,
+  .reproducibility-grid > div {
+    min-width: 0;
   }
 
   .formula {
@@ -591,6 +597,7 @@ npm run build      # emit the static site</code></pre>
   }
 
   .code-card {
+    min-width: 0;
     padding: 24px;
     border: 1px solid rgb(255 255 255 / 22%);
     border-radius: var(--radius);

@@ -69,10 +69,10 @@ const dominantSubjectCountry = [...leaderCountryCount.entries()]
     <div class="shell">
       <SectionHeading
         eyebrow="Start here"
-        title="Four ways to use the data."
+        title="Three ways to use the data."
         description="Every path leads back to the same evidence. Pick the question that matches where you are in the decision."
       />
-      <div class="grid four start-grid">
+      <div class="grid three start-grid">
         <a class="start-card surface" href="/subjects/">
           <span class="start-index mono">01 / STUDY</span>
           <strong>Discover schools by major</strong>
@@ -90,12 +90,6 @@ const dominantSubjectCountry = [...leaderCountryCount.entries()]
           <strong>Look up any university</strong>
           <p>Search every ranked institution and read the provider ranks behind it.</p>
           <span class="start-go">Search all schools →</span>
-        </a>
-        <a class="start-card surface" href="/compare/">
-          <span class="start-index mono">04 / COMPARE</span>
-          <strong>Compare your shortlist</strong>
-          <p>Put up to four universities side by side across every ranking provider.</p>
-          <span class="start-go">Build a shortlist →</span>
         </a>
       </div>
     </div>
@@ -285,14 +279,14 @@ const dominantSubjectCountry = [...leaderCountryCount.entries()]
 
 <style>
   .home-hero {
-    padding-top: 90px;
+    padding-top: clamp(32px, 3.6vw, 52px);
   }
 
   .hero-grid {
     display: grid;
     grid-template-columns: minmax(0, 1.5fr) minmax(330px, 0.68fr);
     align-items: center;
-    gap: clamp(40px, 8vw, 110px);
+    gap: clamp(28px, 5vw, 72px);
   }
 
   .home-hero h1 {
@@ -376,7 +370,7 @@ const dominantSubjectCountry = [...leaderCountryCount.entries()]
   }
 
   .insight-section {
-    padding-top: 80px;
+    padding-top: clamp(32px, 3.2vw, 46px);
     color: white;
     background: var(--ink);
   }

@@ -1,7 +1,7 @@
 ---
-import CustomSelect from '../components/CustomSelect.astro';
 import MetricCard from '../components/MetricCard.astro';
 import SectionHeading from '../components/SectionHeading.astro';
+import UniversityFinder from '../components/UniversityFinder.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import facets from '../data/directory-facets.json';
 import { insights } from '../lib/data';
@@ -10,8 +10,10 @@ import type { DirectoryFacets } from '../data/schema';
 const directory = facets as DirectoryFacets;
 const totalInstitutions = directory.meta.count;
 const providerCount = directory.meta.providerCount;
-const consensusCount = directory.meta.consensusCount;
-const searchableBeyondConsensus = totalInstitutions - consensusCount;
+const subjectTableCount = insights.subjectBoards.length;
+const subjectProviderCount = new Set(
+  insights.subjectBoards.map((board) => board.provider),
+).size;
 
 // Schools that sit inside every one of the six broad providers' displayed top
 // 20 — the strongest "everyone agrees" trust anchor for an overwhelmed student.
@@ -23,38 +25,37 @@ const universalTop20 = insights.consensus.filter(
 
 <BaseLayout
   title="Find"
-  description="Search and query every ranked institution across ten worldwide ranking providers — not only the multi-provider consensus. Filter by country, provider, and coverage, then read the source ranks behind each name."
+  description="Find universities by subject strength in one provider's published table, or search the overall directory across ten worldwide ranking sources."
 >
   <section class="page-hero finder-hero">
     <div class="shell">
       <p class="eyebrow">Find a university</p>
-      <h1>Search every ranked university.</h1>
+      <h1>Start with what you want to study.</h1>
       <p class="lede">
-        This is the one place to look up any school. It indexes all
-        {totalInstitutions.toLocaleString('en-US')} institutions across
-        {providerCount} providers — so any university that appears in even one
-        table is searchable, filterable, and sortable. Schools every major
-        ranking agrees on are flagged as consensus.
+        Choose a ranking source and subject to see that complete published table
+        in rank order—or switch to the overall directory to look up any school.
+        Sources stay separate because a QS subject rank and a bibliometric field
+        rank do not measure the same thing.
       </p>
       <div class="grid three metric-grid">
         <MetricCard
           label="Institutions indexed"
           value={totalInstitutions.toLocaleString('en-US')}
-          detail="Every entity across all provider overall/broad tables, merged by name and country."
+          detail={`Latest overall or broad tables across ${providerCount} providers.`}
           tone="teal"
           index="01"
         />
         <MetricCard
-          label="Beyond consensus"
-          value={searchableBeyondConsensus.toLocaleString('en-US')}
-          detail="Institutions below the four-provider consensus threshold — now findable."
+          label="Subject tables"
+          value={subjectTableCount.toLocaleString('en-US')}
+          detail="Complete provider-specific disciplines and fields available on demand."
           tone="violet"
           index="02"
         />
         <MetricCard
-          label="Providers queried"
-          value={String(providerCount)}
-          detail="Publisher, bibliometric, and research-output tables, latest edition each."
+          label="Subject sources"
+          value={String(subjectProviderCount)}
+          detail="Publisher and bibliometric tables kept distinct—never blended into a fake score."
           tone="coral"
           index="03"
         />
@@ -66,89 +67,16 @@ const universalTop20 = insights.consensus.filter(
     <div class="shell">
       <SectionHeading
         eyebrow="Live query"
-        title="Search, filter, and sort the full archive."
-        description="Type any part of an institution or country name. Combine filters to narrow the field, then sort by coverage or by any single provider's rank. Provider chips preserve each source's displayed rank; hover a chip for its edition."
-        href="/methodology/#consensus"
-        linkLabel="How coverage is counted"
+        title="Choose a subject table—or search the overall directory."
+        description="Subject mode is ordered by the selected provider's published rank and includes every institution in that table. Overall mode removes redundant ranking controls and simply prioritizes broad consensus, then coverage."
+        href="/methodology/#providers"
+        linkLabel="Why sources stay separate"
       />
 
-      <div class="finder" data-finder>
-        <div class="filters surface">
-          <label class="search">
-            <span>Search institution or country</span>
-            <input
-              type="search"
-              placeholder="Try China University of Mining, Reykjavik, Kwazulu…"
-              data-search
-              autocomplete="off"
-            />
-          </label>
-          <label>
-            <span>Country</span>
-            <CustomSelect data-country aria-label="Filter by country">
-              <option value="">All countries</option>
-              {directory.countries.map((country) => (
-                <option value={country}>{country}</option>
-              ))}
-            </CustomSelect>
-          </label>
-          <label>
-            <span>Ranked by</span>
-            <CustomSelect data-provider aria-label="Filter by provider">
-              <option value="">Any provider</option>
-              {directory.providers.map((provider) => (
-                <option value={provider.id}>{provider.label}</option>
-              ))}
-            </CustomSelect>
-          </label>
-          <label>
-            <span>Coverage</span>
-            <CustomSelect data-coverage aria-label="Filter by provider coverage">
-              <option value="1">1+ providers</option>
-              <option value="2">2+ providers</option>
-              <option value="4">4+ providers</option>
-              <option value="6">6+ providers</option>
-              <option value="8">8+ providers</option>
-            </CustomSelect>
-          </label>
-          <label>
-            <span>Sort by</span>
-            <CustomSelect data-sort aria-label="Sort results">
-              <option value="relevance">Best coverage</option>
-              <option value="name">Name (A–Z)</option>
-              <option value="providers">Most rankings</option>
-              {directory.providers.map((provider) => (
-                <option value={`rank:${provider.id}`}>Best {provider.label} rank</option>
-              ))}
-            </CustomSelect>
-          </label>
-        </div>
-
-        <div class="finder-status">
-          <p data-result-count aria-live="polite">Loading the institution index…</p>
-          <p class="fine-print" data-result-note></p>
-        </div>
-
-        <div class="table-wrap surface">
-          <table>
-            <thead>
-              <tr>
-                <th scope="col">Institution</th>
-                <th scope="col">Coverage</th>
-                <th scope="col">Provider ranks</th>
-                <th scope="col" class="compare-col">Compare</th>
-              </tr>
-            </thead>
-            <tbody data-results></tbody>
-          </table>
-          <p class="empty" data-empty hidden>No institution matches these filters. Try a broader search or clear a filter.</p>
-        </div>
-      </div>
-
-      <div class="compare-tray" data-compare-tray hidden>
-        <span data-tray-count>0 selected</span>
-        <a class="button" href="/compare/">Compare shortlist <span aria-hidden="true">&rarr;</span></a>
-      </div>
+      <UniversityFinder
+        directory={directory}
+        subjectBoards={insights.subjectBoards}
+      />
     </div>
   </section>
 
@@ -156,8 +84,8 @@ const universalTop20 = insights.consensus.filter(
     <div class="shell">
       <SectionHeading
         eyebrow="Not sure where to start?"
-        title="Schools every major ranking calls elite."
-        description="These institutions sit inside all six broad providers' displayed top 20 at once. It is a strict agreement test, not another weighted score — a safe anchor before you branch into subject and country fit."
+        title="Schools every major broad ranking calls elite."
+        description="These institutions sit inside all six broad providers' displayed top 20 at once. It is a strict agreement test, not another weighted score—a safe anchor before you branch into subject and country fit."
         href="/subjects/"
         linkLabel="Then match your subject"
       />
@@ -182,300 +110,28 @@ const universalTop20 = insights.consensus.filter(
     <div class="shell">
       <SectionHeading
         eyebrow="Reading the results"
-        title="Coverage is context, not a score."
+        title="A subject rank answers one specific question."
       />
       <div class="use-grid">
         <article class="good">
           <span>Use it for</span>
-          <h3>Finding any institution</h3>
-          <p>Locate a university even when it appears in a single provider — the consensus table would hide it, but the finder will not.</p>
+          <h3>Finding strength in your field</h3>
+          <p>Pick one source and discipline, then filter its full published table by country or institution name.</p>
         </article>
         <article class="good">
           <span>Use it for</span>
-          <h3>Comparing source ranks</h3>
-          <p>Read every provider's displayed rank side by side, including bibliometric tables that never enter the consensus signal.</p>
+          <h3>Looking up any institution</h3>
+          <p>Switch to the overall directory to see every provider that ranks a school, without extra filter-and-sort duplication.</p>
         </article>
         <article class="avoid">
           <span>Do not read it as</span>
-          <h3>A single ranking</h3>
-          <p>Providers measure different things across different editions. More chips means broader coverage, not a higher-quality institution.</p>
+          <h3>A cross-provider subject score</h3>
+          <p>Subject definitions, methods, and table sizes differ. Compare evidence, but do not average unlike ranks.</p>
         </article>
       </div>
     </div>
   </section>
 </BaseLayout>
-
-<script>
-  import {
-    SHORTLIST_MAX,
-    readShortlist,
-    toggleShortlist,
-    subscribeShortlist,
-  } from '../lib/shortlist';
-  import { onPageLeave } from '../lib/client-lifecycle';
-
-  const PROVIDER_ABBR: Record<string, string> = {
-    usnews: 'USN', times: 'THE', qs: 'QS', cwur: 'CWUR', ntu: 'NTU',
-    arwu: 'ARWU', scimago: 'SCI', nature: 'NAT', openalex: 'OA', leiden: 'LEI',
-  };
-  const RESULT_CAP = 200;
-
-  type DirectoryRank = [number, string, number];
-  interface DirectoryInstitution {
-    id: string;
-    name: string;
-    country: string;
-    countryCode: string | null;
-    providerCount: number;
-    consensusRank: number | null;
-    ranks: Record<string, DirectoryRank>;
-    _haystack?: string;
-  }
-  interface DirectoryProvider { id: string; label: string; color: string; year: number | null }
-  interface Directory { providers: DirectoryProvider[]; institutions: DirectoryInstitution[] }
-
-  const asciiFold = (value: string): string =>
-    value.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
-
-  const initializeFinder = async (root: HTMLElement): Promise<void> => {
-    if (root.dataset.initialized === 'true') return;
-    root.dataset.initialized = 'true';
-
-    const search = root.querySelector<HTMLInputElement>('[data-search]');
-    const country = root.querySelector<HTMLSelectElement>('[data-country]');
-    const provider = root.querySelector<HTMLSelectElement>('[data-provider]');
-    const coverage = root.querySelector<HTMLSelectElement>('[data-coverage]');
-    const sort = root.querySelector<HTMLSelectElement>('[data-sort]');
-    const count = root.querySelector<HTMLElement>('[data-result-count]');
-    const note = root.querySelector<HTMLElement>('[data-result-note]');
-    const body = root.querySelector<HTMLTableSectionElement>('[data-results]');
-    const empty = root.querySelector<HTMLElement>('[data-empty]');
-    const tray = document.querySelector<HTMLElement>('[data-compare-tray]');
-    const trayCount = document.querySelector<HTMLElement>('[data-tray-count]');
-    if (!body || !count) return;
-
-    const lifecycle = new AbortController();
-    let unsubscribeShortlist = (): void => {};
-    onPageLeave(document, () => {
-      lifecycle.abort();
-      unsubscribeShortlist();
-    });
-
-    let directory: Directory;
-    try {
-      const response = await fetch('/data/directory.json', { signal: lifecycle.signal });
-      if (!response.ok) throw new Error(String(response.status));
-      directory = (await response.json()) as Directory;
-    } catch {
-      if (lifecycle.signal.aborted) return;
-      count.textContent = 'The institution index could not be loaded. Please retry later.';
-      return;
-    }
-    if (lifecycle.signal.aborted) return;
-
-    const providerOrder = directory.providers.map((item) => item.id);
-    const providerLabels = new Map(directory.providers.map((item) => [item.id, item.label]));
-    const providerColors = new Map(directory.providers.map((item) => [item.id, item.color]));
-    const institutions = directory.institutions;
-    for (const institution of institutions) {
-      institution._haystack = `${asciiFold(institution.name)} ${asciiFold(institution.country)} ${(institution.countryCode ?? '').toLowerCase()}`;
-    }
-
-    const buildChips = (institution: DirectoryInstitution): HTMLElement => {
-      const wrap = document.createElement('div');
-      wrap.className = 'rank-chips';
-      for (const id of providerOrder) {
-        const entry = institution.ranks[id];
-        if (!entry) continue;
-        const [, display, year] = entry;
-        const chip = document.createElement('span');
-        chip.title = `${providerLabels.get(id) ?? id} ${year}: ${display}`;
-        chip.style.setProperty('--chip', providerColors.get(id) ?? 'var(--muted)');
-        const tag = document.createElement('b');
-        tag.textContent = PROVIDER_ABBR[id] ?? id.toUpperCase();
-        chip.append(tag, document.createTextNode(display));
-        wrap.append(chip);
-      }
-      return wrap;
-    };
-
-    const buildRow = (institution: DirectoryInstitution): HTMLTableRowElement => {
-      const row = document.createElement('tr');
-
-      const nameCell = document.createElement('td');
-      const name = document.createElement('strong');
-      name.className = 'institution-name';
-      name.textContent = institution.name;
-      const place = document.createElement('small');
-      place.textContent = institution.country;
-      nameCell.append(name, place);
-      if (institution.consensusRank !== null) {
-        const badge = document.createElement('span');
-        badge.className = 'consensus-badge';
-        badge.textContent = `Consensus #${institution.consensusRank}`;
-        nameCell.append(badge);
-      }
-      row.append(nameCell);
-
-      const coverageCell = document.createElement('td');
-      const coverageValue = document.createElement('strong');
-      coverageValue.className = 'coverage';
-      coverageValue.textContent = String(institution.providerCount);
-      const coverageOf = document.createElement('small');
-      coverageOf.textContent = `of ${providerOrder.length} providers`;
-      coverageCell.append(coverageValue, coverageOf);
-      row.append(coverageCell);
-
-      const chipCell = document.createElement('td');
-      chipCell.append(buildChips(institution));
-      row.append(chipCell);
-
-      const compareCell = document.createElement('td');
-      compareCell.className = 'compare-cell';
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.className = 'compare-check';
-      checkbox.dataset.compareId = institution.id;
-      checkbox.dataset.compareName = institution.name;
-      checkbox.setAttribute('aria-label', `Add ${institution.name} to your comparison`);
-      checkbox.addEventListener('change', () => {
-        toggleShortlist(institution.id);
-      });
-      compareCell.append(checkbox);
-      row.append(compareCell);
-      return row;
-    };
-
-    const compareName = (a: DirectoryInstitution, b: DirectoryInstitution): number =>
-      a.name.toLowerCase() < b.name.toLowerCase() ? -1 : a.name.toLowerCase() > b.name.toLowerCase() ? 1 : 0;
-
-    const sorters: Record<string, (a: DirectoryInstitution, b: DirectoryInstitution) => number> = {
-      relevance: (a, b) => {
-        const ar = a.consensusRank ?? Number.POSITIVE_INFINITY;
-        const br = b.consensusRank ?? Number.POSITIVE_INFINITY;
-        if (ar !== br) return ar - br;
-        if (a.providerCount !== b.providerCount) return b.providerCount - a.providerCount;
-        return compareName(a, b);
-      },
-      name: compareName,
-      providers: (a, b) => (b.providerCount - a.providerCount) || compareName(a, b),
-    };
-
-    const syncCompareUI = (): void => {
-      const selected = readShortlist();
-      const full = selected.length >= SHORTLIST_MAX;
-      root.querySelectorAll<HTMLInputElement>('[data-compare-id]').forEach((box) => {
-        const id = box.dataset.compareId ?? '';
-        const checked = selected.includes(id);
-        box.checked = checked;
-        box.disabled = full && !checked;
-        const name = box.dataset.compareName ?? 'this university';
-        box.setAttribute(
-          'aria-label',
-          checked ? `Remove ${name} from your comparison` : `Add ${name} to your comparison`,
-        );
-      });
-      if (tray && trayCount) {
-        tray.hidden = selected.length === 0;
-        trayCount.textContent = `${selected.length} of ${SHORTLIST_MAX} selected`;
-      }
-    };
-
-    const render = (): void => {
-      const tokens = (search?.value ?? '').trim().toLowerCase().split(/\s+/).filter(Boolean).map(asciiFold);
-      const selectedCountry = country?.value ?? '';
-      const selectedProvider = provider?.value ?? '';
-      const minimumCoverage = Number(coverage?.value ?? 1);
-      const sortValue = sort?.value ?? 'relevance';
-
-      const matches = institutions.filter((institution) => {
-        if (selectedCountry && institution.country !== selectedCountry) return false;
-        if (selectedProvider && !institution.ranks[selectedProvider]) return false;
-        if (institution.providerCount < minimumCoverage) return false;
-        if (tokens.length) {
-          const haystack = institution._haystack ?? '';
-          for (const token of tokens) if (!haystack.includes(token)) return false;
-        }
-        return true;
-      });
-
-      if (sortValue.startsWith('rank:')) {
-        const id = sortValue.slice(5);
-        matches.sort((a, b) => {
-          const ar = a.ranks[id]?.[0] ?? Number.POSITIVE_INFINITY;
-          const br = b.ranks[id]?.[0] ?? Number.POSITIVE_INFINITY;
-          return ar !== br ? ar - br : compareName(a, b);
-        });
-      } else {
-        matches.sort(sorters[sortValue] ?? sorters.relevance);
-      }
-
-      const shown = matches.slice(0, RESULT_CAP);
-      const fragment = document.createDocumentFragment();
-      for (const institution of shown) fragment.append(buildRow(institution));
-      body.replaceChildren(fragment);
-      syncCompareUI();
-
-      const total = matches.length;
-      count.textContent = `${total.toLocaleString('en-US')} institution${total === 1 ? '' : 's'}`;
-      if (empty) empty.hidden = total !== 0;
-      if (note) {
-        note.textContent = total > RESULT_CAP
-          ? `Showing the top ${RESULT_CAP} by ${sortValue.startsWith('rank:') ? 'provider rank' : 'the selected sort'}. Refine your search to narrow the field.`
-          : '';
-      }
-      writeUrl();
-    };
-
-    const DEFAULTS: Record<string, string> = { q: '', country: '', provider: '', coverage: '1', sort: 'relevance' };
-    const controls: Record<string, HTMLInputElement | HTMLSelectElement | null> = { q: search, country, provider, coverage, sort };
-    let suppress = false;
-
-    const writeUrl = (): void => {
-      const params = new URLSearchParams();
-      for (const [key, element] of Object.entries(controls)) {
-        const value = element?.value ?? '';
-        if (value && value !== DEFAULTS[key]) params.set(key, value);
-      }
-      const query = params.toString();
-      const next = `${location.pathname}${query ? `?${query}` : ''}${location.hash}`;
-      if (next !== `${location.pathname}${location.search}${location.hash}`) history.replaceState(null, '', next);
-    };
-
-    const readUrl = (): void => {
-      const params = new URLSearchParams(location.search);
-      suppress = true;
-      for (const [key, element] of Object.entries(controls)) {
-        if (!element) continue;
-        const value = params.get(key) ?? DEFAULTS[key];
-        if (element.value === value) continue;
-        element.value = value;
-        // Re-sync the enhanced CustomSelect label; input elements need no event.
-        if (element instanceof HTMLSelectElement) element.dispatchEvent(new Event('change', { bubbles: true }));
-      }
-      suppress = false;
-    };
-
-    const onControlChange = (): void => { if (!suppress) render(); };
-    search?.addEventListener('input', onControlChange);
-    country?.addEventListener('change', onControlChange);
-    provider?.addEventListener('change', onControlChange);
-    coverage?.addEventListener('change', onControlChange);
-    sort?.addEventListener('change', onControlChange);
-    window.addEventListener('popstate', () => { readUrl(); render(); }, { signal: lifecycle.signal });
-    unsubscribeShortlist = subscribeShortlist(() => syncCompareUI());
-
-    readUrl();
-    render();
-  };
-
-  const boot = (): void => {
-    document.querySelectorAll<HTMLElement>('[data-finder]').forEach((root) => void initializeFinder(root));
-  };
-
-  boot();
-  document.addEventListener('astro:page-load', boot);
-</script>
 
 <style>
   .finder-hero {
@@ -483,185 +139,16 @@ const universalTop20 = insights.consensus.filter(
   }
 
   .metric-grid {
-    margin-top: 48px;
+    margin-top: 24px;
   }
 
   .finder-section {
-    padding-top: 40px;
-  }
-
-  .finder {
-    margin-top: 26px;
-  }
-
-  .filters {
-    display: grid;
-    grid-template-columns: 1.6fr repeat(4, minmax(0, 1fr));
-    align-items: end;
-    gap: 12px;
-    padding: 16px;
-  }
-
-  .filters label {
-    display: grid;
-    gap: 5px;
-  }
-
-  .filters label span {
-    color: var(--muted);
-    font-family: var(--font-mono);
-    font-size: 0.59rem;
-    font-weight: 750;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  .filters input {
-    min-height: 44px;
-    padding: 9px 12px;
-    border: 1px solid var(--line-strong);
-    border-radius: var(--radius-sm);
-    color: var(--ink);
-    background: var(--surface);
-    font-size: 0.8rem;
-  }
-
-  .filters input:focus-visible {
-    outline: none;
-    border-color: var(--teal);
-    box-shadow: var(--ring);
-  }
-
-  .finder-status {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 8px;
-    margin: 20px 2px 12px;
-  }
-
-  .finder-status p:first-child {
-    color: var(--ink);
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-  }
-
-  .finder-status .fine-print {
-    margin: 0;
-  }
-
-  .table-wrap {
-    overflow-x: auto;
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.8rem;
-  }
-
-  thead th {
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    padding: 13px 16px;
-    border-bottom: 1px solid var(--line-strong);
-    color: var(--muted);
-    font-family: var(--font-mono);
-    font-size: 0.58rem;
-    font-weight: 750;
-    letter-spacing: 0.09em;
-    text-align: left;
-    text-transform: uppercase;
-    background: var(--surface);
-  }
-
-  tbody :global(td) {
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--line);
-    vertical-align: top;
-  }
-
-  tbody :global(tr:last-child td) {
-    border-bottom: 0;
-  }
-
-  tbody :global(.institution-name) {
-    display: block;
-    max-width: 320px;
-    font-size: 0.82rem;
-  }
-
-  tbody :global(td small) {
-    display: block;
-    color: var(--muted);
-    font-size: 0.62rem;
-  }
-
-  tbody :global(.consensus-badge) {
-    display: inline-block;
-    margin-top: 6px;
-    padding: 2px 7px;
-    border: 1px solid var(--line-strong);
-    border-radius: 999px;
-    color: var(--teal-dark);
-    font-family: var(--font-mono);
-    font-size: 0.56rem;
-    font-weight: 700;
-    text-decoration: none;
-  }
-
-  tbody :global(.consensus-badge:hover) {
-    border-color: var(--teal);
-    background: rgb(23 160 133 / 8%);
-  }
-
-  tbody :global(.coverage) {
-    color: var(--teal-dark);
-    font-family: var(--font-mono);
-    font-size: 1rem;
-  }
-
-  tbody :global(.rank-chips) {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-    min-width: 260px;
-    max-width: 560px;
-  }
-
-  tbody :global(.rank-chips span) {
-    display: inline-flex;
-    gap: 4px;
-    padding: 4px 6px;
-    border: 1px solid var(--line);
-    border-left: 3px solid var(--chip);
-    border-radius: 6px;
-    color: #5a656b;
-    background: var(--paper);
-    font-family: var(--font-mono);
-    font-size: 0.55rem;
-  }
-
-  tbody :global(.rank-chips b) {
-    color: var(--ink);
-  }
-
-  .empty {
-    margin: 0;
-    padding: 40px 16px;
-    color: var(--muted);
-    font-size: 0.82rem;
-    text-align: center;
+    padding-top: 20px;
   }
 
   .use-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 16px;
   }
 
@@ -694,77 +181,65 @@ const universalTop20 = insights.consensus.filter(
     font-size: 0.76rem;
   }
 
-  @media (max-width: 900px) {
-    .filters {
-      grid-template-columns: 1fr 1fr;
-    }
-
-    .filters .search {
-      grid-column: 1 / -1;
-    }
-
-    .use-grid {
-      grid-template-columns: 1fr;
-    }
+  .elite-section {
+    padding-top: 8px;
   }
 
-  @media (max-width: 560px) {
-    .filters {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  .compare-col { text-align: center; width: 4.5rem; }
-  tbody :global(.compare-cell) { text-align: center; vertical-align: middle; }
-  tbody :global(.compare-check) {
-    width: 18px;
-    height: 18px;
-    accent-color: var(--teal);
-    cursor: pointer;
-  }
-  tbody :global(.compare-check:disabled) { cursor: not-allowed; opacity: 0.4; }
-
-  .compare-tray {
-    position: sticky;
-    bottom: 16px;
-    z-index: 15;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    margin: 18px auto 0;
-    padding: 12px 16px;
-    max-width: 520px;
-    border: 1px solid var(--line-strong, var(--line));
-    border-radius: var(--radius-md);
-    background: var(--ink);
-    color: white;
-    box-shadow: var(--shadow-pop);
-  }
-  .compare-tray span { font-family: var(--font-mono); font-size: 0.8rem; }
-  .compare-tray .button { padding: 8px 16px; font-size: 0.82rem; }
-
-  .elite-section { padding-top: 8px; }
   .elite-cloud {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 10px;
     margin-top: 22px;
   }
+
   .elite-cloud article {
     display: flex;
     align-items: center;
     gap: 12px;
+    min-width: 0;
     padding: 12px 14px;
   }
-  .elite-cloud .mono { color: var(--muted); font-size: 0.72rem; }
-  .elite-cloud div { flex: 1; min-width: 0; }
-  .elite-cloud strong { display: block; font-size: 0.9rem; }
-  .elite-cloud small { color: var(--muted); font-size: 0.72rem; }
+
+  .elite-cloud .mono {
+    color: var(--muted);
+    font-size: 0.72rem;
+  }
+
+  .elite-cloud div {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .elite-cloud strong {
+    display: block;
+    overflow: hidden;
+    font-size: 0.9rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .elite-cloud small {
+    color: var(--muted);
+    font-size: 0.72rem;
+  }
+
   .elite-cloud .range {
+    flex: none;
+    color: var(--teal-dark);
     font-family: var(--font-mono);
     font-size: 0.78rem;
-    color: var(--teal-dark);
     white-space: nowrap;
+  }
+
+  @media (max-width: 900px) {
+    .use-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .elite-cloud {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
 </style>

@@ -56,11 +56,23 @@ npm run verify
 npm run dev
 ```
 
-The generator writes `src/data/insights.json`, `public/data/directory.json`, and
-`src/data/directory-facets.json`. The institution directory combines the ten
-providers whose snapshots carry a usable country field. Webometrics remains
-part of the broader archive and analytical insights, but is excluded from the
-directory because its snapshot has no country field for entity grouping.
+The generator writes `src/data/insights.json`, `public/data/directory.json`,
+`src/data/directory-facets.json`, and the per-table files under
+`public/data/subjects/`. Subject details are split by provider and table so the
+static site can expose every ranked institution and country without loading the
+full 157,000-row subject corpus on the first page view. The institution
+directory combines the ten providers whose snapshots carry a usable country
+field. Webometrics remains part of the broader archive and analytical insights,
+but is excluded from the directory because its snapshot has no country field
+for entity grouping.
+
+Subject detail files use a versioned compact tuple schema. `countries` stores
+`[countryCode, countryName, count]`, `rankDisplays` stores only non-default
+display values such as ties and bands, and each institution stores
+`[rank, name, countryIndex, rankDisplayIndex?]`. When the displayed rank equals
+the numeric rank, the optional fourth value is omitted. Browser components
+expand these tuples through `src/lib/subject-detail.ts`; the decoder also accepts
+the previous object format so cached responses remain safe during deployment.
 
 The generated site preserves source editions and caveats; it is not a
 replacement for provider-published tables.

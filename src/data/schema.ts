@@ -153,7 +153,7 @@ export interface SubjectLeaderInstitution {
 }
 
 export interface SubjectLeaderCountry {
-  countryCode: string;
+  countryCode: string | null;
   country: string;
   count: number;
 }
@@ -167,6 +167,7 @@ export interface SubjectLeaderBoard {
   totalRanked: number;
   countries: SubjectLeaderCountry[];
   institutions: SubjectLeaderInstitution[];
+  detailPath: string;
 }
 
 export interface NationalRankingEntry {

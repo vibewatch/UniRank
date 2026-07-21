@@ -1,0 +1,369 @@
+---
+import type { NatureSubject } from '../data/schema';
+import CustomSelect from './CustomSelect.astro';
+
+interface Props {
+  subjects: NatureSubject[];
+}
+
+const { subjects } = Astro.props;
+const initial = subjects[0];
+const pageSize = 20;
+const serialized = JSON.stringify(subjects).replaceAll('<', '\u003c');
+---
+
+<div class="nature-browser" data-nature-browser>
+  <div class="nature-controls">
+    <label>
+      <span>Academic discipline</span>
+      <CustomSelect data-nature-subject aria-label="Choose a Nature Index academic discipline">
+        {subjects.map((subject, index) => (
+          <option value={subject.subject} selected={index === 0}>{subject.label}</option>
+        ))}
+      </CustomSelect>
+    </label>
+    <div class="nature-summary" data-nature-summary aria-live="polite">
+      <span>Complete published table</span>
+      <strong>{initial?.leaders.length ?? 0} institutions</strong>
+    </div>
+  </div>
+
+  <div class="nature-list-head" aria-hidden="true">
+    <span>Rank</span>
+    <span>Institution</span>
+    <span>Research output</span>
+  </div>
+  <ol class="nature-results" data-nature-results>
+    {initial?.leaders.slice(0, pageSize).map((leader) => (
+      <li>
+        <span class="nature-rank">#{leader.rank}</span>
+        <span class="nature-identity">
+          <strong>{leader.name}</strong>
+          <small>{leader.country}</small>
+        </span>
+        <span class="nature-metrics">
+          <span><small>Share</small><b>{leader.share}</b></span>
+          <span><small>Count</small><b>{leader.count}</b></span>
+        </span>
+      </li>
+    ))}
+  </ol>
+
+  <nav class="nature-pagination" data-nature-pagination aria-label="Nature Index leaderboard pages">
+    <button type="button" data-nature-previous>Previous</button>
+    <span data-nature-page>1–{Math.min(pageSize, initial?.leaders.length ?? 0)} of {initial?.leaders.length ?? 0}</span>
+    <button type="button" data-nature-next>Next</button>
+  </nav>
+
+  <script type="application/json" is:inline data-nature-data set:html={serialized}></script>
+</div>
+
+<script>
+  interface NatureLeader {
+    rank: number;
+    name: string;
+    country: string;
+    share: number;
+    count: number;
+  }
+
+  interface NatureBoard {
+    subject: string;
+    label: string;
+    leaders: NatureLeader[];
+  }
+
+  const NATURE_PAGE_SIZE = 20;
+  const natureNumber = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
+
+  const initializeNatureBrowser = (root: HTMLElement): void => {
+    if (root.dataset.initialized === 'true') return;
+    const dataElement = root.querySelector<HTMLScriptElement>('[data-nature-data]');
+    if (!dataElement) return;
+    root.dataset.initialized = 'true';
+    const subjects = JSON.parse(dataElement.textContent || '[]') as NatureBoard[];
+    const subjectSelect = root.querySelector<HTMLSelectElement>('[data-nature-subject]');
+    const summary = root.querySelector<HTMLElement>('[data-nature-summary]');
+    const results = root.querySelector<HTMLOListElement>('[data-nature-results]');
+    const pageLabel = root.querySelector<HTMLElement>('[data-nature-page]');
+    const previous = root.querySelector<HTMLButtonElement>('[data-nature-previous]');
+    const next = root.querySelector<HTMLButtonElement>('[data-nature-next]');
+    if (!results) return;
+    let page = 0;
+
+    const currentSubject = (): NatureBoard | undefined =>
+      subjects.find((subject) => subject.subject === subjectSelect?.value) ?? subjects[0];
+
+    const render = (): void => {
+      const subject = currentSubject();
+      if (!subject) return;
+      const pages = Math.max(1, Math.ceil(subject.leaders.length / NATURE_PAGE_SIZE));
+      page = Math.min(page, pages - 1);
+      const start = page * NATURE_PAGE_SIZE;
+      const shown = subject.leaders.slice(start, start + NATURE_PAGE_SIZE);
+
+      results.replaceChildren(...shown.map((leader) => {
+        const item = document.createElement('li');
+        const rank = document.createElement('span');
+        rank.className = 'nature-rank';
+        rank.textContent = `#${leader.rank}`;
+        const identity = document.createElement('span');
+        identity.className = 'nature-identity';
+        const name = document.createElement('strong');
+        name.textContent = leader.name;
+        const country = document.createElement('small');
+        country.textContent = leader.country;
+        identity.append(name, country);
+        const metrics = document.createElement('span');
+        metrics.className = 'nature-metrics';
+        const share = document.createElement('span');
+        const shareLabel = document.createElement('small');
+        shareLabel.textContent = 'Share';
+        const shareValue = document.createElement('b');
+        shareValue.textContent = natureNumber.format(leader.share);
+        share.append(shareLabel, shareValue);
+        const count = document.createElement('span');
+        const countLabel = document.createElement('small');
+        countLabel.textContent = 'Count';
+        const countValue = document.createElement('b');
+        countValue.textContent = natureNumber.format(leader.count);
+        count.append(countLabel, countValue);
+        metrics.append(share, count);
+        item.append(rank, identity, metrics);
+        return item;
+      }));
+
+      if (summary) {
+        const label = document.createElement('span');
+        label.textContent = 'Complete published table';
+        const total = document.createElement('strong');
+        total.textContent = `${natureNumber.format(subject.leaders.length)} institutions`;
+        summary.replaceChildren(label, total);
+      }
+      if (pageLabel) pageLabel.textContent = `${start + 1}–${Math.min(start + NATURE_PAGE_SIZE, subject.leaders.length)} of ${subject.leaders.length}`;
+      if (previous) previous.disabled = page === 0;
+      if (next) next.disabled = page >= pages - 1;
+    };
+
+    subjectSelect?.addEventListener('change', () => { page = 0; render(); });
+    previous?.addEventListener('click', () => { page = Math.max(0, page - 1); render(); });
+    next?.addEventListener('click', () => { page += 1; render(); });
+    render();
+  };
+
+  const initializeNatureBrowsers = (): void => {
+    document.querySelectorAll<HTMLElement>('[data-nature-browser]').forEach(initializeNatureBrowser);
+  };
+
+  initializeNatureBrowsers();
+  document.addEventListener('astro:page-load', initializeNatureBrowsers);
+</script>
+
+<style>
+  .nature-browser {
+    overflow: hidden;
+    border: 1px solid rgb(255 255 255 / 14%);
+    border-radius: var(--radius);
+  }
+
+  .nature-controls {
+    display: grid;
+    grid-template-columns: minmax(220px, 360px) minmax(0, 1fr);
+    align-items: end;
+    gap: 18px;
+    padding: 18px;
+    background: rgb(255 255 255 / 4%);
+  }
+
+  label {
+    display: grid;
+    min-width: 0;
+    gap: 6px;
+  }
+
+  label > span,
+  .nature-list-head {
+    color: #8f9ba0;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+
+  .nature-summary {
+    display: grid;
+    justify-items: end;
+    min-width: 0;
+  }
+
+  .nature-summary :global(span) {
+    color: #8f9ba0;
+    font-size: 0.63rem;
+  }
+
+  .nature-summary :global(strong) {
+    color: white;
+    font-size: 0.82rem;
+  }
+
+  .nature-list-head,
+  .nature-results :global(li) {
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr) minmax(160px, auto);
+    align-items: center;
+    gap: 14px;
+  }
+
+  .nature-list-head {
+    padding: 10px 18px;
+    border-top: 1px solid rgb(255 255 255 / 10%);
+    border-bottom: 1px solid rgb(255 255 255 / 10%);
+  }
+
+  .nature-list-head span:last-child {
+    text-align: right;
+  }
+
+  .nature-results {
+    margin: 0;
+    padding: 0 18px;
+    list-style: none;
+  }
+
+  .nature-results :global(li) {
+    min-width: 0;
+    padding: 11px 0;
+    border-top: 1px solid rgb(255 255 255 / 10%);
+  }
+
+  .nature-results :global(li:first-child) {
+    border-top: 0;
+  }
+
+  .nature-results :global(.nature-rank) {
+    color: #73ddc4;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+  }
+
+  .nature-results :global(.nature-identity) {
+    display: grid;
+    min-width: 0;
+  }
+
+  .nature-results :global(.nature-identity strong) {
+    overflow: hidden;
+    color: white;
+    font-size: 0.76rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .nature-results :global(.nature-identity small) {
+    color: #8f9ba0;
+    font-size: 0.6rem;
+  }
+
+  .nature-results :global(.nature-metrics) {
+    display: flex;
+    justify-content: flex-end;
+    gap: 18px;
+  }
+
+  .nature-results :global(.nature-metrics > span) {
+    display: grid;
+    min-width: 58px;
+    text-align: right;
+  }
+
+  .nature-results :global(.nature-metrics small) {
+    color: #7c898e;
+    font-size: 0.54rem;
+    text-transform: uppercase;
+  }
+
+  .nature-results :global(.nature-metrics b) {
+    color: #73ddc4;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+  }
+
+  .nature-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 12px 18px;
+    border-top: 1px solid rgb(255 255 255 / 12%);
+    background: rgb(255 255 255 / 3%);
+  }
+
+  .nature-pagination > span {
+    min-width: 100px;
+    color: #9ca6aa;
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    text-align: center;
+  }
+
+  .nature-pagination button {
+    min-height: 36px;
+    padding: 7px 12px;
+    border: 1px solid rgb(255 255 255 / 22%);
+    border-radius: 999px;
+    color: white;
+    background: transparent;
+    font-size: 0.7rem;
+    font-weight: 700;
+  }
+
+  .nature-pagination button:hover:not(:disabled) {
+    border-color: #73ddc4;
+    color: #73ddc4;
+  }
+
+  .nature-pagination button:disabled {
+    cursor: not-allowed;
+    opacity: 0.35;
+  }
+
+  @media (max-width: 560px) {
+    .nature-controls {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .nature-summary {
+      justify-items: start;
+    }
+
+    .nature-list-head {
+      display: none;
+    }
+
+    .nature-results :global(li) {
+      grid-template-columns: 42px minmax(0, 1fr);
+      gap: 8px 10px;
+    }
+
+    .nature-results :global(.nature-metrics) {
+      grid-column: 2;
+      justify-content: flex-start;
+    }
+
+    .nature-results :global(.nature-metrics > span) {
+      min-width: 64px;
+      text-align: left;
+    }
+
+    .nature-results :global(.nature-identity strong) {
+      white-space: normal;
+    }
+
+    .nature-pagination {
+      justify-content: space-between;
+      gap: 6px;
+    }
+  }
+</style>

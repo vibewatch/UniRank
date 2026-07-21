@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { onPageLeave } from "../src/lib/client-lifecycle.ts";
@@ -47,4 +47,49 @@ test("client source does not assign provider data to raw HTML sinks", () => {
   for (const path of sourceFiles("src")) {
     assert.doesNotMatch(readFileSync(path, "utf8"), sink, path);
   }
+});
+
+test("subjects page headings use rendered punctuation instead of literal entities", () => {
+  const source = readFileSync("src/pages/subjects.astro", "utf8");
+  assert.doesNotMatch(source, /&(?:mdash|rsquo);/);
+  assert.match(source, /top schools—and narrow to a country you’d actually consider/);
+});
+
+test("atlas destination picker uses the shared custom select", () => {
+  const source = readFileSync("src/components/CountryDetail.astro", "utf8");
+  assert.match(source, /import CustomSelect from ['"]\.\/CustomSelect\.astro['"]/);
+  assert.match(source, /<CustomSelect data-country-picker/);
+  assert.doesNotMatch(source, /<select data-country-picker/);
+  assert.match(source, /picker\.dispatchEvent\(new Event\(['"]change['"]/);
+});
+
+test("university comparison feature is removed", () => {
+  assert.equal(existsSync("src/pages/compare.astro"), false);
+  assert.equal(existsSync("src/lib/shortlist.ts"), false);
+
+  const layout = readFileSync("src/layouts/BaseLayout.astro", "utf8");
+  const home = readFileSync("src/pages/index.astro", "utf8");
+  const finder = readFileSync("src/pages/finder.astro", "utf8");
+  for (const [path, source] of [
+    ["BaseLayout.astro", layout],
+    ["index.astro", home],
+    ["finder.astro", finder],
+  ] as const) {
+    assert.doesNotMatch(source, /\/compare\/|data-compare|lib\/shortlist/, path);
+  }
+});
+
+test("finder is subject-first without redundant ranking controls", () => {
+  const page = readFileSync("src/pages/finder.astro", "utf8");
+  const component = readFileSync("src/components/UniversityFinder.astro", "utf8");
+
+  assert.match(page, /<UniversityFinder/);
+  assert.match(component, /data-view-button="subject"/);
+  assert.match(component, /data-view-button="overall"/);
+  assert.match(component, /data-subject-source/);
+  assert.match(component, /data-subject-table/);
+  assert.match(component, /fetch\(board\.detailPath/);
+  assert.match(component, /Published rank order/);
+  assert.doesNotMatch(component, /data-(?:provider|coverage|sort)(?:\s|=)/);
+  assert.doesNotMatch(page, /Ranked by|Best coverage|Most rankings/);
 });

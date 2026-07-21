@@ -1,0 +1,990 @@
+---
+import type { DirectoryFacets, SubjectLeaderBoard } from '../data/schema';
+import CustomSelect from './CustomSelect.astro';
+
+interface Props {
+  directory: DirectoryFacets;
+  subjectBoards: SubjectLeaderBoard[];
+}
+
+interface SubjectBoardMeta {
+  subject: string;
+  label: string;
+  provider: string;
+  providerLabel: string;
+  year: number;
+  totalRanked: number;
+  detailPath: string;
+}
+
+const { directory, subjectBoards } = Astro.props;
+const boards: SubjectBoardMeta[] = subjectBoards.map((board) => ({
+  subject: board.subject,
+  label: board.label,
+  provider: board.provider,
+  providerLabel: board.providerLabel,
+  year: board.year,
+  totalRanked: board.totalRanked,
+  detailPath: board.detailPath,
+}));
+const providers: Array<{ id: string; label: string; count: number }> = [];
+const providerIndex = new Map<string, number>();
+for (const board of boards) {
+  const index = providerIndex.get(board.provider);
+  if (index === undefined) {
+    providerIndex.set(board.provider, providers.length);
+    providers.push({ id: board.provider, label: board.providerLabel, count: 1 });
+  } else {
+    providers[index].count += 1;
+  }
+}
+const initialProvider = providers.find((provider) => provider.id === 'qs')?.id ?? providers[0]?.id ?? '';
+const initialBoards = boards.filter((board) => board.provider === initialProvider);
+const initialSubject =
+  initialBoards.find((board) => board.subject === 'computer-science-information-systems')?.subject ??
+  initialBoards[0]?.subject ??
+  '';
+const serializedBoards = JSON.stringify(boards).replaceAll('<', '\u003c');
+---
+
+<div class="university-finder" data-university-finder data-view="subject">
+  <div class="finder-panel surface">
+    <div class="mode-row">
+      <div class="mode-switch" role="group" aria-label="Choose how to find universities">
+        <button type="button" data-view-button="subject" aria-pressed="true">
+          Subject rankings
+        </button>
+        <button type="button" data-view-button="overall" aria-pressed="false">
+          Overall directory
+        </button>
+      </div>
+      <p data-view-note>
+        Choose one publisher’s subject table; results follow that table’s published order.
+      </p>
+    </div>
+
+    <div class="finder-controls">
+      <label class="search-control">
+        <span>Search institution or country</span>
+        <input
+          type="search"
+          placeholder="Try Toronto, mining, Singapore…"
+          data-search
+          autocomplete="off"
+        />
+      </label>
+
+      <label class="subject-country-control" data-subject-control>
+        <span>Ranking source</span>
+        <CustomSelect data-subject-source aria-label="Choose a subject-ranking source">
+          {providers.map((provider) => (
+            <option value={provider.id} selected={provider.id === initialProvider}>
+              {provider.label} ({provider.count})
+            </option>
+          ))}
+        </CustomSelect>
+      </label>
+
+      <label data-subject-control>
+        <span>Subject table</span>
+        <CustomSelect data-subject-table aria-label="Choose a subject-ranking table">
+          {initialBoards.map((board) => (
+            <option value={board.subject} selected={board.subject === initialSubject}>
+              {board.label}
+            </option>
+          ))}
+        </CustomSelect>
+      </label>
+
+      <label data-subject-control>
+        <span>Country</span>
+        <CustomSelect data-subject-country aria-label="Filter subject rankings by country">
+          <option value="">All countries</option>
+        </CustomSelect>
+      </label>
+
+      <label data-overall-control hidden>
+        <span>Country</span>
+        <CustomSelect data-overall-country aria-label="Filter the overall directory by country">
+          <option value="">All countries</option>
+          {directory.countries.map((country) => <option value={country}>{country}</option>)}
+        </CustomSelect>
+      </label>
+    </div>
+  </div>
+
+  <div class="finder-status">
+    <p data-result-count aria-live="polite">Loading subject rankings…</p>
+    <p class="fine-print" data-result-note></p>
+  </div>
+
+  <div class="table-wrap surface" data-results-wrap aria-busy="true">
+    <table class="results-table" data-results-table data-view="subject">
+      <thead data-results-head>
+        <tr>
+          <th scope="col">Subject rank</th>
+          <th scope="col">Institution</th>
+        </tr>
+      </thead>
+      <tbody data-results></tbody>
+    </table>
+    <p class="empty" data-empty hidden>No institution matches these filters.</p>
+  </div>
+
+  <nav class="result-pagination" data-pagination aria-label="Finder result pages" hidden>
+    <button type="button" data-previous>Previous</button>
+    <span data-page-status></span>
+    <button type="button" data-next>Next</button>
+  </nav>
+
+  <script type="application/json" is:inline data-subject-boards set:html={serializedBoards}></script>
+</div>
+
+<script>
+  import { onPageLeave } from '../lib/client-lifecycle';
+  import {
+    decodeSubjectDetail,
+    type DecodedSubjectDetail,
+    type DecodedSubjectInstitution,
+  } from '../lib/subject-detail';
+
+  type FinderView = 'subject' | 'overall';
+  type DirectoryRank = [number, string, number];
+  type SubjectDetail = DecodedSubjectDetail;
+  type SubjectInstitution = DecodedSubjectInstitution;
+
+  interface SubjectBoardMeta {
+    subject: string;
+    label: string;
+    provider: string;
+    providerLabel: string;
+    year: number;
+    totalRanked: number;
+    detailPath: string;
+  }
+
+  interface DirectoryInstitution {
+    name: string;
+    country: string;
+    countryCode: string | null;
+    providerCount: number;
+    consensusRank: number | null;
+    ranks: Record<string, DirectoryRank>;
+    _haystack?: string;
+  }
+
+  interface DirectoryProvider {
+    id: string;
+    label: string;
+    color: string;
+    year: number | null;
+  }
+
+  interface Directory {
+    providers: DirectoryProvider[];
+    institutions: DirectoryInstitution[];
+  }
+
+  const PAGE_SIZE = 50;
+  const PROVIDER_ABBR: Record<string, string> = {
+    usnews: 'USN', times: 'THE', qs: 'QS', cwur: 'CWUR', ntu: 'NTU',
+    arwu: 'ARWU', scimago: 'SCI', nature: 'NAT', openalex: 'OA', leiden: 'LEI',
+  };
+  const resultNumber = new Intl.NumberFormat('en-US');
+  const asciiFold = (value: string): string =>
+    value.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
+  const searchTokens = (value: string): string[] =>
+    asciiFold(value.trim()).split(/\s+/).filter(Boolean);
+  const matchesTokens = (value: string, tokens: string[]): boolean =>
+    tokens.every((token) => value.includes(token));
+
+  const initializeUniversityFinder = (root: HTMLElement): void => {
+    if (root.dataset.initialized === 'true') return;
+    const boardsElement = root.querySelector<HTMLScriptElement>('[data-subject-boards]');
+    if (!boardsElement) return;
+    root.dataset.initialized = 'true';
+
+    const boards = JSON.parse(boardsElement.textContent || '[]') as SubjectBoardMeta[];
+    const search = root.querySelector<HTMLInputElement>('[data-search]');
+    const subjectSource = root.querySelector<HTMLSelectElement>('[data-subject-source]');
+    const subjectTable = root.querySelector<HTMLSelectElement>('[data-subject-table]');
+    const subjectCountry = root.querySelector<HTMLSelectElement>('[data-subject-country]');
+    const overallCountry = root.querySelector<HTMLSelectElement>('[data-overall-country]');
+    const subjectControls = [...root.querySelectorAll<HTMLElement>('[data-subject-control]')];
+    const overallControl = root.querySelector<HTMLElement>('[data-overall-control]');
+    const viewButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-view-button]')];
+    const viewNote = root.querySelector<HTMLElement>('[data-view-note]');
+    const count = root.querySelector<HTMLElement>('[data-result-count]');
+    const note = root.querySelector<HTMLElement>('[data-result-note]');
+    const wrap = root.querySelector<HTMLElement>('[data-results-wrap]');
+    const table = root.querySelector<HTMLTableElement>('[data-results-table]');
+    const head = root.querySelector<HTMLTableSectionElement>('[data-results-head]');
+    const body = root.querySelector<HTMLTableSectionElement>('[data-results]');
+    const empty = root.querySelector<HTMLElement>('[data-empty]');
+    const pagination = root.querySelector<HTMLElement>('[data-pagination]');
+    const previous = root.querySelector<HTMLButtonElement>('[data-previous]');
+    const next = root.querySelector<HTMLButtonElement>('[data-next]');
+    const pageStatus = root.querySelector<HTMLElement>('[data-page-status]');
+    if (!search || !subjectSource || !subjectTable || !subjectCountry || !overallCountry || !count || !wrap || !table || !head || !body) return;
+
+    const lifecycle = new AbortController();
+    onPageLeave(document, () => lifecycle.abort());
+    const detailCache = new Map<string, Promise<SubjectDetail>>();
+    let directoryPromise: Promise<Directory> | null = null;
+    let directory: Directory | null = null;
+    let view: FinderView = 'subject';
+    let page = 0;
+    let requestVersion = 0;
+    let suppress = false;
+    let subjectResults: SubjectInstitution[] = [];
+    let overallResults: DirectoryInstitution[] = [];
+    let activeBoard: SubjectBoardMeta | null = null;
+
+    const option = (value: string, label: string): HTMLOptionElement => {
+      const element = document.createElement('option');
+      element.value = value;
+      element.textContent = label;
+      return element;
+    };
+
+    const replaceOptions = (
+      select: HTMLSelectElement,
+      options: HTMLOptionElement[],
+      preferred: string,
+    ): string => {
+      const previousSuppress = suppress;
+      suppress = true;
+      select.replaceChildren(...options);
+      select.value = options.some((item) => item.value === preferred)
+        ? preferred
+        : options[0]?.value ?? '';
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+      suppress = previousSuppress;
+      return select.value;
+    };
+
+    const boardsForSource = (source: string): SubjectBoardMeta[] =>
+      boards.filter((board) => board.provider === source);
+
+    const populateSubjectTables = (source: string, preferred = ''): string => {
+      const scoped = boardsForSource(source);
+      const fallback =
+        scoped.find((board) => board.subject === 'computer-science-information-systems')?.subject ??
+        scoped[0]?.subject ??
+        '';
+      return replaceOptions(
+        subjectTable,
+        scoped.map((board) => option(board.subject, board.label)),
+        preferred || fallback,
+      );
+    };
+
+    const populateSubjectCountries = (detail: SubjectDetail, preferred = ''): string =>
+      replaceOptions(
+        subjectCountry,
+        [
+          option('', `All countries (${resultNumber.format(detail.institutions.length)})`),
+          ...detail.countries.map((country) =>
+            option(country.key, `${country.country} (${resultNumber.format(country.count)})`),
+          ),
+        ],
+        preferred,
+      );
+
+    const selectedBoard = (): SubjectBoardMeta | null =>
+      boards.find(
+        (board) =>
+          board.provider === subjectSource.value && board.subject === subjectTable.value,
+      ) ?? null;
+
+    const loadSubjectDetail = (board: SubjectBoardMeta): Promise<SubjectDetail> => {
+      const cached = detailCache.get(board.detailPath);
+      if (cached) return cached;
+      const pending = fetch(board.detailPath, {
+        cache: 'force-cache',
+        signal: lifecycle.signal,
+      }).then((response) => {
+        if (!response.ok) throw new Error(`Unable to load ${board.detailPath}: ${response.status}`);
+        return response.json() as Promise<unknown>;
+      }).then(decodeSubjectDetail);
+      detailCache.set(board.detailPath, pending);
+      return pending;
+    };
+
+    const loadDirectory = (): Promise<Directory> => {
+      if (directoryPromise) return directoryPromise;
+      directoryPromise = fetch('/data/directory.json', {
+        cache: 'force-cache',
+        signal: lifecycle.signal,
+      }).then((response) => {
+        if (!response.ok) throw new Error(`Unable to load directory: ${response.status}`);
+        return response.json() as Promise<Directory>;
+      }).then((payload) => {
+        for (const institution of payload.institutions) {
+          institution._haystack = asciiFold(
+            `${institution.name} ${institution.country} ${institution.countryCode ?? ''}`,
+          );
+        }
+        directory = payload;
+        return payload;
+      });
+      return directoryPromise;
+    };
+
+    const setHeader = (labels: string[]): void => {
+      const row = document.createElement('tr');
+      for (const label of labels) {
+        const cell = document.createElement('th');
+        cell.scope = 'col';
+        cell.textContent = label;
+        row.append(cell);
+      }
+      head.replaceChildren(row);
+    };
+
+    const buildRankChips = (institution: DirectoryInstitution): HTMLElement => {
+      const chips = document.createElement('div');
+      chips.className = 'rank-chips';
+      if (!directory) return chips;
+      for (const provider of directory.providers) {
+        const rank = institution.ranks[provider.id];
+        if (!rank) continue;
+        const chip = document.createElement('span');
+        chip.title = `${provider.label} ${rank[2]}: ${rank[1]}`;
+        chip.style.setProperty('--chip', provider.color || 'var(--muted)');
+        const abbreviation = document.createElement('b');
+        abbreviation.textContent = PROVIDER_ABBR[provider.id] ?? provider.id.toUpperCase();
+        chip.append(abbreviation, document.createTextNode(rank[1]));
+        chips.append(chip);
+      }
+      return chips;
+    };
+
+    const subjectRow = (institution: SubjectInstitution): HTMLTableRowElement => {
+      const row = document.createElement('tr');
+      const rankCell = document.createElement('td');
+      const rank = document.createElement('strong');
+      rank.className = 'subject-rank';
+      rank.textContent = `#${institution.rankDisplay}`;
+      rankCell.append(rank);
+      const identityCell = document.createElement('td');
+      const name = document.createElement('strong');
+      name.className = 'institution-name';
+      name.textContent = institution.name;
+      const country = document.createElement('small');
+      country.textContent = institution.country;
+      identityCell.append(name, country);
+      row.append(rankCell, identityCell);
+      return row;
+    };
+
+    const overallRow = (institution: DirectoryInstitution): HTMLTableRowElement => {
+      const row = document.createElement('tr');
+      const identityCell = document.createElement('td');
+      const name = document.createElement('strong');
+      name.className = 'institution-name';
+      name.textContent = institution.name;
+      const country = document.createElement('small');
+      country.textContent = institution.country;
+      identityCell.append(name, country);
+      if (institution.consensusRank !== null) {
+        const badge = document.createElement('span');
+        badge.className = 'consensus-badge';
+        badge.textContent = `Consensus #${institution.consensusRank}`;
+        identityCell.append(badge);
+      }
+
+      const coverageCell = document.createElement('td');
+      const coverage = document.createElement('strong');
+      coverage.className = 'coverage';
+      coverage.textContent = String(institution.providerCount);
+      const coverageLabel = document.createElement('small');
+      coverageLabel.textContent = `of ${directory?.providers.length ?? 0} providers`;
+      coverageCell.append(coverage, coverageLabel);
+
+      const rankCell = document.createElement('td');
+      rankCell.append(buildRankChips(institution));
+      row.append(identityCell, coverageCell, rankCell);
+      return row;
+    };
+
+    const setPagination = (total: number): { start: number; end: number } => {
+      const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+      page = Math.min(page, pages - 1);
+      const start = page * PAGE_SIZE;
+      const end = Math.min(start + PAGE_SIZE, total);
+      if (pagination) pagination.hidden = total <= PAGE_SIZE;
+      if (previous) previous.disabled = page === 0;
+      if (next) next.disabled = page >= pages - 1;
+      if (pageStatus) pageStatus.textContent = `${total ? start + 1 : 0}–${end} of ${resultNumber.format(total)}`;
+      return { start, end };
+    };
+
+    const renderSubjectPage = (): void => {
+      const { start, end } = setPagination(subjectResults.length);
+      body.replaceChildren(...subjectResults.slice(start, end).map(subjectRow));
+      if (empty) empty.hidden = subjectResults.length !== 0;
+      if (!activeBoard) return;
+      count.textContent = `${resultNumber.format(subjectResults.length)} institution${subjectResults.length === 1 ? '' : 's'} · ${activeBoard.providerLabel} ${activeBoard.year}`;
+      if (note) note.textContent = `${activeBoard.label}. Published rank order; ties and rank bands are preserved.`;
+      wrap.removeAttribute('aria-busy');
+    };
+
+    const renderOverallPage = (): void => {
+      const { start, end } = setPagination(overallResults.length);
+      body.replaceChildren(...overallResults.slice(start, end).map(overallRow));
+      if (empty) empty.hidden = overallResults.length !== 0;
+      count.textContent = `${resultNumber.format(overallResults.length)} institution${overallResults.length === 1 ? '' : 's'}`;
+      if (note) note.textContent = 'Ordered by the broad-ranking consensus signal, then coverage; each provider’s published rank remains visible separately.';
+      wrap.removeAttribute('aria-busy');
+    };
+
+    const filterActiveSubject = (resetPage = true): void => {
+      if (!activeBoard) return;
+      const board = activeBoard;
+      const detailPromise = detailCache.get(board.detailPath);
+      if (!detailPromise) return;
+      void detailPromise.then((detail) => {
+        if (view !== 'subject' || selectedBoard()?.detailPath !== board.detailPath) return;
+        const tokens = searchTokens(search.value);
+        const country = subjectCountry.value;
+        subjectResults = detail.institutions.filter((institution) => {
+          if (country && institution.countryKey !== country) return false;
+          return matchesTokens(asciiFold(`${institution.name} ${institution.country}`), tokens);
+        });
+        if (resetPage) page = 0;
+        renderSubjectPage();
+      });
+    };
+
+    const activateSubject = async (preferredCountry = ''): Promise<void> => {
+      const board = selectedBoard();
+      if (!board) return;
+      const version = ++requestVersion;
+      activeBoard = board;
+      page = 0;
+      count.textContent = `Loading ${board.providerLabel} ${board.label}…`;
+      if (note) note.textContent = '';
+      wrap.setAttribute('aria-busy', 'true');
+      try {
+        const detail = await loadSubjectDetail(board);
+        if (version !== requestVersion || view !== 'subject') return;
+        populateSubjectCountries(detail, preferredCountry);
+        filterActiveSubject(true);
+      } catch {
+        if (lifecycle.signal.aborted || version !== requestVersion) return;
+        count.textContent = 'This subject table could not be loaded.';
+        if (note) note.textContent = 'Please try another source or refresh the page.';
+        body.replaceChildren();
+        if (empty) empty.hidden = false;
+        wrap.removeAttribute('aria-busy');
+      }
+    };
+
+    const renderOverall = async (resetPage = true): Promise<void> => {
+      const version = ++requestVersion;
+      count.textContent = 'Loading the overall directory…';
+      if (note) note.textContent = '';
+      wrap.setAttribute('aria-busy', 'true');
+      try {
+        const payload = await loadDirectory();
+        if (version !== requestVersion || view !== 'overall') return;
+        const tokens = searchTokens(search.value);
+        const country = overallCountry.value;
+        overallResults = payload.institutions.filter((institution) => {
+          if (country && institution.country !== country) return false;
+          return matchesTokens(institution._haystack ?? '', tokens);
+        });
+        if (resetPage) page = 0;
+        renderOverallPage();
+      } catch {
+        if (lifecycle.signal.aborted || version !== requestVersion) return;
+        count.textContent = 'The overall directory could not be loaded.';
+        if (note) note.textContent = 'Please refresh the page and try again.';
+        body.replaceChildren();
+        if (empty) empty.hidden = false;
+        wrap.removeAttribute('aria-busy');
+      }
+    };
+
+    const setView = (nextView: FinderView): void => {
+      view = nextView;
+      root.dataset.view = view;
+      table.dataset.view = view;
+      page = 0;
+      subjectControls.forEach((control) => { control.hidden = view !== 'subject'; });
+      if (overallControl) overallControl.hidden = view !== 'overall';
+      viewButtons.forEach((button) => {
+        button.setAttribute('aria-pressed', String(button.dataset.viewButton === view));
+      });
+      if (viewNote) {
+        viewNote.textContent = view === 'subject'
+          ? 'Choose one publisher’s subject table; results follow that table’s published order.'
+          : 'Search the latest overall tables; results prioritize broad-ranking consensus and coverage.';
+      }
+      setHeader(view === 'subject' ? ['Subject rank', 'Institution'] : ['Institution', 'Coverage', 'Provider ranks']);
+      if (view === 'subject') void activateSubject(subjectCountry.value);
+      else void renderOverall(true);
+    };
+
+    const writeUrl = (push = false): void => {
+      const params = new URLSearchParams();
+      params.set('view', view);
+      const query = search.value.trim();
+      if (query) params.set('q', query);
+      if (view === 'subject') {
+        params.set('source', subjectSource.value);
+        params.set('subject', subjectTable.value);
+        if (subjectCountry.value) params.set('country', subjectCountry.value);
+      } else if (overallCountry.value) {
+        params.set('country', overallCountry.value);
+      }
+      const nextUrl = `${location.pathname}?${params.toString()}${location.hash}`;
+      const method = push ? 'pushState' : 'replaceState';
+      if (nextUrl !== `${location.pathname}${location.search}${location.hash}`) {
+        history[method](null, '', nextUrl);
+      }
+    };
+
+    const readUrl = (): void => {
+      const params = new URLSearchParams(location.search);
+      const requestedView: FinderView = params.get('view') === 'overall' ? 'overall' : 'subject';
+      const previousSuppress = suppress;
+      suppress = true;
+      search.value = params.get('q') ?? '';
+      if (requestedView === 'subject') {
+        const requestedSource = params.get('source') ?? subjectSource.value;
+        if (boards.some((board) => board.provider === requestedSource)) {
+          subjectSource.value = requestedSource;
+          subjectSource.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        populateSubjectTables(subjectSource.value, params.get('subject') ?? '');
+      } else {
+        const requestedCountry = params.get('country') ?? '';
+        overallCountry.value = [...overallCountry.options].some((item) => item.value === requestedCountry)
+          ? requestedCountry
+          : '';
+        overallCountry.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      suppress = previousSuppress;
+      view = requestedView;
+      root.dataset.view = view;
+      table.dataset.view = view;
+      subjectControls.forEach((control) => { control.hidden = view !== 'subject'; });
+      if (overallControl) overallControl.hidden = view !== 'overall';
+      viewButtons.forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.viewButton === view)));
+      if (viewNote) {
+        viewNote.textContent = view === 'subject'
+          ? 'Choose one publisher’s subject table; results follow that table’s published order.'
+          : 'Search the latest overall tables; results prioritize broad-ranking consensus and coverage.';
+      }
+      setHeader(view === 'subject' ? ['Subject rank', 'Institution'] : ['Institution', 'Coverage', 'Provider ranks']);
+      if (view === 'subject') void activateSubject(params.get('country') ?? '');
+      else void renderOverall(true);
+    };
+
+    viewButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const nextView = button.dataset.viewButton === 'overall' ? 'overall' : 'subject';
+        if (nextView === view) return;
+        setView(nextView);
+        writeUrl(true);
+      });
+    });
+    search.addEventListener('input', () => {
+      if (suppress) return;
+      if (view === 'subject') filterActiveSubject(true);
+      else void renderOverall(true);
+      writeUrl();
+    });
+    subjectSource.addEventListener('change', () => {
+      if (suppress) return;
+      populateSubjectTables(subjectSource.value);
+      void activateSubject('');
+      writeUrl();
+    });
+    subjectTable.addEventListener('change', () => {
+      if (suppress) return;
+      void activateSubject('');
+      writeUrl();
+    });
+    subjectCountry.addEventListener('change', () => {
+      if (suppress) return;
+      filterActiveSubject(true);
+      writeUrl();
+    });
+    overallCountry.addEventListener('change', () => {
+      if (suppress) return;
+      void renderOverall(true);
+      writeUrl();
+    });
+    previous?.addEventListener('click', () => {
+      page = Math.max(0, page - 1);
+      if (view === 'subject') renderSubjectPage();
+      else renderOverallPage();
+    });
+    next?.addEventListener('click', () => {
+      page += 1;
+      if (view === 'subject') renderSubjectPage();
+      else renderOverallPage();
+    });
+    window.addEventListener('popstate', readUrl, { signal: lifecycle.signal });
+
+    readUrl();
+  };
+
+  const bootUniversityFinders = (): void => {
+    document.querySelectorAll<HTMLElement>('[data-university-finder]').forEach(initializeUniversityFinder);
+  };
+
+  bootUniversityFinders();
+  document.addEventListener('astro:page-load', bootUniversityFinders);
+</script>
+
+<style>
+  .university-finder {
+    min-width: 0;
+    margin-top: 26px;
+  }
+
+  .finder-panel {
+    overflow: visible;
+    padding: 16px;
+  }
+
+  .mode-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .mode-switch {
+    display: inline-flex;
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--paper);
+  }
+
+  .mode-switch button {
+    min-height: 38px;
+    padding: 7px 14px;
+    border: 0;
+    border-radius: 999px;
+    color: var(--muted);
+    background: transparent;
+    font-size: 0.76rem;
+    font-weight: 700;
+  }
+
+  .mode-switch button[aria-pressed='true'] {
+    color: white;
+    background: var(--ink);
+    box-shadow: 0 2px 8px rgb(18 23 29 / 16%);
+  }
+
+  .mode-row p {
+    max-width: 560px;
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.7rem;
+    text-align: right;
+  }
+
+  .finder-controls {
+    display: grid;
+    grid-template-columns: minmax(220px, 1.55fr) repeat(3, minmax(150px, 1fr));
+    align-items: end;
+    gap: 12px;
+    min-width: 0;
+    padding-top: 14px;
+  }
+
+  .university-finder[data-view='overall'] .finder-controls {
+    grid-template-columns: minmax(260px, 1.55fr) minmax(180px, 0.8fr);
+  }
+
+  .finder-controls label {
+    display: grid;
+    min-width: 0;
+    gap: 5px;
+  }
+
+  .finder-controls label[hidden] {
+    display: none;
+  }
+
+  .finder-controls label > span {
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.59rem;
+    font-weight: 750;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .finder-controls input {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    padding: 9px 12px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-sm);
+    color: var(--ink);
+    background: var(--surface);
+    font-size: 0.8rem;
+  }
+
+  .finder-controls input:focus-visible {
+    outline: none;
+    border-color: var(--teal);
+    box-shadow: var(--ring);
+  }
+
+  .finder-status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 20px 2px 12px;
+  }
+
+  .finder-status p:first-child {
+    margin: 0;
+    color: var(--ink);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .finder-status .fine-print {
+    margin: 0;
+  }
+
+  .table-wrap {
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .results-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+  }
+
+  .results-table[data-view='overall'] {
+    min-width: 760px;
+  }
+
+  thead :global(th) {
+    position: sticky;
+    z-index: 1;
+    top: 0;
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--line-strong);
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    font-weight: 750;
+    letter-spacing: 0.09em;
+    text-align: left;
+    text-transform: uppercase;
+    background: var(--surface);
+  }
+
+  tbody :global(td) {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+
+  tbody :global(tr:last-child td) {
+    border-bottom: 0;
+  }
+
+  tbody :global(.institution-name) {
+    display: block;
+    max-width: 420px;
+    overflow-wrap: anywhere;
+    font-size: 0.82rem;
+  }
+
+  tbody :global(td small) {
+    display: block;
+    color: var(--muted);
+    font-size: 0.62rem;
+  }
+
+  tbody :global(.subject-rank) {
+    color: var(--teal-dark);
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    white-space: nowrap;
+  }
+
+  .results-table[data-view='subject'] :global(th:first-child),
+  .results-table[data-view='subject'] :global(td:first-child) {
+    width: 120px;
+  }
+
+  tbody :global(.consensus-badge) {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 2px 7px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    color: var(--teal-dark);
+    font-family: var(--font-mono);
+    font-size: 0.56rem;
+    font-weight: 700;
+  }
+
+  tbody :global(.coverage) {
+    color: var(--teal-dark);
+    font-family: var(--font-mono);
+    font-size: 1rem;
+  }
+
+  tbody :global(.rank-chips) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    min-width: 260px;
+    max-width: 560px;
+  }
+
+  tbody :global(.rank-chips span) {
+    display: inline-flex;
+    gap: 4px;
+    padding: 4px 6px;
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--chip);
+    border-radius: 6px;
+    color: #5a656b;
+    background: var(--paper);
+    font-family: var(--font-mono);
+    font-size: 0.55rem;
+  }
+
+  tbody :global(.rank-chips b) {
+    color: var(--ink);
+  }
+
+  .empty {
+    margin: 0;
+    padding: 40px 16px;
+    color: var(--muted);
+    font-size: 0.82rem;
+    text-align: center;
+  }
+
+  .result-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .result-pagination[hidden] {
+    display: none;
+  }
+
+  .result-pagination span {
+    min-width: 110px;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.64rem;
+    text-align: center;
+  }
+
+  .result-pagination button {
+    min-height: 38px;
+    padding: 7px 13px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    color: var(--ink);
+    background: var(--surface);
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
+  .result-pagination button:hover:not(:disabled) {
+    border-color: var(--teal);
+    color: var(--teal-dark);
+  }
+
+  .result-pagination button:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+  }
+
+  @media (max-width: 760px) {
+    .finder-controls {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .search-control {
+      grid-column: 1 / -1;
+    }
+
+    .subject-country-control {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .mode-row {
+      align-items: stretch;
+    }
+
+    .mode-switch {
+      display: grid;
+      width: 100%;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .mode-switch button {
+      min-width: 0;
+      padding-inline: 8px;
+    }
+
+    .mode-row p {
+      text-align: left;
+    }
+
+    .finder-controls,
+    .university-finder[data-view='overall'] .finder-controls {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .search-control {
+      grid-column: auto;
+    }
+
+    .subject-country-control {
+      grid-column: auto;
+    }
+
+    .results-table[data-view='subject'] :global(th:first-child),
+    .results-table[data-view='subject'] :global(td:first-child) {
+      width: 88px;
+      padding-right: 8px;
+    }
+
+    .result-pagination {
+      justify-content: space-between;
+      gap: 6px;
+    }
+  }
+</style>

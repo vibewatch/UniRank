@@ -1,0 +1,1418 @@
+[
+  {
+    "path": "/data/subjects/qs/accounting-finance.json?v=1",
+    "version": 1,
+    "countries": 53,
+    "institutions": 376
+  },
+  {
+    "path": "/data/subjects/qs/agriculture-forestry.json?v=1",
+    "version": 1,
+    "countries": 77,
+    "institutions": 474
+  },
+  {
+    "path": "/data/subjects/qs/anatomy-physiology.json?v=1",
+    "version": 1,
+    "countries": 35,
+    "institutions": 202
+  },
+  {
+    "path": "/data/subjects/qs/anthropology.json?v=1",
+    "version": 1,
+    "countries": 40,
+    "institutions": 203
+  },
+  {
+    "path": "/data/subjects/qs/archaeology.json?v=1",
+    "version": 1,
+    "countries": 49,
+    "institutions": 260
+  },
+  {
+    "path": "/data/subjects/qs/architecture-built-environment.json?v=1",
+    "version": 1,
+    "countries": 51,
+    "institutions": 261
+  },
+  {
+    "path": "/data/subjects/qs/art-design.json?v=1",
+    "version": 1,
+    "countries": 50,
+    "institutions": 302
+  },
+  {
+    "path": "/data/subjects/qs/art-history.json?v=1",
+    "version": 1,
+    "countries": 17,
+    "institutions": 50
+  },
+  {
+    "path": "/data/subjects/qs/arts-humanities.json?v=1",
+    "version": 1,
+    "countries": 63,
+    "institutions": 552
+  },
+  {
+    "path": "/data/subjects/qs/biological-sciences.json?v=1",
+    "version": 1,
+    "countries": 66,
+    "institutions": 704
+  },
+  {
+    "path": "/data/subjects/qs/business-management-studies.json?v=1",
+    "version": 1,
+    "countries": 67,
+    "institutions": 649
+  },
+  {
+    "path": "/data/subjects/qs/chemical-engineering.json?v=1",
+    "version": 1,
+    "countries": 56,
+    "institutions": 449
+  },
+  {
+    "path": "/data/subjects/qs/chemistry.json?v=1",
+    "version": 1,
+    "countries": 64,
+    "institutions": 701
+  },
+  {
+    "path": "/data/subjects/qs/civil-structural-engineering.json?v=1",
+    "version": 1,
+    "countries": 49,
+    "institutions": 277
+  },
+  {
+    "path": "/data/subjects/qs/classics-ancient-history.json?v=1",
+    "version": 1,
+    "countries": 26,
+    "institutions": 150
+  },
+  {
+    "path": "/data/subjects/qs/communication-media-studies.json?v=1",
+    "version": 1,
+    "countries": 42,
+    "institutions": 277
+  },
+  {
+    "path": "/data/subjects/qs/computer-science-information-systems.json?v=1",
+    "version": 1,
+    "countries": 79,
+    "institutions": 849
+  },
+  {
+    "path": "/data/subjects/qs/data-science-artificial-intelligence.json?v=1",
+    "version": 1,
+    "countries": 37,
+    "institutions": 201
+  },
+  {
+    "path": "/data/subjects/qs/dentistry.json?v=1",
+    "version": 1,
+    "countries": 40,
+    "institutions": 150
+  },
+  {
+    "path": "/data/subjects/qs/development-studies.json?v=1",
+    "version": 1,
+    "countries": 37,
+    "institutions": 150
+  },
+  {
+    "path": "/data/subjects/qs/earth-marine-sciences.json?v=1",
+    "version": 1,
+    "countries": 37,
+    "institutions": 276
+  },
+  {
+    "path": "/data/subjects/qs/economics-econometrics.json?v=1",
+    "version": 1,
+    "countries": 75,
+    "institutions": 699
+  },
+  {
+    "path": "/data/subjects/qs/education-training.json?v=1",
+    "version": 1,
+    "countries": 62,
+    "institutions": 452
+  },
+  {
+    "path": "/data/subjects/qs/electrical-electronic-engineering.json?v=1",
+    "version": 1,
+    "countries": 69,
+    "institutions": 549
+  },
+  {
+    "path": "/data/subjects/qs/engineering-petroleum.json?v=1",
+    "version": 1,
+    "countries": 50,
+    "institutions": 174
+  },
+  {
+    "path": "/data/subjects/qs/engineering-technology.json?v=1",
+    "version": 1,
+    "countries": 68,
+    "institutions": 556
+  },
+  {
+    "path": "/data/subjects/qs/english-language-literature.json?v=1",
+    "version": 1,
+    "countries": 52,
+    "institutions": 352
+  },
+  {
+    "path": "/data/subjects/qs/environmental-sciences.json?v=1",
+    "version": 1,
+    "countries": 61,
+    "institutions": 553
+  },
+  {
+    "path": "/data/subjects/qs/geography.json?v=1",
+    "version": 1,
+    "countries": 43,
+    "institutions": 251
+  },
+  {
+    "path": "/data/subjects/qs/geology.json?v=1",
+    "version": 1,
+    "countries": 35,
+    "institutions": 250
+  },
+  {
+    "path": "/data/subjects/qs/geophysics.json?v=1",
+    "version": 1,
+    "countries": 36,
+    "institutions": 249
+  },
+  {
+    "path": "/data/subjects/qs/history.json?v=1",
+    "version": 1,
+    "countries": 45,
+    "institutions": 249
+  },
+  {
+    "path": "/data/subjects/qs/hospitality-leisure-management.json?v=1",
+    "version": 1,
+    "countries": 38,
+    "institutions": 173
+  },
+  {
+    "path": "/data/subjects/qs/law-legal-studies.json?v=1",
+    "version": 1,
+    "countries": 61,
+    "institutions": 403
+  },
+  {
+    "path": "/data/subjects/qs/library-information-management.json?v=1",
+    "version": 1,
+    "countries": 37,
+    "institutions": 100
+  },
+  {
+    "path": "/data/subjects/qs/life-sciences-medicine.json?v=1",
+    "version": 1,
+    "countries": 61,
+    "institutions": 549
+  },
+  {
+    "path": "/data/subjects/qs/linguistics.json?v=1",
+    "version": 1,
+    "countries": 58,
+    "institutions": 350
+  },
+  {
+    "path": "/data/subjects/qs/marketing.json?v=1",
+    "version": 1,
+    "countries": 25,
+    "institutions": 100
+  },
+  {
+    "path": "/data/subjects/qs/materials-sciences.json?v=1",
+    "version": 1,
+    "countries": 62,
+    "institutions": 554
+  },
+  {
+    "path": "/data/subjects/qs/mathematics.json?v=1",
+    "version": 1,
+    "countries": 70,
+    "institutions": 603
+  },
+  {
+    "path": "/data/subjects/qs/mechanical-aeronautical-manufacturing-engineering.json?v=1",
+    "version": 1,
+    "countries": 69,
+    "institutions": 575
+  },
+  {
+    "path": "/data/subjects/qs/medicine.json?v=1",
+    "version": 1,
+    "countries": 87,
+    "institutions": 847
+  },
+  {
+    "path": "/data/subjects/qs/mineral-mining-engineering.json?v=1",
+    "version": 1,
+    "countries": 32,
+    "institutions": 101
+  },
+  {
+    "path": "/data/subjects/qs/modern-languages.json?v=1",
+    "version": 1,
+    "countries": 55,
+    "institutions": 352
+  },
+  {
+    "path": "/data/subjects/qs/music.json?v=1",
+    "version": 1,
+    "countries": 22,
+    "institutions": 50
+  },
+  {
+    "path": "/data/subjects/qs/natural-sciences.json?v=1",
+    "version": 1,
+    "countries": 58,
+    "institutions": 553
+  },
+  {
+    "path": "/data/subjects/qs/nursing.json?v=1",
+    "version": 1,
+    "countries": 39,
+    "institutions": 225
+  },
+  {
+    "path": "/data/subjects/qs/performing-arts.json?v=1",
+    "version": 1,
+    "countries": 35,
+    "institutions": 150
+  },
+  {
+    "path": "/data/subjects/qs/pharmacy-pharmacology.json?v=1",
+    "version": 1,
+    "countries": 55,
+    "institutions": 402
+  },
+  {
+    "path": "/data/subjects/qs/philosophy.json?v=1",
+    "version": 1,
+    "countries": 37,
+    "institutions": 225
+  },
+  {
+    "path": "/data/subjects/qs/physics-astronomy.json?v=1",
+    "version": 1,
+    "countries": 70,
+    "institutions": 676
+  },
+  {
+    "path": "/data/subjects/qs/politics.json?v=1",
+    "version": 1,
+    "countries": 57,
+    "institutions": 400
+  },
+  {
+    "path": "/data/subjects/qs/psychology.json?v=1",
+    "version": 1,
+    "countries": 47,
+    "institutions": 356
+  },
+  {
+    "path": "/data/subjects/qs/social-policy-administration.json?v=1",
+    "version": 1,
+    "countries": 33,
+    "institutions": 149
+  },
+  {
+    "path": "/data/subjects/qs/social-sciences-management.json?v=1",
+    "version": 1,
+    "countries": 65,
+    "institutions": 550
+  },
+  {
+    "path": "/data/subjects/qs/sociology.json?v=1",
+    "version": 1,
+    "countries": 49,
+    "institutions": 374
+  },
+  {
+    "path": "/data/subjects/qs/sports-related-subjects.json?v=1",
+    "version": 1,
+    "countries": 28,
+    "institutions": 149
+  },
+  {
+    "path": "/data/subjects/qs/statistics-operational-research.json?v=1",
+    "version": 1,
+    "countries": 43,
+    "institutions": 275
+  },
+  {
+    "path": "/data/subjects/qs/theology-divinity-religious-studies.json?v=1",
+    "version": 1,
+    "countries": 41,
+    "institutions": 150
+  },
+  {
+    "path": "/data/subjects/qs/veterinary-science.json?v=1",
+    "version": 1,
+    "countries": 33,
+    "institutions": 100
+  },
+  {
+    "path": "/data/subjects/arwu/aerospace-engineering.json?v=1",
+    "version": 1,
+    "countries": 21,
+    "institutions": 100
+  },
+  {
+    "path": "/data/subjects/arwu/agricultural-sciences.json?v=1",
+    "version": 1,
+    "countries": 58,
+    "institutions": 500
+  },
+  {
+    "path": "/data/subjects/arwu/artificial-intelligence.json?v=1",
+    "version": 1,
+    "countries": 46,
+    "institutions": 400
+  },
+  {
+    "path": "/data/subjects/arwu/atmospheric-science.json?v=1",
+    "version": 1,
+    "countries": 41,
+    "institutions": 400
+  },
+  {
+    "path": "/data/subjects/arwu/automation-control.json?v=1",
+    "version": 1,
+    "countries": 31,
+    "institutions": 200
+  },
+  {
+    "path": "/data/subjects/arwu/biological-sciences.json?v=1",
+    "version": 1,
+    "countries": 49,
+    "institutions": 500
+  },
+  {
+    "path": "/data/subjects/arwu/biomedical-engineering.json?v=1",
+    "version": 1,
+    "countries": 33,
+    "institutions": 300
+  },
+  {
+    "path": "/data/subjects/arwu/biotechnology.json?v=1",
+    "version": 1,
+    "countries": 44,
+    "institutions": 400
+  },
+  {
+    "path": "/data/subjects/arwu/business-administration.json?v=1",
+    "version": 1,
+    "countries": 40,
+    "institutions": 400
+  },
+  {
+    "path": "/data/subjects/arwu/chemical-engineering.json?v=1",
+    "version": 1,
+    "countries": 45,
+    "institutions": 500
+  },
+  {
+    "path": "/data/subjects/arwu/chemistry.json?v=1",
+    "version": 1,
+    "countries": 39,
+    "institutions": 500
+  },
+  {
+    "path": "/data/subjects/arwu/civil-engineering.json?v=1",
+    "version": 1,
+    "countries": 51,
+    "institutions": 400
+  },
+  {
+    "path": "/data/subjects/arwu/clinical-medicine.json?v=1",
+    "version": 1,
+    "countries": 70,
+    "institutions": 500
+  },
+  {
+    "path": "/data/subjects/arwu/communication.json?v=1",
+    "version": 1,
+    "countries": 25,
+    "institutions": 200
+  },
+  {
+    "path": "/data/subjects/arwu/computer-science-engineering.json?v=1",
+    "version": 1,
+    "countries": 44,
+    "institutions": 500
+  },
+  {
+    "path": "/data/subjects/arwu/dentistry-oral-sciences.json?v=1",
+    "version": 1,
+    "countries": 47,
+    "institutions": 300
+  },
+  {
+    "path": "/data/subjects/arwu/earth-sciences.json?v=1",
+    "version": 1,
+    "countries": 45,
+    "institutions": 500
+  },
+  {
+    "path": "/data/subjects/arwu/ecology.json?v=1",
+    "version": 1,
+    "countries": 38,
+    "institutions": 400
+  },
+  {
+    "path": "/data/subjects/arwu/economics.json?v=1",
+    "version": 1,
+    "countries": 47,
+    "institutions": 500
+  },
+  {
+    "path": "/data/subjects/arwu/education.json?v=1",
+    "version": 1,
+    "countries": 53,
+    "institutions": 500
+  },
+  {
+    "path": "/data/subjects/arwu/electrical-electronic-engineering.json?v=1",
+    "version": 1,
+    "countries": 53,
+    "institutions": 500
+  },
+  {
+    "path": "/data/subjects/arwu/energy-science-engineering.json?v=1",
+    "version": 1,
+    "countries": 45,
+    "institutions": 400
+  },
+  {
+    "path": "/data/subjects/arwu/environmental-science-engineering.json?v=1",
+    "version": 1,
+    "countries": 45,
+    "institutions": 500
+  },
+  {
+    "path": "/data/subjects/arwu/finance.json?v=1",
+    "version": 1,
+    "countries": 29,
+    "institutions": 200
+  },
+  {
+    "path": "/data/subjects/arwu/food-science-technology.json?v=1",
+    "version": 1,
+    "countries": 50,
+    "institutions": 400
+  },
+  {
+    "path": "/data/subjects/arwu/geography.json?v=1",
+    "version": 1,
+    "countries": 28,
+    "institutions": 200
+  },
+  {
+    "path": "/data/subjects/arwu/hospitality-tourism-management.json?v=1",
+    "version": 1,
+    "countries": 20,
+    "institutions": 100
+  },
+  {
+    "path": "/data/subjects/arwu/human-biological-sciences.json?v=1",
+    "version": 1,
+    "countries": 52,
+    "institutions": 500
+  },
+  {
+    "path": "/data/subjects/arwu/instruments-science-technology.json?v=1",
+    "version": 1,
+    "countries": 42,
+    "institutions": 400
+  },
+  {
+    "path": "/data/subjects/arwu/law.json?v=1",
+    "version": 1,
+    "countries": 20,
+    "institutions": 200
+  },
+  {
+    "path": "/data/subjects/arwu/library-information-science.json?v=1",
+    "version": 1,
+    "countries": 15,
+    "institutions": 100
+  },
+  {
+    "path": "/data/subjects/arwu/management.json?v=1",
+    "version": 1,
+    "countries": 41,
+    "institutions": 500
+  },
+  {
+    "path": "/data/subjects/arwu/marine-ocean-engineering.json?v=1",
+    "version": 1,
+    "countries": 23,
+    "institutions": 100
+  },
+  {
+    "path": "/data/subjects/arwu/materials-science-engineering.json?v=1",
+    "version": 1,
+    "countries": 44,
+    "institutions": 500
+  },
+  {
+    "path": "/data/subjects/arwu/mathematics.json?v=1",
+    "version": 1,
+    "countries": 55,
+    "institutions": 500
+  },
+  {
+    "path": "/data/subjects/arwu/mechanical-engineering.json?v=1",
+    "version": 1,
+    "countries": 44,
+    "institutions": 400
+  },
+  {
+    "path": "/data/subjects/arwu/medical-technology.json?v=1",
+    "version": 1,
+    "countries": 36,
+    "institutions": 300
+  },
+  {
+    "path": "/data/subjects/arwu/metallurgical-engineering.json?v=1",
+    "version": 1,
+    "countries": 36,
+    "institutions": 300
+  },
+  {
+    "path": "/data/subjects/arwu/mining-mineral-engineering.json?v=1",
+    "version": 1,
+    "countries": 20,
+    "institutions": 100
+  },
+  {
+    "path": "/data/subjects/arwu/nanoscience-nanotechnology.json?v=1",
+    "version": 1,
+    "countries": 29,
+    "institutions": 400
+  },
+  {
+    "path": "/data/subjects/arwu/nursing.json?v=1",
+    "version": 1,
+    "countries": 34,
+    "institutions": 300
+  },
+  {
+    "path": "/data/subjects/arwu/oceanography.json?v=1",
+    "version": 1,
+    "countries": 33,
+    "institutions": 200
+  },
+  {
+    "path": "/data/subjects/arwu/pharmacy-pharmaceutical-sciences.json?v=1",
+    "version": 1,
+    "countries": 48,
+    "institutions": 500
+  },
+  {
+    "path": "/data/subjects/arwu/physics.json?v=1",
+    "version": 1,
+    "countries": 53,
+    "institutions": 500
+  },
+  {
+    "path": "/data/subjects/arwu/political-sciences.json?v=1",
+    "version": 1,
+    "countries": 35,
+    "institutions": 300
+  },
+  {
+    "path": "/data/subjects/arwu/psychology.json?v=1",
+    "version": 1,
+    "countries": 44,
+    "institutions": 500
+  },
+  {
+    "path": "/data/subjects/arwu/public-administration.json?v=1",
+    "version": 1,
+    "countries": 20,
+    "institutions": 100
+  },
+  {
+    "path": "/data/subjects/arwu/public-health.json?v=1",
+    "version": 1,
+    "countries": 70,
+    "institutions": 500
+  },
+  {
+    "path": "/data/subjects/arwu/remote-sensing.json?v=1",
+    "version": 1,
+    "countries": 27,
+    "institutions": 200
+  },
+  {
+    "path": "/data/subjects/arwu/robotic-science-engineering.json?v=1",
+    "version": 1,
+    "countries": 20,
+    "institutions": 100
+  },
+  {
+    "path": "/data/subjects/arwu/sociology.json?v=1",
+    "version": 1,
+    "countries": 36,
+    "institutions": 300
+  },
+  {
+    "path": "/data/subjects/arwu/statistics.json?v=1",
+    "version": 1,
+    "countries": 34,
+    "institutions": 300
+  },
+  {
+    "path": "/data/subjects/arwu/telecommunication-engineering.json?v=1",
+    "version": 1,
+    "countries": 47,
+    "institutions": 400
+  },
+  {
+    "path": "/data/subjects/arwu/textile-science-engineering.json?v=1",
+    "version": 1,
+    "countries": 18,
+    "institutions": 50
+  },
+  {
+    "path": "/data/subjects/arwu/transportation-science-technology.json?v=1",
+    "version": 1,
+    "countries": 31,
+    "institutions": 200
+  },
+  {
+    "path": "/data/subjects/arwu/veterinary-sciences.json?v=1",
+    "version": 1,
+    "countries": 50,
+    "institutions": 300
+  },
+  {
+    "path": "/data/subjects/arwu/water-resources.json?v=1",
+    "version": 1,
+    "countries": 39,
+    "institutions": 300
+  },
+  {
+    "path": "/data/subjects/usnews/agricultural-sciences.json?v=1",
+    "version": 1,
+    "countries": 58,
+    "institutions": 500
+  },
+  {
+    "path": "/data/subjects/usnews/artificial-intelligence.json?v=1",
+    "version": 1,
+    "countries": 32,
+    "institutions": 250
+  },
+  {
+    "path": "/data/subjects/usnews/arts-and-humanities.json?v=1",
+    "version": 1,
+    "countries": 35,
+    "institutions": 250
+  },
+  {
+    "path": "/data/subjects/usnews/biology-biochemistry.json?v=1",
+    "version": 1,
+    "countries": 55,
+    "institutions": 750
+  },
+  {
+    "path": "/data/subjects/usnews/biotechnology-applied-microbiology.json?v=1",
+    "version": 1,
+    "countries": 33,
+    "institutions": 250
+  },
+  {
+    "path": "/data/subjects/usnews/cardiac-cardiovascular.json?v=1",
+    "version": 1,
+    "countries": 33,
+    "institutions": 250
+  },
+  {
+    "path": "/data/subjects/usnews/cell-biology.json?v=1",
+    "version": 1,
+    "countries": 28,
+    "institutions": 250
+  },
+  {
+    "path": "/data/subjects/usnews/chemical-engineering.json?v=1",
+    "version": 1,
+    "countries": 44,
+    "institutions": 400
+  },
+  {
+    "path": "/data/subjects/usnews/chemistry.json?v=1",
+    "version": 1,
+    "countries": 77,
+    "institutions": 1500
+  },
+  {
+    "path": "/data/subjects/usnews/civil-engineering.json?v=1",
+    "version": 1,
+    "countries": 35,
+    "institutions": 250
+  },
+  {
+    "path": "/data/subjects/usnews/clinical-medicine.json?v=1",
+    "version": 1,
+    "countries": 95,
+    "institutions": 1250
+  },
+  {
+    "path": "/data/subjects/usnews/computer-science.json?v=1",
+    "version": 1,
+    "countries": 61,
+    "institutions": 1000
+  },
+  {
+    "path": "/data/subjects/usnews/condensed-matter-physics.json?v=1",
+    "version": 1,
+    "countries": 27,
+    "institutions": 250
+  },
+  {
+    "path": "/data/subjects/usnews/ecology.json?v=1",
+    "version": 1,
+    "countries": 31,
+    "institutions": 250
+  },
+  {
+    "path": "/data/subjects/usnews/economics-business.json?v=1",
+    "version": 1,
+    "countries": 37,
+    "institutions": 400
+  },
+  {
+    "path": "/data/subjects/usnews/education-educational-research.json?v=1",
+    "version": 1,
+    "countries": 21,
+    "institutions": 100
+  },
+  {
+    "path": "/data/subjects/usnews/electrical-electronic-engineering.json?v=1",
+    "version": 1,
+    "countries": 58,
+    "institutions": 750
+  },
+  {
+    "path": "/data/subjects/usnews/endocrinology-metabolism.json?v=1",
+    "version": 1,
+    "countries": 36,
+    "institutions": 250
+  },
+  {
+    "path": "/data/subjects/usnews/energy-fuels.json?v=1",
+    "version": 1,
+    "countries": 52,
+    "institutions": 500
+  },
+  {
+    "path": "/data/subjects/usnews/engineering.json?v=1",
+    "version": 1,
+    "countries": 77,
+    "institutions": 1500
+  },
+  {
+    "path": "/data/subjects/usnews/environment-ecology.json?v=1",
+    "version": 1,
+    "countries": 71,
+    "institutions": 1000
+  },
+  {
+    "path": "/data/subjects/usnews/environmental-engineering.json?v=1",
+    "version": 1,
+    "countries": 30,
+    "institutions": 250
+  },
+  {
+    "path": "/data/subjects/usnews/food-science-technology.json?v=1",
+    "version": 1,
+    "countries": 40,
+    "institutions": 250
+  },
+  {
+    "path": "/data/subjects/usnews/gastroenterology-hepatology.json?v=1",
+    "version": 1,
+    "countries": 33,
+    "institutions": 250
+  },
+  {
+    "path": "/data/subjects/usnews/geosciences.json?v=1",
+    "version": 1,
+    "countries": 52,
+    "institutions": 500
+  },
+  {
+    "path": "/data/subjects/usnews/green-sustainable-science-technology.json?v=1",
+    "version": 1,
+    "countries": 39,
+    "institutions": 250
+  },
+  {
+    "path": "/data/subjects/usnews/immunology.json?v=1",
+    "version": 1,
+    "countries": 35,
+    "institutions": 250
+  },
+  {
+    "path": "/data/subjects/usnews/infectious-diseases.json?v=1",
+    "version": 1,
+    "countries": 49,
+    "institutions": 250
+  },
+  {
+    "path": "/data/subjects/usnews/marine-freshwater-biology.json?v=1",
+    "version": 1,
+    "countries": 25,
+    "institutions": 100
+  },
+  {
+    "path": "/data/subjects/usnews/materials-science.json?v=1",
+    "version": 1,
+    "countries": 61,
+    "institutions": 1000
+  },
+  {
+    "path": "/data/subjects/usnews/mathematics.json?v=1",
+    "version": 1,
+    "countries": 54,
+    "institutions": 500
+  },
+  {
+    "path": "/data/subjects/usnews/mechanical-engineering.json?v=1",
+    "version": 1,
+    "countries": 27,
+    "institutions": 200
+  },
+  {
+    "path": "/data/subjects/usnews/meteorology-atmospheric-sciences.json?v=1",
+    "version": 1,
+    "countries": 20,
+    "institutions": 100
+  },
+  {
+    "path": "/data/subjects/usnews/microbiology.json?v=1",
+    "version": 1,
+    "countries": 38,
+    "institutions": 250
+  },
+  {
+    "path": "/data/subjects/usnews/molecular-biology-genetics.json?v=1",
+    "version": 1,
+    "countries": 40,
+    "institutions": 400
+  },
+  {
+    "path": "/data/subjects/usnews/nanoscience-nanotechnology.json?v=1",
+    "version": 1,
+    "countries": 31,
+    "institutions": 400
+  },
+  {
+    "path": "/data/subjects/usnews/neuroscience-behavior.json?v=1",
+    "version": 1,
+    "countries": 46,
+    "institutions": 500
+  },
+  {
+    "path": "/data/subjects/usnews/oncology.json?v=1",
+    "version": 1,
+    "countries": 47,
+    "institutions": 500
+  },
+  {
+    "path": "/data/subjects/usnews/optics.json?v=1",
+    "version": 1,
+    "countries": 34,
+    "institutions": 250
+  },
+  {
+    "path": "/data/subjects/usnews/pharmacology-toxicology.json?v=1",
+    "version": 1,
+    "countries": 51,
+    "institutions": 500
+  },
+  {
+    "path": "/data/subjects/usnews/physical-chemistry.json?v=1",
+    "version": 1,
+    "countries": 51,
+    "institutions": 750
+  },
+  {
+    "path": "/data/subjects/usnews/physics.json?v=1",
+    "version": 1,
+    "countries": 79,
+    "institutions": 1000
+  },
+  {
+    "path": "/data/subjects/usnews/plant-animal-science.json?v=1",
+    "version": 1,
+    "countries": 64,
+    "institutions": 750
+  },
+  {
+    "path": "/data/subjects/usnews/polymer-science.json?v=1",
+    "version": 1,
+    "countries": 39,
+    "institutions": 250
+  },
+  {
+    "path": "/data/subjects/usnews/psychiatry-psychology.json?v=1",
+    "version": 1,
+    "countries": 48,
+    "institutions": 500
+  },
+  {
+    "path": "/data/subjects/usnews/public-environmental-occupational-health.json?v=1",
+    "version": 1,
+    "countries": 59,
+    "institutions": 500
+  },
+  {
+    "path": "/data/subjects/usnews/radiology-nuclear-medicine-medical-imaging.json?v=1",
+    "version": 1,
+    "countries": 28,
+    "institutions": 250
+  },
+  {
+    "path": "/data/subjects/usnews/social-sciences-public-health.json?v=1",
+    "version": 1,
+    "countries": 69,
+    "institutions": 750
+  },
+  {
+    "path": "/data/subjects/usnews/space-science.json?v=1",
+    "version": 1,
+    "countries": 35,
+    "institutions": 250
+  },
+  {
+    "path": "/data/subjects/usnews/surgery.json?v=1",
+    "version": 1,
+    "countries": 31,
+    "institutions": 250
+  },
+  {
+    "path": "/data/subjects/usnews/water-resources.json?v=1",
+    "version": 1,
+    "countries": 34,
+    "institutions": 200
+  },
+  {
+    "path": "/data/subjects/times/arts-and-humanities.json?v=1",
+    "version": 1,
+    "countries": 74,
+    "institutions": 817
+  },
+  {
+    "path": "/data/subjects/times/business-and-economics.json?v=1",
+    "version": 1,
+    "countries": 91,
+    "institutions": 1067
+  },
+  {
+    "path": "/data/subjects/times/clinical-pre-clinical-health.json?v=1",
+    "version": 1,
+    "countries": 102,
+    "institutions": 1230
+  },
+  {
+    "path": "/data/subjects/times/computer-science.json?v=1",
+    "version": 1,
+    "countries": 84,
+    "institutions": 1165
+  },
+  {
+    "path": "/data/subjects/times/education.json?v=1",
+    "version": 1,
+    "countries": 88,
+    "institutions": 830
+  },
+  {
+    "path": "/data/subjects/times/engineering.json?v=1",
+    "version": 1,
+    "countries": 98,
+    "institutions": 1555
+  },
+  {
+    "path": "/data/subjects/times/law.json?v=1",
+    "version": 1,
+    "countries": 53,
+    "institutions": 425
+  },
+  {
+    "path": "/data/subjects/times/life-sciences.json?v=1",
+    "version": 1,
+    "countries": 98,
+    "institutions": 1211
+  },
+  {
+    "path": "/data/subjects/times/physical-sciences.json?v=1",
+    "version": 1,
+    "countries": 109,
+    "institutions": 1497
+  },
+  {
+    "path": "/data/subjects/times/psychology.json?v=1",
+    "version": 1,
+    "countries": 64,
+    "institutions": 694
+  },
+  {
+    "path": "/data/subjects/times/social-sciences.json?v=1",
+    "version": 1,
+    "countries": 104,
+    "institutions": 1202
+  },
+  {
+    "path": "/data/subjects/ntu/agricultural-sciences.json?v=1",
+    "version": 1,
+    "countries": 49,
+    "institutions": 496
+  },
+  {
+    "path": "/data/subjects/ntu/biology-biochemistry.json?v=1",
+    "version": 1,
+    "countries": 49,
+    "institutions": 504
+  },
+  {
+    "path": "/data/subjects/ntu/biomedical-engineering.json?v=1",
+    "version": 1,
+    "countries": 20,
+    "institutions": 151
+  },
+  {
+    "path": "/data/subjects/ntu/chemical-engineering.json?v=1",
+    "version": 1,
+    "countries": 39,
+    "institutions": 401
+  },
+  {
+    "path": "/data/subjects/ntu/chemistry.json?v=1",
+    "version": 1,
+    "countries": 42,
+    "institutions": 498
+  },
+  {
+    "path": "/data/subjects/ntu/civil-engineering.json?v=1",
+    "version": 1,
+    "countries": 42,
+    "institutions": 410
+  },
+  {
+    "path": "/data/subjects/ntu/clinical-medicine.json?v=1",
+    "version": 1,
+    "countries": 60,
+    "institutions": 501
+  },
+  {
+    "path": "/data/subjects/ntu/computer-science.json?v=1",
+    "version": 1,
+    "countries": 44,
+    "institutions": 496
+  },
+  {
+    "path": "/data/subjects/ntu/economics-business.json?v=1",
+    "version": 1,
+    "countries": 39,
+    "institutions": 398
+  },
+  {
+    "path": "/data/subjects/ntu/electrical-engineering.json?v=1",
+    "version": 1,
+    "countries": 47,
+    "institutions": 502
+  },
+  {
+    "path": "/data/subjects/ntu/energy-science-engineering.json?v=1",
+    "version": 1,
+    "countries": 42,
+    "institutions": 399
+  },
+  {
+    "path": "/data/subjects/ntu/environment-ecology.json?v=1",
+    "version": 1,
+    "countries": 44,
+    "institutions": 497
+  },
+  {
+    "path": "/data/subjects/ntu/environmental-science-engineering.json?v=1",
+    "version": 1,
+    "countries": 31,
+    "institutions": 300
+  },
+  {
+    "path": "/data/subjects/ntu/field-agriculture.json?v=1",
+    "version": 1,
+    "countries": 46,
+    "institutions": 502
+  },
+  {
+    "path": "/data/subjects/ntu/field-engineering.json?v=1",
+    "version": 1,
+    "countries": 48,
+    "institutions": 694
+  },
+  {
+    "path": "/data/subjects/ntu/field-life-sciences.json?v=1",
+    "version": 1,
+    "countries": 50,
+    "institutions": 605
+  },
+  {
+    "path": "/data/subjects/ntu/field-medicine.json?v=1",
+    "version": 1,
+    "countries": 71,
+    "institutions": 610
+  },
+  {
+    "path": "/data/subjects/ntu/field-natural-sciences.json?v=1",
+    "version": 1,
+    "countries": 52,
+    "institutions": 600
+  },
+  {
+    "path": "/data/subjects/ntu/field-social-sciences.json?v=1",
+    "version": 1,
+    "countries": 47,
+    "institutions": 596
+  },
+  {
+    "path": "/data/subjects/ntu/geoscience.json?v=1",
+    "version": 1,
+    "countries": 34,
+    "institutions": 299
+  },
+  {
+    "path": "/data/subjects/ntu/immunology.json?v=1",
+    "version": 1,
+    "countries": 39,
+    "institutions": 302
+  },
+  {
+    "path": "/data/subjects/ntu/materials-science.json?v=1",
+    "version": 1,
+    "countries": 41,
+    "institutions": 509
+  },
+  {
+    "path": "/data/subjects/ntu/mathematics.json?v=1",
+    "version": 1,
+    "countries": 51,
+    "institutions": 499
+  },
+  {
+    "path": "/data/subjects/ntu/mechanical-engineering.json?v=1",
+    "version": 1,
+    "countries": 39,
+    "institutions": 302
+  },
+  {
+    "path": "/data/subjects/ntu/microbiology.json?v=1",
+    "version": 1,
+    "countries": 38,
+    "institutions": 301
+  },
+  {
+    "path": "/data/subjects/ntu/molecular-biology-genetics.json?v=1",
+    "version": 1,
+    "countries": 36,
+    "institutions": 306
+  },
+  {
+    "path": "/data/subjects/ntu/neuroscience-behavior.json?v=1",
+    "version": 1,
+    "countries": 36,
+    "institutions": 301
+  },
+  {
+    "path": "/data/subjects/ntu/pharmacology-toxicology.json?v=1",
+    "version": 1,
+    "countries": 49,
+    "institutions": 506
+  },
+  {
+    "path": "/data/subjects/ntu/physics.json?v=1",
+    "version": 1,
+    "countries": 57,
+    "institutions": 499
+  },
+  {
+    "path": "/data/subjects/ntu/plant-animal-science.json?v=1",
+    "version": 1,
+    "countries": 41,
+    "institutions": 298
+  },
+  {
+    "path": "/data/subjects/ntu/psychiatry-psychology.json?v=1",
+    "version": 1,
+    "countries": 42,
+    "institutions": 496
+  },
+  {
+    "path": "/data/subjects/ntu/social-sciences-general.json?v=1",
+    "version": 1,
+    "countries": 43,
+    "institutions": 500
+  },
+  {
+    "path": "/data/subjects/ntu/space-science.json?v=1",
+    "version": 1,
+    "countries": 38,
+    "institutions": 302
+  },
+  {
+    "path": "/data/subjects/scimago/agricultural-biological-sciences.json?v=1",
+    "version": 1,
+    "countries": 141,
+    "institutions": 3571
+  },
+  {
+    "path": "/data/subjects/scimago/arts-humanities.json?v=1",
+    "version": 1,
+    "countries": 118,
+    "institutions": 2482
+  },
+  {
+    "path": "/data/subjects/scimago/biochemistry-genetics-molecular-biology.json?v=1",
+    "version": 1,
+    "countries": 130,
+    "institutions": 3398
+  },
+  {
+    "path": "/data/subjects/scimago/business-management-accounting.json?v=1",
+    "version": 1,
+    "countries": 114,
+    "institutions": 3053
+  },
+  {
+    "path": "/data/subjects/scimago/chemistry.json?v=1",
+    "version": 1,
+    "countries": 118,
+    "institutions": 3447
+  },
+  {
+    "path": "/data/subjects/scimago/computer-science.json?v=1",
+    "version": 1,
+    "countries": 115,
+    "institutions": 3476
+  },
+  {
+    "path": "/data/subjects/scimago/dentistry.json?v=1",
+    "version": 1,
+    "countries": 79,
+    "institutions": 795
+  },
+  {
+    "path": "/data/subjects/scimago/earth-planetary-sciences.json?v=1",
+    "version": 1,
+    "countries": 132,
+    "institutions": 3163
+  },
+  {
+    "path": "/data/subjects/scimago/economics-econometrics-finance.json?v=1",
+    "version": 1,
+    "countries": 115,
+    "institutions": 2504
+  },
+  {
+    "path": "/data/subjects/scimago/energy.json?v=1",
+    "version": 1,
+    "countries": 125,
+    "institutions": 3354
+  },
+  {
+    "path": "/data/subjects/scimago/engineering.json?v=1",
+    "version": 1,
+    "countries": 117,
+    "institutions": 3572
+  },
+  {
+    "path": "/data/subjects/scimago/environmental-science.json?v=1",
+    "version": 1,
+    "countries": 142,
+    "institutions": 3983
+  },
+  {
+    "path": "/data/subjects/scimago/mathematics.json?v=1",
+    "version": 1,
+    "countries": 126,
+    "institutions": 3552
+  },
+  {
+    "path": "/data/subjects/scimago/medicine.json?v=1",
+    "version": 1,
+    "countries": 133,
+    "institutions": 3022
+  },
+  {
+    "path": "/data/subjects/scimago/pharmacology-toxicology-pharmaceutics.json?v=1",
+    "version": 1,
+    "countries": 123,
+    "institutions": 2742
+  },
+  {
+    "path": "/data/subjects/scimago/physics-astronomy.json?v=1",
+    "version": 1,
+    "countries": 105,
+    "institutions": 2890
+  },
+  {
+    "path": "/data/subjects/scimago/psychology.json?v=1",
+    "version": 1,
+    "countries": 106,
+    "institutions": 2466
+  },
+  {
+    "path": "/data/subjects/scimago/social-sciences.json?v=1",
+    "version": 1,
+    "countries": 140,
+    "institutions": 3909
+  },
+  {
+    "path": "/data/subjects/scimago/veterinary.json?v=1",
+    "version": 1,
+    "countries": 100,
+    "institutions": 978
+  },
+  {
+    "path": "/data/subjects/leiden/biomedical-health-sciences.json?v=1",
+    "version": 1,
+    "countries": 110,
+    "institutions": 2165
+  },
+  {
+    "path": "/data/subjects/leiden/life-earth-sciences.json?v=1",
+    "version": 1,
+    "countries": 97,
+    "institutions": 1692
+  },
+  {
+    "path": "/data/subjects/leiden/mathematics-computer-science.json?v=1",
+    "version": 1,
+    "countries": 96,
+    "institutions": 1910
+  },
+  {
+    "path": "/data/subjects/leiden/physical-sciences-engineering.json?v=1",
+    "version": 1,
+    "countries": 97,
+    "institutions": 2134
+  },
+  {
+    "path": "/data/subjects/leiden/social-sciences-humanities.json?v=1",
+    "version": 1,
+    "countries": 101,
+    "institutions": 1800
+  }
+]

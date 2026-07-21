@@ -1,0 +1,302 @@
+---
+import type { QsSubjectOutperformer } from '../data/schema';
+import CustomSelect from './CustomSelect.astro';
+
+interface Props {
+  items: QsSubjectOutperformer[];
+}
+
+const { items } = Astro.props;
+const subjects = [...new Map(items.map((item) => [item.subject, item.subjectLabel])).entries()]
+  .map(([value, label]) => ({ value, label }))
+  .sort((a, b) => a.label.localeCompare(b.label));
+---
+
+<div class="specialist-browser surface" data-specialist-browser>
+  <div class="specialist-controls">
+    <label>
+      <span>Filter by subject</span>
+      <CustomSelect data-specialist-subject aria-label="Filter specialist examples by subject">
+        <option value="">All {subjects.length} qualifying subjects</option>
+        {subjects.map((subject) => <option value={subject.value}>{subject.label}</option>)}
+      </CustomSelect>
+    </label>
+    <p data-specialist-count aria-live="polite">
+      {items.length} qualifying subject placements
+    </p>
+  </div>
+
+  <div class="specialist-list">
+    {items.map((institution) => (
+      <article class="specialist-row" data-specialist-item data-subject={institution.subject}>
+        <p class="specialist-subject">{institution.subjectLabel}</p>
+        <div class="specialist-identity">
+          <h3>{institution.name}</h3>
+          <small>{institution.country}</small>
+        </div>
+        <div class="specialist-ranks" aria-label="Subject and overall ranks">
+          <span>
+            <small>Subject</small>
+            <strong>#{institution.subjectRankDisplay}</strong>
+          </span>
+          <i aria-hidden="true">→</i>
+          <span>
+            <small>Overall</small>
+            <strong>{institution.overallRankDisplay ? `#${institution.overallRankDisplay}` : 'Not listed'}</strong>
+          </span>
+        </div>
+      </article>
+    ))}
+  </div>
+
+  <nav class="pagination" data-specialist-pagination aria-label="Specialist examples pages">
+    <button type="button" data-specialist-previous>Previous</button>
+    <span data-specialist-page>Page 1</span>
+    <button type="button" data-specialist-next>Next</button>
+  </nav>
+</div>
+
+<script>
+  const SPECIALIST_PAGE_SIZE = 12;
+
+  const initializeSpecialistBrowser = (root: HTMLElement): void => {
+    if (root.dataset.initialized === 'true') return;
+    root.dataset.initialized = 'true';
+    const subject = root.querySelector<HTMLSelectElement>('[data-specialist-subject]');
+    const count = root.querySelector<HTMLElement>('[data-specialist-count]');
+    const pageLabel = root.querySelector<HTMLElement>('[data-specialist-page]');
+    const pagination = root.querySelector<HTMLElement>('[data-specialist-pagination]');
+    const previous = root.querySelector<HTMLButtonElement>('[data-specialist-previous]');
+    const next = root.querySelector<HTMLButtonElement>('[data-specialist-next]');
+    const items = [...root.querySelectorAll<HTMLElement>('[data-specialist-item]')];
+    let page = 0;
+
+    const render = (): void => {
+      const selected = subject?.value ?? '';
+      const matches = items.filter((item) => !selected || item.dataset.subject === selected);
+      const pages = Math.max(1, Math.ceil(matches.length / SPECIALIST_PAGE_SIZE));
+      page = Math.min(page, pages - 1);
+      const start = page * SPECIALIST_PAGE_SIZE;
+      const visible = new Set(matches.slice(start, start + SPECIALIST_PAGE_SIZE));
+      items.forEach((item) => { item.hidden = !visible.has(item); });
+
+      const first = matches.length ? start + 1 : 0;
+      const last = Math.min(start + SPECIALIST_PAGE_SIZE, matches.length);
+      if (count) count.textContent = `${first}–${last} of ${matches.length} qualifying placement${matches.length === 1 ? '' : 's'}`;
+      if (pageLabel) pageLabel.textContent = `Page ${page + 1} of ${pages}`;
+      if (pagination) pagination.hidden = pages <= 1;
+      if (previous) previous.disabled = page === 0;
+      if (next) next.disabled = page >= pages - 1;
+    };
+
+    subject?.addEventListener('change', () => { page = 0; render(); });
+    previous?.addEventListener('click', () => { page = Math.max(0, page - 1); render(); });
+    next?.addEventListener('click', () => { page += 1; render(); });
+    render();
+  };
+
+  const initializeSpecialistBrowsers = (): void => {
+    document.querySelectorAll<HTMLElement>('[data-specialist-browser]').forEach(initializeSpecialistBrowser);
+  };
+
+  initializeSpecialistBrowsers();
+  document.addEventListener('astro:page-load', initializeSpecialistBrowsers);
+</script>
+
+<style>
+  .specialist-browser {
+    overflow: hidden;
+  }
+
+  .specialist-controls {
+    display: grid;
+    grid-template-columns: minmax(220px, 360px) minmax(0, 1fr);
+    align-items: end;
+    gap: 16px;
+    padding: 16px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  label {
+    display: grid;
+    min-width: 0;
+    gap: 6px;
+  }
+
+  label > span {
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.61rem;
+    font-weight: 750;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .specialist-controls p {
+    margin: 0 2px 11px;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    text-align: right;
+  }
+
+  .specialist-list {
+    display: grid;
+  }
+
+  .specialist-row {
+    display: grid;
+    grid-template-columns: minmax(150px, 0.8fr) minmax(0, 1.55fr) auto;
+    align-items: center;
+    gap: 18px;
+    min-width: 0;
+    padding: 13px 16px;
+    border-top: 1px solid var(--line);
+  }
+
+  .specialist-row:first-child {
+    border-top: 0;
+  }
+
+  .specialist-row[hidden] {
+    display: none;
+  }
+
+  .specialist-subject {
+    margin: 0;
+    color: var(--teal-dark);
+    font-size: 0.65rem;
+    font-weight: 750;
+    letter-spacing: 0.04em;
+    line-height: 1.35;
+    text-transform: uppercase;
+  }
+
+  .specialist-identity {
+    min-width: 0;
+  }
+
+  .specialist-identity h3 {
+    margin: 0;
+    overflow: hidden;
+    font-size: 0.88rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .specialist-identity small {
+    color: var(--muted);
+    font-size: 0.65rem;
+  }
+
+  .specialist-ranks {
+    display: grid;
+    grid-template-columns: minmax(58px, auto) 14px minmax(78px, auto);
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .specialist-ranks span {
+    display: grid;
+  }
+
+  .specialist-ranks small {
+    color: var(--muted);
+    font-size: 0.55rem;
+  }
+
+  .specialist-ranks strong {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    white-space: nowrap;
+  }
+
+  .specialist-ranks i {
+    color: var(--coral);
+    font-style: normal;
+  }
+
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--line);
+  }
+
+  .pagination[hidden] {
+    display: none;
+  }
+
+  .pagination span {
+    min-width: 88px;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    text-align: center;
+  }
+
+  .pagination button {
+    min-height: 36px;
+    padding: 7px 12px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    color: var(--ink);
+    background: var(--surface);
+    font-size: 0.7rem;
+    font-weight: 700;
+  }
+
+  .pagination button:hover:not(:disabled) {
+    border-color: var(--teal);
+    color: var(--teal-dark);
+  }
+
+  .pagination button:disabled {
+    cursor: not-allowed;
+    opacity: 0.42;
+  }
+
+  @media (max-width: 720px) {
+    .specialist-row {
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px 14px;
+    }
+
+    .specialist-subject {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .specialist-controls {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    .specialist-controls p {
+      margin: 0;
+      text-align: left;
+    }
+
+    .specialist-row {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    .specialist-identity h3 {
+      white-space: normal;
+    }
+
+    .specialist-ranks {
+      justify-content: start;
+    }
+
+    .pagination {
+      justify-content: space-between;
+      gap: 6px;
+    }
+  }
+</style>
