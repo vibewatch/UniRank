@@ -42,6 +42,13 @@ const { class: className, placeholder, ...rest } = Astro.props;
     min-width: 0;
   }
 
+  /* While open, lift the whole control into its own high stacking context so
+     the absolutely-positioned menu paints above sibling controls, summaries,
+     charts, and following sections regardless of DOM order. */
+  .custom-select[data-open] {
+    z-index: 90;
+  }
+
   .custom-select[data-enhanced] > .cs-native {
     display: none;
   }
