@@ -36,6 +36,9 @@ jobs:
       - name: Type-check scraper
         run: npm run typecheck:scraper
 
+      - name: Verify generated data
+        run: npm run check:data
+
       - name: Astro check
         run: npm run check
 
