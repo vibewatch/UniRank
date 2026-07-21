@@ -169,6 +169,39 @@ export interface SubjectLeaderBoard {
   institutions: SubjectLeaderInstitution[];
 }
 
+export interface NationalRankingEntry {
+  rank: number;
+  rankDisplay: string;
+  name: string;
+}
+
+export interface NationalRankingBoard {
+  provider: string;
+  providerLabel: string;
+  year: number;
+  totalRanked: number;
+  top: NationalRankingEntry[];
+}
+
+export interface NationalConsensusRank {
+  provider: string;
+  providerLabel: string;
+  rank: number;
+  rankDisplay: string;
+}
+
+export interface NationalConsensusEntry {
+  name: string;
+  meanRank: number;
+  ranks: NationalConsensusRank[];
+}
+
+export interface NationalRankings {
+  country: string;
+  providers: NationalRankingBoard[];
+  consensus: NationalConsensusEntry[];
+}
+
 export interface CountryAtlasMetric {
   id: string;
   label: string;
@@ -299,6 +332,7 @@ export interface InsightsData {
   natureSubjects: NatureSubject[];
   subjectMatrix: SubjectMatrixRow[];
   subjectBoards: SubjectLeaderBoard[];
+  nationalRankings: NationalRankings;
   qsSubjectOutperformers: QsSubjectOutperformer[];
   countryAtlas: CountryAtlas;
   openAlexGrowth: OpenAlexGrowth[];

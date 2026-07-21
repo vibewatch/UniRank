@@ -1,6 +1,7 @@
 ---
 import ConsensusTable from '../components/ConsensusTable.astro';
 import MetricCard from '../components/MetricCard.astro';
+import NationalSpotlight from '../components/NationalSpotlight.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { insights } from '../lib/data';
@@ -69,6 +70,17 @@ const providerById = new Map(insights.providers.map((provider) => [provider.id, 
         linkLabel="See the formula"
       />
       <ConsensusTable institutions={insights.consensus} interactive={true} />
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="National lens"
+        title="Inside one country: the United States up close."
+        description="The global table blends six methods worldwide. Here the two largest publisher rankings are restricted to U.S. institutions and combined into a mean rank—useful for reading a single system without the noise of cross-border comparison."
+      />
+      <NationalSpotlight data={insights.nationalRankings} />
     </div>
   </section>
 
