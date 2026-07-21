@@ -343,7 +343,11 @@ import { SHORTLIST_MAX } from '../lib/shortlist';
           const button = document.createElement('button');
           button.type = 'button';
           button.disabled = atMax;
-          button.innerHTML = `<strong>${item.name}</strong><small>${item.country || ''}</small>`;
+          const name = document.createElement('strong');
+          name.textContent = item.name;
+          const country = document.createElement('small');
+          country.textContent = item.country || '';
+          button.append(name, country);
           button.addEventListener('click', () => {
             addManyToShortlist([item.id]);
             addSearch.value = '';

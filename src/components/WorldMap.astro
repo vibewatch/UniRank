@@ -325,19 +325,33 @@ const serialized = JSON.stringify({ metrics: atlas.metrics, countries: atlas.cou
       const country = byId.get(id);
       const geoName =
         mapFeatures.find((shape) => String(shape.id ?? '') === id)?.properties?.name ?? 'Unknown';
-      const rows = country
-        ? metrics
-            .map((metric) => {
-              const value = country.values[metric.id] ?? 0;
-              const strong = metric.id === activeMetric.id;
-              return `<span class="tt-row${strong ? ' tt-active' : ''}"><i>${metric.short}</i><b>${formatValue(value, metric)}</b></span>`;
-            })
-            .join('')
-        : '<span class="tt-empty">Not in the current archive tables.</span>';
-      const top = country?.topInstitution
-        ? `<span class="tt-top">Top consensus: ${country.topInstitution}</span>`
-        : '';
-      tooltip.innerHTML = `<strong>${country ? country.country : geoName}</strong>${rows}${top}`;
+      const heading = document.createElement('strong');
+      heading.textContent = country ? country.country : geoName;
+      const content: HTMLElement[] = [heading];
+      if (country) {
+        for (const metric of metrics) {
+          const row = document.createElement('span');
+          row.className = `tt-row${metric.id === activeMetric.id ? ' tt-active' : ''}`;
+          const label = document.createElement('i');
+          label.textContent = metric.short;
+          const value = document.createElement('b');
+          value.textContent = formatValue(country.values[metric.id] ?? 0, metric);
+          row.append(label, value);
+          content.push(row);
+        }
+        if (country.topInstitution) {
+          const top = document.createElement('span');
+          top.className = 'tt-top';
+          top.textContent = `Top consensus: ${country.topInstitution}`;
+          content.push(top);
+        }
+      } else {
+        const empty = document.createElement('span');
+        empty.className = 'tt-empty';
+        empty.textContent = 'Not in the current archive tables.';
+        content.push(empty);
+      }
+      tooltip.replaceChildren(...content);
       tooltip.hidden = false;
     };
 
