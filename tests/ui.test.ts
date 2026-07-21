@@ -63,6 +63,16 @@ test("atlas destination picker uses the shared custom select", () => {
   assert.match(source, /picker\.dispatchEvent\(new Event\(['"]change['"]/);
 });
 
+test("custom select menus are not clipped by card containers", () => {
+  const customSelect = readFileSync("src/components/CustomSelect.astro", "utf8");
+  const specialists = readFileSync("src/components/SpecialistExamples.astro", "utf8");
+  const nature = readFileSync("src/components/NatureLeaderboards.astro", "utf8");
+
+  assert.match(customSelect, /\.custom-select\[data-open\]\s*\{[^}]*z-index:\s*90/s);
+  assert.match(specialists, /\.specialist-browser\s*\{[^}]*overflow:\s*visible/s);
+  assert.match(nature, /\.nature-browser\s*\{[^}]*overflow:\s*visible/s);
+});
+
 test("university comparison feature is removed", () => {
   assert.equal(existsSync("src/pages/compare.astro"), false);
   assert.equal(existsSync("src/lib/shortlist.ts"), false);

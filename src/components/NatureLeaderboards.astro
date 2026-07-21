@@ -161,7 +161,7 @@ const serialized = JSON.stringify(subjects).replaceAll('<', '\u003c');
 
 <style>
   .nature-browser {
-    overflow: hidden;
+    overflow: visible;
     border: 1px solid rgb(255 255 255 / 14%);
     border-radius: var(--radius);
   }
@@ -172,6 +172,7 @@ const serialized = JSON.stringify(subjects).replaceAll('<', '\u003c');
     align-items: end;
     gap: 18px;
     padding: 18px;
+    border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0;
     background: rgb(255 255 255 / 4%);
   }
 
@@ -296,6 +297,7 @@ const serialized = JSON.stringify(subjects).replaceAll('<', '\u003c');
     gap: 12px;
     padding: 12px 18px;
     border-top: 1px solid rgb(255 255 255 / 12%);
+    border-radius: 0 0 calc(var(--radius) - 1px) calc(var(--radius) - 1px);
     background: rgb(255 255 255 / 3%);
   }
 
