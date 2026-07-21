@@ -88,11 +88,11 @@ const subjectNote = `Subject tables from ${subjectProviderCount} rankings: QS, S
       <SectionHeading
         eyebrow="Nature Index 2026"
         title="Academic discipline leaders split across research systems."
-        description={`All eight latest academic discipline tables are included, with ${number.format(natureLeaderCount)} published rows in total. Their #1 positions are led primarily by ${split.slice(0, 2).map(([country, count]) => `${country} (${count})`).join(' and ')}. Browse one complete table at a time below.`}
+        description={`All eight latest academic discipline tables are included, with ${number.format(natureLeaderCount)} published entries in total. Their #1 positions are led primarily by ${split.slice(0, 2).map(([country, count]) => `${country} (${count})`).join(' and ')}. Browse one complete table at a time below.`}
       />
       <NatureLeaderboards subjects={insights.natureSubjects} />
       <p class="fine-print nature-note">
-        These are all rows in the eight Nature Index 2026 academic discipline
+        These are all entries in the eight Nature Index 2026 academic discipline
         tables in the archive (500 per discipline; Social sciences has 548).
         Share is a fractional publication contribution; Count is not used in
         the displayed rank. Nature Index covers a selected journal set and

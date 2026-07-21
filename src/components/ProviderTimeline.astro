@@ -1,6 +1,5 @@
 ---
 import type { Provider } from '../data/schema';
-import { compact } from '../lib/format';
 
 interface Props {
   providers: Provider[];
@@ -35,7 +34,6 @@ const span = end - start;
             title={`${provider.firstYear}–${provider.lastYear}`}
           ></span>
         </div>
-        <span class="count mono">{compact.format(provider.records)}</span>
       </div>
     );
   })}
@@ -50,7 +48,7 @@ const span = end - start;
   .axis,
   .timeline-row {
     display: grid;
-    grid-template-columns: 190px minmax(260px, 1fr) 58px;
+    grid-template-columns: 190px minmax(260px, 1fr);
     gap: 18px;
   }
 
@@ -67,7 +65,7 @@ const span = end - start;
   }
 
   .timeline-row {
-    min-width: 570px;
+    min-width: 460px;
     align-items: center;
     padding: 9px 0;
     border-top: 1px solid #e7e4dd;
@@ -125,12 +123,6 @@ const span = end - start;
     min-width: 8px;
     border-radius: inherit;
     background: var(--provider);
-  }
-
-  .count {
-    color: var(--muted);
-    font-size: 0.65rem;
-    text-align: right;
   }
 
   @media (max-width: 700px) {

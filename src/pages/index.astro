@@ -6,7 +6,7 @@ import ProviderTimeline from '../components/ProviderTimeline.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { insights } from '../lib/data';
-import { compact, decimal, number, signedPercent } from '../lib/format';
+import { decimal, number, signedPercent } from '../lib/format';
 
 const chinaShift = insights.natureCountryShift.find((item) => item.countryCode === 'CN');
 const usShift = insights.natureCountryShift.find((item) => item.countryCode === 'US');
@@ -23,7 +23,7 @@ const dominantSubjectCountry = [...leaderCountryCount.entries()]
 
 <BaseLayout
   title="Overview"
-  description="Explore 920,000+ university ranking records across 11 providers, with transparent consensus, research momentum, subject strength, and geographic trend analysis."
+  description="Explore university rankings with transparent cross-provider consensus, research momentum, subject strength, and geographic trend analysis."
 >
   <section class="page-hero home-hero">
     <div class="shell hero-grid">
@@ -31,11 +31,10 @@ const dominantSubjectCountry = [...leaderCountryCount.entries()]
         <p class="eyebrow">For students &amp; families</p>
         <h1>See past the rank to the right fit.</h1>
         <p class="lede">
-          One league table gives a position. This archive connects{' '}
-          <strong>{number.format(insights.meta.archiveRows)} rows</strong> across
-          reputation, research scale, citation impact, subject strength, and
-          web visibility—so you can shortlist by what you want to study and
-          where, not by a single number.
+          One league table gives a position. This connects reputation, research
+          scale, citation impact, subject strength, and web visibility—so you
+          can shortlist by what you want to study and where, not by a single
+          number.
         </p>
         <div class="button-row">
           <a class="button" href="/finder/">Find a university <span aria-hidden="true">→</span></a>
@@ -97,34 +96,20 @@ const dominantSubjectCountry = [...leaderCountryCount.entries()]
 
   <section class="section">
     <div class="shell">
-      <div class="grid four metric-grid">
-        <MetricCard
-          label="Archive rows"
-          value={compact.format(insights.meta.archiveRows)}
-          detail={`${number.format(insights.meta.csvFiles)} CSV snapshots; rows are observations, not unique institutions.`}
-          tone="teal"
-          index="01"
-        />
-        <MetricCard
-          label="Provider lenses"
-          value={String(insights.meta.providers)}
-          detail="Publisher rankings, bibliometrics, research output, and web visibility."
-          tone="coral"
-          index="02"
-        />
+      <div class="grid two metric-grid">
         <MetricCard
           label="Time horizon"
           value={`${insights.meta.firstYear}—${insights.meta.lastYear}`}
-          detail="Uneven by provider; every visual preserves its source edition."
+          detail="Historical and current editions, each preserved as its source published it."
           tone="violet"
-          index="03"
+          index="01"
         />
         <MetricCard
           label="Country coverage"
           value={String(insights.meta.countries)}
-          detail={`${number.format(insights.meta.subjectViews)} provider-specific subject or field views.`}
+          detail="Home systems represented across the ranking tables."
           tone="yellow"
-          index="04"
+          index="02"
         />
       </div>
     </div>
@@ -238,8 +223,8 @@ const dominantSubjectCountry = [...leaderCountryCount.entries()]
     <div class="shell">
       <SectionHeading
         eyebrow="Coverage map"
-        title="Eleven lenses, eleven definitions of “best.”"
-        description="The archive’s time depth and subject coverage vary. Long bars show historical continuity; row totals show how much evidence each lens contributes."
+        title="Every lens defines “best” differently."
+        description="Time depth and subject coverage vary by source. Long bars show each ranking’s historical continuity across editions."
         href="/methodology/#providers"
         linkLabel="Read provider notes"
       />

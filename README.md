@@ -77,6 +77,13 @@ the previous object format so cached responses remain safe during deployment.
 The generated site preserves source editions and caveats; it is not a
 replacement for provider-published tables.
 
+## GitHub Pages
+
+Pushes to `main` trigger the **Deploy GitHub Pages** workflow, which builds the
+Astro site and deploys `dist/`. In the repository settings, set **Pages → Build
+and deployment → Source** to **GitHub Actions**, then configure the custom
+domain as `unirank.genisisiq.com`.
+
 ## Installation
 
 ```bash

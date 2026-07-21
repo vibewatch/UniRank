@@ -3,7 +3,6 @@ import ProviderTimeline from '../components/ProviderTimeline.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { insights } from '../lib/data';
-import { compact, number } from '../lib/format';
 
 const restrictedProviders = new Set(['usnews', 'times', 'qs', 'cwur', 'ntu', 'arwu', 'scimago']);
 const formatDate = new Intl.DateTimeFormat('en-US', {
@@ -23,13 +22,11 @@ const formatDate = new Intl.DateTimeFormat('en-US', {
       <p class="eyebrow">Methods before conclusions</p>
       <h1>Every signal keeps its source attached.</h1>
       <p class="lede">
-        This site reduces {number.format(insights.meta.archiveRows)} archived rows
-        into a small analytical layer. It does not erase provider definitions,
-        measurement windows, ties, missingness, or reuse restrictions.
+        This site reduces a large multi-provider ranking archive into a small
+        analytical layer. It does not erase provider definitions, measurement
+        windows, ties, missingness, or reuse restrictions.
       </p>
       <dl class="provenance-strip">
-        <div><dt>Snapshots</dt><dd>{insights.meta.csvFiles}</dd></div>
-        <div><dt>Providers</dt><dd>{insights.meta.providers}</dd></div>
         <div><dt>Coverage</dt><dd>{insights.meta.firstYear}—{insights.meta.lastYear}</dd></div>
         <div><dt>Latest retrieval</dt><dd>{formatDate.format(new Date(insights.meta.latestRetrieval))}</dd></div>
       </dl>
@@ -46,7 +43,7 @@ const formatDate = new Intl.DateTimeFormat('en-US', {
         />
         <div class="formula surface">
           <span class="mono">FOR EACH PROVIDER</span>
-          <code>percentile = 100 × (1 − (rank − 1) / (ranked rows − 1))</code>
+          <code>percentile = 100 × (1 − (rank − 1) / (ranked entries − 1))</code>
           <span class="operator">↓</span>
           <span class="mono">FOR EACH INSTITUTION</span>
           <code>signal = mean(provider percentiles)</code>
@@ -59,7 +56,7 @@ const formatDate = new Intl.DateTimeFormat('en-US', {
         </article>
         <article>
           <span>02</span>
-          <div><h3>Four-source minimum</h3><p>An institution needs evidence from at least {insights.methodology.consensusMinimumProviders} providers. Missing sources are not imputed.</p></div>
+          <div><h3>Four-source minimum</h3><p>An institution needs evidence from at least {insights.methodology.consensusMinimumProviders} independent sources. Missing sources are not imputed.</p></div>
         </article>
         <article>
           <span>03</span>
@@ -77,8 +74,8 @@ const formatDate = new Intl.DateTimeFormat('en-US', {
     <div class="shell">
       <SectionHeading
         eyebrow="Source inventory"
-        title="Eleven providers, different questions."
-        description="Archive totals include overlapping editions, scopes, and country subsets. They are observations—not a count of unique universities."
+        title="Different providers, different questions."
+        description="Each provider publishes on its own schedule, scope, and license. The table lists what each one contributes and how its data may be reused."
       />
       <ProviderTimeline providers={insights.providers} />
       <div class="provider-table table-wrap">
@@ -88,7 +85,6 @@ const formatDate = new Intl.DateTimeFormat('en-US', {
               <th>Provider</th>
               <th>Lens</th>
               <th>Coverage</th>
-              <th>Rows</th>
               <th>Reuse status</th>
             </tr>
           </thead>
@@ -98,7 +94,6 @@ const formatDate = new Intl.DateTimeFormat('en-US', {
                 <td><strong>{provider.label}</strong></td>
                 <td>{provider.kind}</td>
                 <td>{provider.firstYear}—{provider.lastYear} · {provider.subjectViews} subject views</td>
-                <td>{compact.format(provider.records)}</td>
                 <td>
                   <span class:list={{ restricted: restrictedProviders.has(provider.id), open: !restrictedProviders.has(provider.id) }}>
                     {restrictedProviders.has(provider.id) ? 'Provider-controlled' : provider.license}
@@ -130,7 +125,7 @@ const formatDate = new Intl.DateTimeFormat('en-US', {
         <article>
           <strong>=42</strong>
           <h3>Tied rank</h3>
-          <p>Several institutions may share a position. Top-100 tables can therefore contain more than 100 rows.</p>
+          <p>Several institutions may share a position. Top-100 tables can therefore contain more than 100 entries.</p>
         </article>
         <article>
           <strong>601–800</strong>
@@ -229,31 +224,6 @@ const formatDate = new Intl.DateTimeFormat('en-US', {
       </div>
     </div>
   </section>
-
-  <section class="section reproducibility-section">
-    <div class="shell reproducibility-grid">
-      <div>
-        <p class="eyebrow">Reproducibility</p>
-        <h2>Generated from committed snapshots.</h2>
-        <p>
-          The browser never loads the source CSV archive. A Node build step
-          reduces it to a typed static JSON artifact, then Astro emits static
-          HTML, CSS, SVG, and small vanilla-JavaScript interactions.
-        </p>
-      </div>
-      <div class="code-card">
-        <span class="mono">FROM REPOSITORY ROOT</span>
-        <pre><code>npm run insights   # rebuild src/data/insights.json from data/
-npm test           # verify archive + consensus invariants
-npm run build      # emit the static site</code></pre>
-        <p>
-          One known source failure is retained explicitly: the 2018 ARWU overall
-          bulk edition was unavailable, while its GRAS subject tables remain in
-          the archive.
-        </p>
-      </div>
-    </div>
-  </section>
 </BaseLayout>
 
 <style>
@@ -263,7 +233,7 @@ npm run build      # emit the static site</code></pre>
 
   .provenance-strip {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     margin: 22px 0 0;
     border: 1px solid var(--line-strong);
     border-radius: var(--radius);
@@ -295,16 +265,14 @@ npm run build      # emit the static site</code></pre>
   }
 
   .method-grid,
-  .entity-grid,
-  .reproducibility-grid {
+  .entity-grid {
     display: grid;
     grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
     gap: clamp(28px, 5vw, 64px);
   }
 
   .method-grid > div,
-  .entity-grid > div,
-  .reproducibility-grid > div {
+  .entity-grid > div {
     min-width: 0;
   }
 
@@ -578,56 +546,9 @@ npm run build      # emit the static site</code></pre>
     font-size: 0.72rem;
   }
 
-  .reproducibility-section {
-    color: white;
-    background: var(--teal-dark);
-  }
-
-  .reproducibility-section .eyebrow {
-    color: #a4f0df;
-  }
-
-  .reproducibility-section h2 {
-    max-width: 570px;
-  }
-
-  .reproducibility-section p {
-    color: rgb(255 255 255 / 68%);
-    font-size: 0.78rem;
-  }
-
-  .code-card {
-    min-width: 0;
-    padding: 24px;
-    border: 1px solid rgb(255 255 255 / 22%);
-    border-radius: var(--radius);
-    background: rgb(0 0 0 / 12%);
-  }
-
-  .code-card > span {
-    font-size: 0.59rem;
-    opacity: 0.65;
-  }
-
-  pre {
-    overflow-x: auto;
-    margin: 18px 0;
-    padding: 18px;
-    border-radius: var(--radius-sm);
-    color: #d8fff5;
-    background: rgb(0 0 0 / 22%);
-    font-size: 0.72rem;
-  }
-
-  .code-card p {
-    margin: 0;
-    font-size: 0.66rem;
-  }
-
   @media (max-width: 900px) {
     .method-grid,
-    .entity-grid,
-    .reproducibility-grid {
+    .entity-grid {
       grid-template-columns: 1fr;
     }
 

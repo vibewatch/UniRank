@@ -29,9 +29,9 @@ const nav = [
 const fullTitle = title === 'Overview' ? 'University Signals' : `${title} · University Signals`;
 
 // Absolute URLs for canonical + social cards. `Astro.site` comes from
-// astro.config's `site`; fall back to the same placeholder so a missing config
-// never throws at build time.
-const siteOrigin = Astro.site ?? new URL('https://unirank.pages.dev');
+// astro.config's `site`; fall back to the production origin so a missing
+// config never throws at build time.
+const siteOrigin = Astro.site ?? new URL('https://unirank.genisisiq.com');
 const canonicalURL = new URL(path, siteOrigin);
 const socialImage = new URL('/og.png', siteOrigin);
 const jsonLd = {
@@ -125,9 +125,9 @@ const jsonLd = {
           </p>
         </div>
         <div>
-          <span class="footer-label">Archive</span>
-          <strong>{insights.meta.archiveRows.toLocaleString('en-US')} rows</strong>
-          <span>{insights.meta.csvFiles} snapshots · {insights.meta.providers} providers</span>
+          <span class="footer-label">Coverage</span>
+          <strong>{insights.meta.firstYear}—{insights.meta.lastYear}</strong>
+          <span>Worldwide and country rankings</span>
         </div>
         <div>
           <span class="footer-label">Navigate</span>

@@ -9,11 +9,7 @@ import type { DirectoryFacets } from '../data/schema';
 
 const directory = facets as DirectoryFacets;
 const totalInstitutions = directory.meta.count;
-const providerCount = directory.meta.providerCount;
 const subjectTableCount = insights.subjectBoards.length;
-const subjectProviderCount = new Set(
-  insights.subjectBoards.map((board) => board.provider),
-).size;
 
 // Schools that sit inside every one of the six broad providers' displayed top
 // 20 — the strongest "everyone agrees" trust anchor for an overwhelmed student.
@@ -37,27 +33,20 @@ const universalTop20 = insights.consensus.filter(
         Sources stay separate because a QS subject rank and a bibliometric field
         rank do not measure the same thing.
       </p>
-      <div class="grid three metric-grid">
+      <div class="grid two metric-grid">
         <MetricCard
           label="Institutions indexed"
           value={totalInstitutions.toLocaleString('en-US')}
-          detail={`Latest overall or broad tables across ${providerCount} providers.`}
+          detail="Every school in the latest overall or broad ranking tables, searchable in one place."
           tone="teal"
           index="01"
         />
         <MetricCard
           label="Subject tables"
           value={subjectTableCount.toLocaleString('en-US')}
-          detail="Complete provider-specific disciplines and fields available on demand."
+          detail="Complete provider-specific disciplines and fields, available on demand."
           tone="violet"
           index="02"
-        />
-        <MetricCard
-          label="Subject sources"
-          value={String(subjectProviderCount)}
-          detail="Publisher and bibliometric tables kept distinct—never blended into a fake score."
-          tone="coral"
-          index="03"
         />
       </div>
     </div>
