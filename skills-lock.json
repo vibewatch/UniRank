@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "lsp-setup": {
+      "source": "github/awesome-copilot",
+      "sourceType": "github",
+      "skillPath": "skills/lsp-setup/SKILL.md",
+      "computedHash": "3e7d2ab00279e79810d42dbedf1acb2985dc3e1dbc38e52b4c67dd948a441c89"
+    }
+  }
+}
