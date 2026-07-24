@@ -254,9 +254,19 @@ export interface CountryAtlasEntry {
   values: CountryAtlasValues;
 }
 
+export interface CampusPin {
+  name: string;
+  country: string;
+  countryCode: string | null;
+  consensusRank: number | null;
+  latitude: number;
+  longitude: number;
+}
+
 export interface CountryAtlas {
   metrics: CountryAtlasMetric[];
   countries: CountryAtlasEntry[];
+  campuses: CampusPin[];
 }
 
 export interface OpenAlexGrowth {

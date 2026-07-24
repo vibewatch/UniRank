@@ -7,10 +7,12 @@ interface Props {
 }
 
 const { atlas, initialMetric = 'consensusTop100' } = Astro.props;
-const serialized = JSON.stringify({ metrics: atlas.metrics, countries: atlas.countries, initialMetric }).replaceAll(
-  '<',
-  '\\u003c',
-);
+const serialized = JSON.stringify({
+  metrics: atlas.metrics,
+  countries: atlas.countries,
+  campuses: atlas.campuses,
+  initialMetric,
+}).replaceAll('<', '\\u003c');
 ---
 
 <figure class="worldmap" data-worldmap>
@@ -26,6 +28,9 @@ const serialized = JSON.stringify({ metrics: atlas.metrics, countries: atlas.cou
         {metric.short}
       </button>
     ))}
+    <button type="button" class="campus-toggle" data-campus-toggle aria-pressed="false">
+      Show consensus campuses
+    </button>
   </div>
 
   <p class="map-caption" data-caption></p>
@@ -80,7 +85,15 @@ const serialized = JSON.stringify({ metrics: atlas.metrics, countries: atlas.cou
     topInstitution: string | null;
     values: CountryValues;
   };
-  type Payload = { metrics: Metric[]; countries: Country[]; initialMetric: string };
+  type Campus = {
+    name: string;
+    country: string;
+    countryCode: string | null;
+    consensusRank: number | null;
+    latitude: number;
+    longitude: number;
+  };
+  type Payload = { metrics: Metric[]; countries: Country[]; campuses: Campus[]; initialMetric: string };
 
   const initializeWorldMap = () => {
     const root = document.querySelector<HTMLElement>('[data-worldmap]');
@@ -100,6 +113,7 @@ const serialized = JSON.stringify({ metrics: atlas.metrics, countries: atlas.cou
     const rankList = root.querySelector<HTMLOListElement>('[data-ranklist]');
     const rankTitle = root.querySelector<HTMLElement>('[data-rank-title]');
     const buttons = [...root.querySelectorAll<HTMLButtonElement>('[data-metric]')];
+    const campusToggle = root.querySelector<HTMLButtonElement>('[data-campus-toggle]');
     const svgNamespace = 'http://www.w3.org/2000/svg';
 
     const NEUTRAL = '#e4e0d6';
@@ -160,6 +174,29 @@ const serialized = JSON.stringify({ metrics: atlas.metrics, countries: atlas.cou
       element.addEventListener('click', () => {
         window.dispatchEvent(new CustomEvent('atlas:country', { detail: id }));
       });
+    }
+
+    const campusLayer = svgElement('g', { 'data-campus-layer': '1' });
+    campusLayer.style.display = 'none';
+    svg?.append(campusLayer);
+    let campusesVisible = false;
+    for (const campus of payload.campuses) {
+      const point = projection([campus.longitude, campus.latitude]);
+      if (!point || Number.isNaN(point[0]) || Number.isNaN(point[1])) continue;
+      const [x, y] = point;
+      const dot = svgElement('circle', {
+        cx: x,
+        cy: y,
+        r: campus.consensusRank !== null && campus.consensusRank <= 20 ? 2.6 : 1.6,
+        fill: campus.consensusRank !== null && campus.consensusRank <= 20 ? '#c1462c' : '#12171d',
+        stroke: '#ffffff',
+        'stroke-width': 0.5,
+      });
+      dot.classList.add('campus-dot');
+      dot.addEventListener('pointerenter', () => showCampusTooltip(campus));
+      dot.addEventListener('pointermove', (event) => moveTooltip(event as PointerEvent));
+      dot.addEventListener('pointerleave', () => hideTooltip());
+      campusLayer.append(dot);
     }
 
     let activeMetric = metrics.find((m) => m.id === payload.initialMetric) ?? metrics[0];
@@ -355,6 +392,27 @@ const serialized = JSON.stringify({ metrics: atlas.metrics, countries: atlas.cou
       tooltip.hidden = false;
     };
 
+    const showCampusTooltip = (campus: Campus) => {
+      if (!tooltip) return;
+      if (highlighted) highlight(highlighted, false);
+      const heading = document.createElement('strong');
+      heading.textContent = campus.name;
+      const meta = document.createElement('span');
+      meta.className = 'tt-row';
+      const label = document.createElement('i');
+      label.textContent = campus.country;
+      meta.append(label);
+      const content: HTMLElement[] = [heading, meta];
+      if (campus.consensusRank !== null) {
+        const rank = document.createElement('span');
+        rank.className = 'tt-top';
+        rank.textContent = `Consensus #${campus.consensusRank}`;
+        content.push(rank);
+      }
+      tooltip.replaceChildren(...content);
+      tooltip.hidden = false;
+    };
+
     const moveTooltip = (event: PointerEvent) => {
       if (!tooltip) return;
       const frame = tooltip.parentElement?.getBoundingClientRect();
@@ -393,6 +451,16 @@ const serialized = JSON.stringify({ metrics: atlas.metrics, countries: atlas.cou
         const metric = metrics.find((item) => item.id === button.dataset.metric);
         if (metric) activate(metric);
       });
+
+    if (campusToggle) {
+      campusToggle.addEventListener('click', () => {
+        campusesVisible = !campusesVisible;
+        campusLayer.style.display = campusesVisible ? '' : 'none';
+        campusToggle.classList.toggle('active', campusesVisible);
+        campusToggle.setAttribute('aria-pressed', campusesVisible ? 'true' : 'false');
+        campusToggle.textContent = campusesVisible ? 'Hide consensus campuses' : 'Show consensus campuses';
+      });
+    }
 
     activate(activeMetric);
   };
@@ -434,6 +502,19 @@ const serialized = JSON.stringify({ metrics: atlas.metrics, countries: atlas.cou
     color: white;
     background: var(--ink);
     border-color: var(--ink);
+  }
+
+  .campus-toggle {
+    margin-left: auto;
+  }
+
+  .map-frame :global(.campus-dot) {
+    cursor: pointer;
+    transition: r 120ms ease;
+  }
+
+  .map-frame :global(.campus-dot:hover) {
+    r: 4;
   }
 
   .map-caption {
