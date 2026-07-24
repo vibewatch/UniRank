@@ -23,6 +23,7 @@ const DATA_ROOT = join(ROOT, "data");
 const OUTPUT_PATH = join(ROOT, "src", "data", "insights.json");
 const DIRECTORY_PATH = join(ROOT, "public", "data", "directory.json");
 const DIRECTORY_FACETS_PATH = join(ROOT, "src", "data", "directory-facets.json");
+const UNIVERSITY_FACTS_PATH = join(ROOT, "data", "restricted", "university-common-facts.json");
 const SUBJECT_DETAILS_ROOT = join(ROOT, "public", "data", "subjects");
 const SUBJECT_DETAIL_VERSION = 1;
 
@@ -568,7 +569,93 @@ function buildWebVisibility(snapshots: Snapshot[], consensus: Row[]): Row {
 
 function uniqueCountryCount(snapshots: Snapshot[]): number { const frame = readColumns(globalSnapshotFor(snapshots, "openalex", 2025).path, new Set(["country_code", "country"])); return new Set(frame.map((row) => rowCountry(row, "openalex")[0]).filter(Boolean)).size; }
 function archiveMetadata(snapshots: Snapshot[], providers: Row[]): Row { const years = snapshots.filter(isGlobal).map((s) => s.year); const scopes = new Set<string>(); for (const s of snapshots) for (const scope of Object.keys(s.manifest.records_by_scope ?? {})) if (scope !== "overall") scopes.add(`${s.source}\u0000${scope}`); const retrieved = snapshots.map((s) => s.manifest.retrieved_at).filter(Boolean).map(String); return { archiveRows: snapshots.reduce((a, s) => a + s.records, 0), globalRows: snapshots.filter(isGlobal).reduce((a, s) => a + s.records, 0), csvFiles: snapshots.length, providers: providers.length, firstYear: Math.min(...years), lastYear: Math.max(...years), countries: uniqueCountryCount(snapshots), subjectViews: scopes.size, failedScopes: snapshots.reduce((a, s) => a + ((s.manifest.failures ?? []) as unknown[]).length, 0), latestRetrieval: retrieved.sort(sortStrings).at(-1) } }
-function buildInstitutionDirectory(snapshots: Snapshot[], consensus: Row[]): Row {
+const UNIVERSITY_FACT_METRIC_FIELDS: Record<string, string> = {
+  "institution.founded_year": "foundedYear",
+  "enrollment.total": "enrollmentTotal",
+  "workforce.faculty": "facultyCount",
+  "academics.student_faculty_ratio": "studentFacultyRatio",
+  "research.h_index": "hIndex",
+  "research.i10_index": "i10Index",
+  "research.lifetime_works": "lifetimeWorks",
+  "research.lifetime_citations": "lifetimeCitations",
+};
+const UNIVERSITY_FACT_VALUE_KEYS = [
+  "foundedYear", "enrollmentTotal", "facultyCount", "studentFacultyRatio", "hIndex", "i10Index",
+  "lifetimeWorks", "lifetimeCitations", "city", "latitude", "longitude", "officialWebsite",
+] as const;
+function countTruthy(row: Row): number { return UNIVERSITY_FACT_VALUE_KEYS.filter((k) => row[k] !== null && row[k] !== undefined).length; }
+/** Loads the enriched per-institution facts dataset (founded year, enrollment, research output metrics, location) and
+ * indexes it by the same normalized name+country key used to merge ranking-provider rows, so it can be attached to
+ * institutions in the directory without a separate identifier join. */
+function loadUniversityFacts(): Map<string, Row> {
+  const byKey = new Map<string, Row>();
+  if (!existsSync(UNIVERSITY_FACTS_PATH)) return byKey;
+  let dataset: Row;
+  try { dataset = JSON.parse(readFileSync(UNIVERSITY_FACTS_PATH, "utf8")); } catch { return byKey; }
+  const canonicalByInstitution = new Map<string, Row>();
+  for (const entry of dataset.canonical ?? []) {
+    const field = UNIVERSITY_FACT_METRIC_FIELDS[entry.metric];
+    if (!field) continue;
+    const value = entry.value?.value;
+    if (value === undefined || value === null) continue;
+    const row = canonicalByInstitution.get(entry.institutionId) ?? {};
+    row[field] = value;
+    canonicalByInstitution.set(entry.institutionId, row);
+  }
+  for (const inst of dataset.institutions ?? []) {
+    if (!inst?.name) continue;
+    const key = entityKey(inst.name, inst.countryCode ?? null);
+    const facts = canonicalByInstitution.get(inst.id) ?? {};
+    const row: Row = {
+      name: inst.name,
+      country: countryLabel(inst.countryCode ?? null, inst.country),
+      countryCode: inst.countryCode ?? null,
+      foundedYear: facts.foundedYear ?? null,
+      enrollmentTotal: facts.enrollmentTotal ?? null,
+      facultyCount: facts.facultyCount ?? null,
+      studentFacultyRatio: facts.studentFacultyRatio ?? null,
+      hIndex: facts.hIndex ?? null,
+      // OpenAlex's i10-index summary occasionally exceeds an institution's own lifetime work count for very
+      // high-output institutions (a known API aggregation quirk); i10-index can never exceed total works, so
+      // drop implausible values rather than surface a misleading number.
+      i10Index: typeof facts.i10Index === "number" && typeof facts.lifetimeWorks === "number" && facts.i10Index > facts.lifetimeWorks ? null : facts.i10Index ?? null,
+      lifetimeWorks: facts.lifetimeWorks ?? null,
+      lifetimeCitations: facts.lifetimeCitations ?? null,
+      city: inst.location?.city ?? inst.city ?? null,
+      latitude: typeof inst.location?.latitude === "number" ? inst.location.latitude : null,
+      longitude: typeof inst.location?.longitude === "number" ? inst.location.longitude : null,
+      officialWebsite: inst.officialWebsite ?? null,
+    };
+    if (countTruthy(row) === 0) continue;
+    const existing = byKey.get(key);
+    if (!existing || countTruthy(row) > countTruthy(existing)) byKey.set(key, row);
+  }
+  return byKey;
+}
+/** Surfaces a research-output leaderboard (OpenAlex h-index/i10-index/lifetime citations) drawn from the enriched
+ * per-institution facts dataset. This highlights research productivity independent of any single ranking table,
+ * and cross-references each leader's consensus rank (if any) so readers can spot output leaders outside the
+ * usual top-of-table names. */
+function buildResearchProfiles(consensus: Row[], universityFacts: Map<string, Row>): Row {
+  const consensusRankByKey = new Map<string, number>();
+  for (const inst of consensus) consensusRankByKey.set(keyOf(inst.canonical, inst.countryCode), inst.consensusRank);
+  const withHIndex = [...universityFacts.entries()].filter(([, facts]) => typeof facts.hIndex === "number");
+  const leaders = withHIndex
+    .map(([key, facts]) => ({
+      name: String(facts.name),
+      country: String(facts.country),
+      countryCode: facts.countryCode ?? null,
+      hIndex: Math.trunc(facts.hIndex),
+      i10Index: typeof facts.i10Index === "number" ? Math.trunc(facts.i10Index) : null,
+      lifetimeWorks: typeof facts.lifetimeWorks === "number" ? Math.trunc(facts.lifetimeWorks) : null,
+      lifetimeCitations: typeof facts.lifetimeCitations === "number" ? Math.trunc(facts.lifetimeCitations) : null,
+      consensusRank: consensusRankByKey.get(key) ?? null,
+    }))
+    .sort((a, b) => b.hIndex - a.hIndex || (b.lifetimeCitations ?? 0) - (a.lifetimeCitations ?? 0))
+    .slice(0, 25);
+  return { institutionCount: withHIndex.length, source: "OpenAlex institution works/citations snapshot", leaders };
+}
+function buildInstitutionDirectory(snapshots: Snapshot[], consensus: Row[], universityFacts: Map<string, Row>): Row {
   const latest = latestGlobalSnapshots(snapshots, DIRECTORY_PROVIDERS);
   const consensusRankByKey = new Map<string, number>();
   for (const inst of consensus) consensusRankByKey.set(keyOf(inst.canonical, inst.countryCode), inst.consensusRank);
@@ -595,7 +682,9 @@ function buildInstitutionDirectory(snapshots: Snapshot[], consensus: Row[]): Row
     const name = e.names.reduce((best, item) => (item.length > best.length || (item.length === best.length && item > best) ? item : best), "").replace(/\s+/g, " ").replace(" *", "").trim();
     const ranks: Row = {};
     for (const source of DIRECTORY_PROVIDERS) { const v = e.providers.get(source); if (v) ranks[source] = [Math.trunc(v.rank), v.display, v.year]; }
-    institutions.push({ id: `${slugify(canonical)}-${(code ?? "xx").toLowerCase()}`, name, country: countryName, countryCode: ccode ?? null, providerCount: e.providers.size, consensusRank: consensusRankByKey.get(key) ?? null, ranks });
+    const rawFacts = universityFacts.get(key);
+    const facts = rawFacts ? Object.fromEntries(UNIVERSITY_FACT_VALUE_KEYS.map((k) => [k, rawFacts[k] ?? null])) : null;
+    institutions.push({ id: `${slugify(canonical)}-${(code ?? "xx").toLowerCase()}`, name, country: countryName, countryCode: ccode ?? null, providerCount: e.providers.size, consensusRank: consensusRankByKey.get(key) ?? null, ranks, facts });
   }
   institutions.sort((a, b) => {
     const ar = a.consensusRank ?? Number.POSITIVE_INFINITY, br = b.consensusRank ?? Number.POSITIVE_INFINITY;
@@ -607,7 +696,7 @@ function buildInstitutionDirectory(snapshots: Snapshot[], consensus: Row[]): Row
   const countries = [...new Set(institutions.map((i) => String(i.country)))].sort(sortStrings);
   return { meta: { count: institutions.length, providerCount: providers.length, consensusCount: consensus.length, note: "Latest overall or broad edition per provider; institutions merged by normalized name and country." }, providers, countries, institutions };
 }
-function buildPayload(): { insights: Row; directory: Row; subjectDetails: SubjectDetail[] } { const snapshots = loadSnapshots(); const providers = providerInventory(snapshots); const [consensus, countryFootprint, providerTop100] = buildConsensus(snapshots); const [natureSubjects, subjectMatrix] = buildNatureSubjects(snapshots, consensus); const subjectData = buildAllSubjectBoards(snapshots); const latest = latestGlobalSnapshots(snapshots); const insights = { meta: archiveMetadata(snapshots, providers), providers, consensus, countryFootprint, providerTop100, rankingUniverse: buildRankingUniverse(snapshots), arwuConcentration: buildArwuConcentration(snapshots), arwuConcentrationTrend: buildArwuConcentrationTrend(snapshots), natureCountryShift: buildNatureCountryShift(snapshots), natureSubjects, subjectMatrix, subjectBoards: subjectData.boards, nationalRankings: buildNationalRankings(snapshots), webVisibility: buildWebVisibility(snapshots, consensus), qsSubjectOutperformers: buildQsSubjectOutperformers(snapshots), countryAtlas: buildCountryAtlas(snapshots, consensus), openAlexGrowth: buildOpenAlexGrowth(snapshots, consensus.slice(0, 40)), openAlexCountryMomentum: buildOpenAlexCountryMomentum(snapshots), leidenScaleImpact: buildLeidenScatter(snapshots), leidenSummary: buildLeidenSummary(snapshots), institutionTrends: buildInstitutionTrends(snapshots, consensus), methodology: { consensusProviders: CONSENSUS_PROVIDERS.map((source) => ({ id: source, label: PROVIDER_META[source].label, year: latest[source].year })), consensusMinimumProviders: 4, consensusDefinition: "Mean within-table percentile across the latest available broad overall editions; it is an analytical index, not a new ranking.", natureWindow: "2016 edition (2015 output) to 2026 edition (2025 output)", openAlexWindow: "Publication years 2016 to 2025" } }; return { insights, directory: buildInstitutionDirectory(snapshots, consensus), subjectDetails: subjectData.details }; }
+function buildPayload(): { insights: Row; directory: Row; subjectDetails: SubjectDetail[] } { const snapshots = loadSnapshots(); const providers = providerInventory(snapshots); const [consensus, countryFootprint, providerTop100] = buildConsensus(snapshots); const [natureSubjects, subjectMatrix] = buildNatureSubjects(snapshots, consensus); const subjectData = buildAllSubjectBoards(snapshots); const latest = latestGlobalSnapshots(snapshots); const universityFacts = loadUniversityFacts(); const insights = { meta: archiveMetadata(snapshots, providers), providers, consensus, countryFootprint, providerTop100, rankingUniverse: buildRankingUniverse(snapshots), arwuConcentration: buildArwuConcentration(snapshots), arwuConcentrationTrend: buildArwuConcentrationTrend(snapshots), natureCountryShift: buildNatureCountryShift(snapshots), natureSubjects, subjectMatrix, subjectBoards: subjectData.boards, nationalRankings: buildNationalRankings(snapshots), webVisibility: buildWebVisibility(snapshots, consensus), qsSubjectOutperformers: buildQsSubjectOutperformers(snapshots), countryAtlas: buildCountryAtlas(snapshots, consensus), openAlexGrowth: buildOpenAlexGrowth(snapshots, consensus.slice(0, 40)), openAlexCountryMomentum: buildOpenAlexCountryMomentum(snapshots), leidenScaleImpact: buildLeidenScatter(snapshots), leidenSummary: buildLeidenSummary(snapshots), institutionTrends: buildInstitutionTrends(snapshots, consensus), researchProfiles: buildResearchProfiles(consensus, universityFacts), methodology: { consensusProviders: CONSENSUS_PROVIDERS.map((source) => ({ id: source, label: PROVIDER_META[source].label, year: latest[source].year })), consensusMinimumProviders: 4, consensusDefinition: "Mean within-table percentile across the latest available broad overall editions; it is an analytical index, not a new ranking.", natureWindow: "2016 edition (2015 output) to 2026 edition (2025 output)", openAlexWindow: "Publication years 2016 to 2025" } }; return { insights, directory: buildInstitutionDirectory(snapshots, consensus, universityFacts), subjectDetails: subjectData.details }; }
 
 function compactSubjectDetail(payload: SubjectDetailPayload): CompactSubjectDetail {
   const countries: CompactSubjectDetail["countries"] = payload.countries.map(

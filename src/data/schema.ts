@@ -344,6 +344,38 @@ export interface InstitutionTrend {
   series: TrendSeries[];
 }
 
+export interface InstitutionFacts {
+  foundedYear: number | null;
+  enrollmentTotal: number | null;
+  facultyCount: number | null;
+  studentFacultyRatio: number | null;
+  hIndex: number | null;
+  i10Index: number | null;
+  lifetimeWorks: number | null;
+  lifetimeCitations: number | null;
+  city: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  officialWebsite: string | null;
+}
+
+export interface ResearchOutputLeader {
+  name: string;
+  country: string;
+  countryCode: string | null;
+  hIndex: number;
+  i10Index: number | null;
+  lifetimeWorks: number | null;
+  lifetimeCitations: number | null;
+  consensusRank: number | null;
+}
+
+export interface ResearchProfiles {
+  institutionCount: number;
+  source: string;
+  leaders: ResearchOutputLeader[];
+}
+
 export interface InsightsData {
   meta: ArchiveMeta;
   providers: Provider[];
@@ -366,6 +398,7 @@ export interface InsightsData {
   leidenScaleImpact: LeidenPoint[];
   leidenSummary: LeidenSummary;
   institutionTrends: InstitutionTrend[];
+  researchProfiles: ResearchProfiles;
   methodology: {
     consensusProviders: Array<{ id: string; label: string; year: number }>;
     consensusMinimumProviders: number;
@@ -386,6 +419,7 @@ export interface DirectoryInstitution {
   providerCount: number;
   consensusRank: number | null;
   ranks: Partial<Record<string, DirectoryRank>>;
+  facts: InstitutionFacts | null;
 }
 
 export interface DirectoryProvider {

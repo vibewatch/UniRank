@@ -169337,6 +169337,262 @@
       ]
     }
   ],
+  "researchProfiles": {
+    "institutionCount": 9617,
+    "source": "OpenAlex institution works/citations snapshot",
+    "leaders": [
+      {
+        "name": "University of Washington",
+        "country": "United States",
+        "countryCode": "US",
+        "hIndex": 3592,
+        "i10Index": null,
+        "lifetimeWorks": 521857,
+        "lifetimeCitations": 94951274,
+        "consensusRank": 24
+      },
+      {
+        "name": "Harvard University",
+        "country": "United States",
+        "countryCode": "US",
+        "hIndex": 2772,
+        "i10Index": null,
+        "lifetimeWorks": 704018,
+        "lifetimeCitations": 143952100,
+        "consensusRank": 1
+      },
+      {
+        "name": "Stanford University",
+        "country": "United States",
+        "countryCode": "US",
+        "hIndex": 2487,
+        "i10Index": null,
+        "lifetimeWorks": 528279,
+        "lifetimeCitations": 87451954,
+        "consensusRank": 2
+      },
+      {
+        "name": "Johns Hopkins University",
+        "country": "United States",
+        "countryCode": "US",
+        "hIndex": 2262,
+        "i10Index": null,
+        "lifetimeWorks": 498008,
+        "lifetimeCitations": 76723169,
+        "consensusRank": 11
+      },
+      {
+        "name": "Massachusetts Institute of Technology",
+        "country": "United States",
+        "countryCode": "US",
+        "hIndex": 2261,
+        "i10Index": null,
+        "lifetimeWorks": 348171,
+        "lifetimeCitations": 64828785,
+        "consensusRank": 3
+      },
+      {
+        "name": "University of Michigan",
+        "country": "United States",
+        "countryCode": "US",
+        "hIndex": 2081,
+        "i10Index": 678777,
+        "lifetimeWorks": 982294,
+        "lifetimeCitations": 66404268,
+        "consensusRank": null
+      },
+      {
+        "name": "University of Oxford",
+        "country": "United Kingdom",
+        "countryCode": "GB",
+        "hIndex": 2073,
+        "i10Index": 566731,
+        "lifetimeWorks": 595350,
+        "lifetimeCitations": 63481881,
+        "consensusRank": 4
+      },
+      {
+        "name": "University College London",
+        "country": "United Kingdom",
+        "countryCode": "GB",
+        "hIndex": 2066,
+        "i10Index": null,
+        "lifetimeWorks": 583087,
+        "lifetimeCitations": 65779892,
+        "consensusRank": 6
+      },
+      {
+        "name": "University of California, Berkeley",
+        "country": "United States",
+        "countryCode": "US",
+        "hIndex": 1876,
+        "i10Index": null,
+        "lifetimeWorks": 450823,
+        "lifetimeCitations": 56370727,
+        "consensusRank": 10
+      },
+      {
+        "name": "California Institute of Technology",
+        "country": "United States",
+        "countryCode": "US",
+        "hIndex": 1856,
+        "i10Index": null,
+        "lifetimeWorks": 245160,
+        "lifetimeCitations": 37173385,
+        "consensusRank": 27
+      },
+      {
+        "name": "Washington University in St. Louis",
+        "country": "United States",
+        "countryCode": "US",
+        "hIndex": 1855,
+        "i10Index": null,
+        "lifetimeWorks": 255440,
+        "lifetimeCitations": 40417977,
+        "consensusRank": 50
+      },
+      {
+        "name": "Cornell University",
+        "country": "United States",
+        "countryCode": "US",
+        "hIndex": 1853,
+        "i10Index": null,
+        "lifetimeWorks": 472548,
+        "lifetimeCitations": 56587649,
+        "consensusRank": 12
+      },
+      {
+        "name": "University of Cambridge",
+        "country": "United Kingdom",
+        "countryCode": "GB",
+        "hIndex": 1824,
+        "i10Index": null,
+        "lifetimeWorks": 447911,
+        "lifetimeCitations": 53821365,
+        "consensusRank": 5
+      },
+      {
+        "name": "Yale University",
+        "country": "United States",
+        "countryCode": "US",
+        "hIndex": 1801,
+        "i10Index": null,
+        "lifetimeWorks": 410957,
+        "lifetimeCitations": 51905473,
+        "consensusRank": 7
+      },
+      {
+        "name": "University of Toronto",
+        "country": "Canada",
+        "countryCode": "CA",
+        "hIndex": 1782,
+        "i10Index": null,
+        "lifetimeWorks": 553930,
+        "lifetimeCitations": 58615111,
+        "consensusRank": 16
+      },
+      {
+        "name": "University of Pennsylvania",
+        "country": "United States",
+        "countryCode": "US",
+        "hIndex": 1747,
+        "i10Index": null,
+        "lifetimeWorks": 381274,
+        "lifetimeCitations": 54895634,
+        "consensusRank": 8
+      },
+      {
+        "name": "University of California San Diego",
+        "country": "United States",
+        "countryCode": "US",
+        "hIndex": 1742,
+        "i10Index": null,
+        "lifetimeWorks": 355659,
+        "lifetimeCitations": 50660392,
+        "consensusRank": 22
+      },
+      {
+        "name": "Columbia University",
+        "country": "United States",
+        "countryCode": "US",
+        "hIndex": 1723,
+        "i10Index": null,
+        "lifetimeWorks": 387006,
+        "lifetimeCitations": 47447981,
+        "consensusRank": 13
+      },
+      {
+        "name": "University of California, San Francisco",
+        "country": "United States",
+        "countryCode": "US",
+        "hIndex": 1703,
+        "i10Index": null,
+        "lifetimeWorks": 298021,
+        "lifetimeCitations": 49215559,
+        "consensusRank": 20
+      },
+      {
+        "name": "Université Paris Cité",
+        "country": "France",
+        "countryCode": "FR",
+        "hIndex": 1670,
+        "i10Index": null,
+        "lifetimeWorks": 360939,
+        "lifetimeCitations": 40443958,
+        "consensusRank": null
+      },
+      {
+        "name": "University of California, Los Angeles",
+        "country": "United States",
+        "countryCode": "US",
+        "hIndex": 1641,
+        "i10Index": null,
+        "lifetimeWorks": 415301,
+        "lifetimeCitations": 51834662,
+        "consensusRank": 17
+      },
+      {
+        "name": "University of Chicago",
+        "country": "United States",
+        "countryCode": "US",
+        "hIndex": 1635,
+        "i10Index": null,
+        "lifetimeWorks": 309299,
+        "lifetimeCitations": 34694409,
+        "consensusRank": 18
+      },
+      {
+        "name": "Heidelberg University",
+        "country": "Germany",
+        "countryCode": "DE",
+        "hIndex": 1602,
+        "i10Index": null,
+        "lifetimeWorks": 318927,
+        "lifetimeCitations": 42678021,
+        "consensusRank": null
+      },
+      {
+        "name": "University of North Carolina at Chapel Hill",
+        "country": "United States",
+        "countryCode": "US",
+        "hIndex": 1593,
+        "i10Index": 346430,
+        "lifetimeWorks": 354825,
+        "lifetimeCitations": 34837517,
+        "consensusRank": 62
+      },
+      {
+        "name": "Imperial College London",
+        "country": "United Kingdom",
+        "countryCode": "GB",
+        "hIndex": 1551,
+        "i10Index": null,
+        "lifetimeWorks": 387396,
+        "lifetimeCitations": 42109070,
+        "consensusRank": 9
+      }
+    ]
+  },
   "methodology": {
     "consensusProviders": [
       {

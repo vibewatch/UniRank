@@ -4,6 +4,7 @@ import ConcentrationTrend from '../components/ConcentrationTrend.astro';
 import CountryShift from '../components/CountryShift.astro';
 import MomentumChart from '../components/MomentumChart.astro';
 import OutputGrowth from '../components/OutputGrowth.astro';
+import ResearchOutputLeaders from '../components/ResearchOutputLeaders.astro';
 import ScaleImpactPlot from '../components/ScaleImpactPlot.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import TrendExplorer from '../components/TrendExplorer.astro';
@@ -255,6 +256,19 @@ const theExpansion = theFirst && theLatest ? theLatest.size / theFirst.size : 0;
           </p>
         </aside>
       </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="Research output leaderboard"
+        title="Decades of accumulated output separate a small group of institutions."
+        description={`OpenAlex-derived h-index, lifetime works, and lifetime citations for ${number.format(insights.researchProfiles.institutionCount)} institutions with a resolved research profile. Several leaders here sit well outside any single ranking's top tier—this is a cumulative-output signal, independent of the consensus above.`}
+        href="/methodology/#research-metrics"
+        linkLabel="Read metric definitions"
+      />
+      <ResearchOutputLeaders data={insights.researchProfiles} />
     </div>
   </section>
 
