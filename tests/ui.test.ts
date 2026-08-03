@@ -55,6 +55,18 @@ test("subjects page headings use rendered punctuation instead of literal entitie
   assert.match(source, /top schools—and narrow to a country you’d actually consider/);
 });
 
+test("specialist copy distinguishes qualifying subjects from placement rows", () => {
+  const page = readFileSync("src/pages/subjects.astro", "utf8");
+  const component = readFileSync("src/components/SpecialistExamples.astro", "utf8");
+
+  assert.match(page, /placements are shown across \$\{outperformerSubjectCount\} subjects/);
+  assert.match(page, /Each placement is one university’s result in one subject/);
+  assert.match(
+    component,
+    /All \{subjects\.length\} qualifying subjects \(\{items\.length\} placements\)/,
+  );
+});
+
 test("atlas destination picker uses the shared custom select", () => {
   const source = readFileSync("src/components/CountryDetail.astro", "utf8");
   assert.match(source, /import CustomSelect from ['"]\.\/CustomSelect\.astro['"]/);

@@ -156272,6 +156272,39 @@
   },
   "qsSubjectOutperformers": [
     {
+      "name": "London Business School",
+      "country": "United Kingdom",
+      "countryCode": "GB",
+      "subject": "accounting-finance",
+      "subjectLabel": "Accounting Finance",
+      "subjectRank": 18,
+      "subjectRankDisplay": "18",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Bocconi University",
+      "country": "Italy",
+      "countryCode": "IT",
+      "subject": "accounting-finance",
+      "subjectLabel": "Accounting Finance",
+      "subjectRank": 20,
+      "subjectRankDisplay": "20",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "HEC Paris",
+      "country": "France",
+      "countryCode": "FR",
+      "subject": "accounting-finance",
+      "subjectLabel": "Accounting Finance",
+      "subjectRank": 23,
+      "subjectRankDisplay": "23",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
       "name": "Swedish University of Agricultural Sciences",
       "country": "Sweden",
       "countryCode": "SE",
@@ -156316,6 +156349,94 @@
       "overallRankDisplay": "791-800"
     },
     {
+      "name": "University of Guelph",
+      "country": "Canada",
+      "countryCode": "CA",
+      "subject": "agriculture-forestry",
+      "subjectLabel": "Agriculture Forestry",
+      "subjectRank": 14,
+      "subjectRankDisplay": "=14",
+      "overallRank": 504,
+      "overallRankDisplay": "=504"
+    },
+    {
+      "name": "University of Hohenheim",
+      "country": "Germany",
+      "countryCode": "DE",
+      "subject": "agriculture-forestry",
+      "subjectLabel": "Agriculture Forestry",
+      "subjectRank": 17,
+      "subjectRankDisplay": "17",
+      "overallRank": 711,
+      "overallRankDisplay": "711-720"
+    },
+    {
+      "name": "L'Institut Agro (L'Institut Agro Dijon, L'Institut Agro Montpellier, L'Institut Agro Rennes-Angers)",
+      "country": "France",
+      "countryCode": "FR",
+      "subject": "agriculture-forestry",
+      "subjectLabel": "Agriculture Forestry",
+      "subjectRank": 18,
+      "subjectRankDisplay": "18",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Nanjing Agricultural University",
+      "country": "China",
+      "countryCode": "CN",
+      "subject": "agriculture-forestry",
+      "subjectLabel": "Agriculture Forestry",
+      "subjectRank": 20,
+      "subjectRankDisplay": "20",
+      "overallRank": 951,
+      "overallRankDisplay": "951-1000"
+    },
+    {
+      "name": "Karolinska Institutet",
+      "country": "Sweden",
+      "countryCode": "SE",
+      "subject": "anatomy-physiology",
+      "subjectLabel": "Anatomy Physiology",
+      "subjectRank": 19,
+      "subjectRankDisplay": "=19",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "SOAS University of London",
+      "country": "United Kingdom",
+      "countryCode": "GB",
+      "subject": "anthropology",
+      "subjectLabel": "Anthropology",
+      "subjectRank": 19,
+      "subjectRankDisplay": "19",
+      "overallRank": 511,
+      "overallRankDisplay": "=511"
+    },
+    {
+      "name": "Ecole des Hautes Etudes en Sciences Sociales",
+      "country": "France",
+      "countryCode": "FR",
+      "subject": "anthropology",
+      "subjectLabel": "Anthropology",
+      "subjectRank": 24,
+      "subjectRankDisplay": "24",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Christian-Albrechts-University zu Kiel",
+      "country": "Germany",
+      "countryCode": "DE",
+      "subject": "archaeology",
+      "subjectLabel": "Archaeology",
+      "subjectRank": 20,
+      "subjectRankDisplay": "20",
+      "overallRank": 618,
+      "overallRankDisplay": "=618"
+    },
+    {
       "name": "Manchester School of Architecture",
       "country": "United Kingdom",
       "countryCode": "GB",
@@ -156325,6 +156446,28 @@
       "subjectRankDisplay": "5",
       "overallRank": null,
       "overallRankDisplay": null
+    },
+    {
+      "name": "Universitat Politècnica de Catalunya - BarcelonaTech (UPC)",
+      "country": "Spain",
+      "countryCode": "ES",
+      "subject": "architecture-built-environment",
+      "subjectLabel": "Architecture Built Environment",
+      "subjectRank": 19,
+      "subjectRankDisplay": "=19",
+      "overallRank": 392,
+      "overallRankDisplay": "=392"
+    },
+    {
+      "name": "Universidad Politécnica de Madrid (UPM)",
+      "country": "Spain",
+      "countryCode": "ES",
+      "subject": "architecture-built-environment",
+      "subjectLabel": "Architecture Built Environment",
+      "subjectRank": 21,
+      "subjectRankDisplay": "=21",
+      "overallRank": 334,
+      "overallRankDisplay": "=334"
     },
     {
       "name": "Royal College of Art",
@@ -156404,6 +156547,83 @@
       "overallRankDisplay": null
     },
     {
+      "name": "School of the Art Institute of Chicago",
+      "country": "United States",
+      "countryCode": "US",
+      "subject": "art-design",
+      "subjectLabel": "Art & design",
+      "subjectRank": 11,
+      "subjectRankDisplay": "11",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Art Center College of Design",
+      "country": "United States",
+      "countryCode": "US",
+      "subject": "art-design",
+      "subjectLabel": "Art & design",
+      "subjectRank": 12,
+      "subjectRankDisplay": "12",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Central Academy of Fine Arts (CAFA)",
+      "country": "China",
+      "countryCode": "CN",
+      "subject": "art-design",
+      "subjectLabel": "Art & design",
+      "subjectRank": 14,
+      "subjectRankDisplay": "14",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Savannah College of Art and Design",
+      "country": "United States",
+      "countryCode": "US",
+      "subject": "art-design",
+      "subjectLabel": "Art & design",
+      "subjectRank": 15,
+      "subjectRankDisplay": "15",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "School of Visual Arts (SVA)",
+      "country": "United States",
+      "countryCode": "US",
+      "subject": "art-design",
+      "subjectLabel": "Art & design",
+      "subjectRank": 18,
+      "subjectRankDisplay": "18",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "The Royal Danish Academy of Fine Arts (KADK)",
+      "country": "Denmark",
+      "countryCode": "DK",
+      "subject": "art-design",
+      "subjectLabel": "Art & design",
+      "subjectRank": 22,
+      "subjectRankDisplay": "22",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "California Institute of the Arts",
+      "country": "United States",
+      "countryCode": "US",
+      "subject": "art-design",
+      "subjectLabel": "Art & design",
+      "subjectRank": 23,
+      "subjectRankDisplay": "23",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
       "name": "The Courtauld Institute of Art",
       "country": "United Kingdom",
       "countryCode": "GB",
@@ -156435,6 +156655,83 @@
       "subjectRankDisplay": "9",
       "overallRank": 801,
       "overallRankDisplay": "801-850"
+    },
+    {
+      "name": "Università Iuav di Venezia",
+      "country": "Italy",
+      "countryCode": "IT",
+      "subject": "art-history",
+      "subjectLabel": "Art History",
+      "subjectRank": 14,
+      "subjectRankDisplay": "14",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Universidad Politécnica de Madrid (UPM)",
+      "country": "Spain",
+      "countryCode": "ES",
+      "subject": "art-history",
+      "subjectLabel": "Art History",
+      "subjectRank": 19,
+      "subjectRankDisplay": "19",
+      "overallRank": 334,
+      "overallRankDisplay": "=334"
+    },
+    {
+      "name": "Pratt Institute",
+      "country": "United States",
+      "countryCode": "US",
+      "subject": "art-history",
+      "subjectLabel": "Art History",
+      "subjectRank": 20,
+      "subjectRankDisplay": "=20",
+      "overallRank": 1201,
+      "overallRankDisplay": "1201-1400"
+    },
+    {
+      "name": "Rhode Island School of Design (RISD)",
+      "country": "United States",
+      "countryCode": "US",
+      "subject": "art-history",
+      "subjectLabel": "Art History",
+      "subjectRank": 23,
+      "subjectRankDisplay": "23",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "SOAS University of London",
+      "country": "United Kingdom",
+      "countryCode": "GB",
+      "subject": "art-history",
+      "subjectLabel": "Art History",
+      "subjectRank": 24,
+      "subjectRankDisplay": "24",
+      "overallRank": 511,
+      "overallRankDisplay": "=511"
+    },
+    {
+      "name": "University of California, San Francisco",
+      "country": "United States",
+      "countryCode": "US",
+      "subject": "biological-sciences",
+      "subjectLabel": "Biological Sciences",
+      "subjectRank": 11,
+      "subjectRankDisplay": "11",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Karolinska Institutet",
+      "country": "Sweden",
+      "countryCode": "SE",
+      "subject": "biological-sciences",
+      "subjectLabel": "Biological Sciences",
+      "subjectRank": 25,
+      "subjectRankDisplay": "=25",
+      "overallRank": null,
+      "overallRankDisplay": null
     },
     {
       "name": "INSEAD",
@@ -156470,6 +156767,72 @@
       "overallRankDisplay": null
     },
     {
+      "name": "HEC Paris",
+      "country": "France",
+      "countryCode": "FR",
+      "subject": "business-management-studies",
+      "subjectLabel": "Business & management studies",
+      "subjectRank": 12,
+      "subjectRankDisplay": "12",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Universitat Ramon Llull",
+      "country": "Spain",
+      "countryCode": "ES",
+      "subject": "business-management-studies",
+      "subjectLabel": "Business & management studies",
+      "subjectRank": 18,
+      "subjectRankDisplay": "18",
+      "overallRank": 436,
+      "overallRankDisplay": "=436"
+    },
+    {
+      "name": "Copenhagen Business School",
+      "country": "Denmark",
+      "countryCode": "DK",
+      "subject": "business-management-studies",
+      "subjectLabel": "Business & management studies",
+      "subjectRank": 19,
+      "subjectRankDisplay": "19",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Indian Institute of Management (IIM) - Ahmedabad",
+      "country": "India",
+      "countryCode": "IN",
+      "subject": "business-management-studies",
+      "subjectLabel": "Business & management studies",
+      "subjectRank": 21,
+      "subjectRankDisplay": "21",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Institute of Science Tokyo",
+      "country": "Japan",
+      "countryCode": "JP",
+      "subject": "chemical-engineering",
+      "subjectLabel": "Chemical Engineering",
+      "subjectRank": 13,
+      "subjectRankDisplay": "=13",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Institute of Science Tokyo",
+      "country": "Japan",
+      "countryCode": "JP",
+      "subject": "civil-structural-engineering",
+      "subjectLabel": "Civil & structural engineering",
+      "subjectRank": 19,
+      "subjectRankDisplay": "19",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
       "name": "Scuola Normale Superiore",
       "country": "Italy",
       "countryCode": "IT",
@@ -156477,6 +156840,50 @@
       "subjectLabel": "Classics Ancient History",
       "subjectRank": 10,
       "subjectRankDisplay": "10",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "University of Pisa",
+      "country": "Italy",
+      "countryCode": "IT",
+      "subject": "classics-ancient-history",
+      "subjectLabel": "Classics Ancient History",
+      "subjectRank": 23,
+      "subjectRankDisplay": "23",
+      "overallRank": 343,
+      "overallRankDisplay": "=343"
+    },
+    {
+      "name": "Ca' Foscari University of Venice",
+      "country": "Italy",
+      "countryCode": "IT",
+      "subject": "classics-ancient-history",
+      "subjectLabel": "Classics Ancient History",
+      "subjectRank": 24,
+      "subjectRankDisplay": "=24",
+      "overallRank": 660,
+      "overallRankDisplay": "=660"
+    },
+    {
+      "name": "Goldsmiths, University of London",
+      "country": "United Kingdom",
+      "countryCode": "GB",
+      "subject": "communication-media-studies",
+      "subjectLabel": "Communication Media Studies",
+      "subjectRank": 18,
+      "subjectRankDisplay": "18",
+      "overallRank": 711,
+      "overallRankDisplay": "711-720"
+    },
+    {
+      "name": "Institute of Science Tokyo",
+      "country": "Japan",
+      "countryCode": "JP",
+      "subject": "computer-science-information-systems",
+      "subjectLabel": "Computer Science Information Systems",
+      "subjectRank": 18,
+      "subjectRankDisplay": "18",
       "overallRank": null,
       "overallRankDisplay": null
     },
@@ -156536,6 +156943,39 @@
       "overallRankDisplay": "=324"
     },
     {
+      "name": "Imam Abdulrahman Bin Faisal University (IAU)",
+      "country": "Saudi Arabia",
+      "countryCode": "SA",
+      "subject": "dentistry",
+      "subjectLabel": "Dentistry",
+      "subjectRank": 16,
+      "subjectRankDisplay": "16",
+      "overallRank": 491,
+      "overallRankDisplay": "=491"
+    },
+    {
+      "name": "Charité - Universitätsmedizin Berlin",
+      "country": "Germany",
+      "countryCode": "DE",
+      "subject": "dentistry",
+      "subjectLabel": "Dentistry",
+      "subjectRank": 22,
+      "subjectRankDisplay": "22",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Saveetha Institute of Medical And Technical Sciences (SIMATS), Tamil Nadu,India",
+      "country": "India",
+      "countryCode": "IN",
+      "subject": "dentistry",
+      "subjectLabel": "Dentistry",
+      "subjectRank": 25,
+      "subjectRankDisplay": "25",
+      "overallRank": 901,
+      "overallRankDisplay": "901-950"
+    },
+    {
       "name": "SOAS University of London",
       "country": "United Kingdom",
       "countryCode": "GB",
@@ -156545,6 +156985,39 @@
       "subjectRankDisplay": "2",
       "overallRank": 511,
       "overallRankDisplay": "=511"
+    },
+    {
+      "name": "University of East Anglia (UEA)",
+      "country": "United Kingdom",
+      "countryCode": "GB",
+      "subject": "development-studies",
+      "subjectLabel": "Development Studies",
+      "subjectRank": 23,
+      "subjectRankDisplay": "=23",
+      "overallRank": 381,
+      "overallRankDisplay": "=381"
+    },
+    {
+      "name": "Colorado School of Mines",
+      "country": "United States",
+      "countryCode": "US",
+      "subject": "earth-marine-sciences",
+      "subjectLabel": "Earth Marine Sciences",
+      "subjectRank": 23,
+      "subjectRankDisplay": "23",
+      "overallRank": 571,
+      "overallRankDisplay": "=571"
+    },
+    {
+      "name": "Bocconi University",
+      "country": "Italy",
+      "countryCode": "IT",
+      "subject": "economics-econometrics",
+      "subjectLabel": "Economics Econometrics",
+      "subjectRank": 18,
+      "subjectRankDisplay": "18",
+      "overallRank": null,
+      "overallRankDisplay": null
     },
     {
       "name": "The Education University of Hong Kong",
@@ -156558,6 +157031,17 @@
       "overallRankDisplay": "=530"
     },
     {
+      "name": "Institute of Science Tokyo",
+      "country": "Japan",
+      "countryCode": "JP",
+      "subject": "electrical-electronic-engineering",
+      "subjectLabel": "Electrical Electronic Engineering",
+      "subjectRank": 20,
+      "subjectRankDisplay": "=20",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
       "name": "Colorado School of Mines",
       "country": "United States",
       "countryCode": "US",
@@ -156567,6 +157051,50 @@
       "subjectRankDisplay": "7",
       "overallRank": 571,
       "overallRankDisplay": "=571"
+    },
+    {
+      "name": "King Abdullah University of Science & Technology (KAUST)",
+      "country": "Saudi Arabia",
+      "countryCode": "SA",
+      "subject": "engineering-petroleum",
+      "subjectLabel": "Engineering Petroleum",
+      "subjectRank": 11,
+      "subjectRankDisplay": "11",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Sultan Qaboos University",
+      "country": "Oman",
+      "countryCode": "OM",
+      "subject": "engineering-petroleum",
+      "subjectLabel": "Engineering Petroleum",
+      "subjectRank": 17,
+      "subjectRankDisplay": "17",
+      "overallRank": 334,
+      "overallRankDisplay": "=334"
+    },
+    {
+      "name": "Sharif University of Technology",
+      "country": "Iran",
+      "countryCode": "IR",
+      "subject": "engineering-petroleum",
+      "subjectLabel": "Engineering Petroleum",
+      "subjectRank": 20,
+      "subjectRankDisplay": "20",
+      "overallRank": 375,
+      "overallRankDisplay": "=375"
+    },
+    {
+      "name": "University of Tehran",
+      "country": "Iran",
+      "countryCode": "IR",
+      "subject": "engineering-petroleum",
+      "subjectLabel": "Engineering Petroleum",
+      "subjectRank": 23,
+      "subjectRankDisplay": "23",
+      "overallRank": 322,
+      "overallRankDisplay": "322"
     },
     {
       "name": "China University of Geosciences",
@@ -156690,6 +157218,116 @@
       "overallRankDisplay": null
     },
     {
+      "name": "Vatel, Hotel & Tourism Business School",
+      "country": "France",
+      "countryCode": "FR",
+      "subject": "hospitality-leisure-management",
+      "subjectLabel": "Hospitality & leisure management",
+      "subjectRank": 11,
+      "subjectRankDisplay": "11",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "BHMS - Business & Hotel Management School",
+      "country": "Switzerland",
+      "countryCode": "CH",
+      "subject": "hospitality-leisure-management",
+      "subjectLabel": "Hospitality & leisure management",
+      "subjectRank": 12,
+      "subjectRankDisplay": "12",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "IMI International Management Institute Switzerland",
+      "country": "Switzerland",
+      "countryCode": "CH",
+      "subject": "hospitality-leisure-management",
+      "subjectLabel": "Hospitality & leisure management",
+      "subjectRank": 13,
+      "subjectRankDisplay": "13",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Sant Pol Hospitality & Culinary Business School - Barcelona (ex-EUHT StPOL)",
+      "country": "Spain",
+      "countryCode": "ES",
+      "subject": "hospitality-leisure-management",
+      "subjectLabel": "Hospitality & leisure management",
+      "subjectRank": 14,
+      "subjectRankDisplay": "14",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "HTMi Hotel and Tourism Management Institute Switzerland",
+      "country": "Switzerland",
+      "countryCode": "CH",
+      "subject": "hospitality-leisure-management",
+      "subjectLabel": "Hospitality & leisure management",
+      "subjectRank": 17,
+      "subjectRankDisplay": "17",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Blue Mountains International Hotel Management School (BMIHMS)",
+      "country": "Australia",
+      "countryCode": "AU",
+      "subject": "hospitality-leisure-management",
+      "subjectLabel": "Hospitality & leisure management",
+      "subjectRank": 21,
+      "subjectRankDisplay": "21",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "EHG - Ecole Hôtelière Geneve (Geneva Hotel Management School)",
+      "country": "Switzerland",
+      "countryCode": "CH",
+      "subject": "hospitality-leisure-management",
+      "subjectLabel": "Hospitality & leisure management",
+      "subjectRank": 22,
+      "subjectRankDisplay": "22",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Florida International University",
+      "country": "United States",
+      "countryCode": "US",
+      "subject": "hospitality-leisure-management",
+      "subjectLabel": "Hospitality & leisure management",
+      "subjectRank": 23,
+      "subjectRankDisplay": "=23",
+      "overallRank": 582,
+      "overallRankDisplay": "=582"
+    },
+    {
+      "name": "National Kaohsiung University of Hospitality and Tourism (NKUHT)",
+      "country": "Taiwan",
+      "countryCode": "TW",
+      "subject": "hospitality-leisure-management",
+      "subjectLabel": "Hospitality & leisure management",
+      "subjectRank": 23,
+      "subjectRankDisplay": "=23",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "The Southern Alberta Institute of Technology (SAIT)",
+      "country": "Canada",
+      "countryCode": "CA",
+      "subject": "hospitality-leisure-management",
+      "subjectLabel": "Hospitality & leisure management",
+      "subjectRank": 25,
+      "subjectRankDisplay": "25",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
       "name": "Indiana University Bloomington",
       "country": "United States",
       "countryCode": "US",
@@ -156712,6 +157350,39 @@
       "overallRankDisplay": "=328"
     },
     {
+      "name": "Tampere University",
+      "country": "Finland",
+      "countryCode": "FI",
+      "subject": "library-information-management",
+      "subjectLabel": "Library Information Management",
+      "subjectRank": 12,
+      "subjectRankDisplay": "12",
+      "overallRank": 423,
+      "overallRankDisplay": "=423"
+    },
+    {
+      "name": "University of Tsukuba",
+      "country": "Japan",
+      "countryCode": "JP",
+      "subject": "library-information-management",
+      "subjectLabel": "Library Information Management",
+      "subjectRank": 20,
+      "subjectRankDisplay": "20",
+      "overallRank": 350,
+      "overallRankDisplay": "=350"
+    },
+    {
+      "name": "Syracuse University",
+      "country": "United States",
+      "countryCode": "US",
+      "subject": "library-information-management",
+      "subjectLabel": "Library Information Management",
+      "subjectRank": 25,
+      "subjectRankDisplay": "=25",
+      "overallRank": 741,
+      "overallRankDisplay": "741-750"
+    },
+    {
       "name": "University of California, San Francisco",
       "country": "United States",
       "countryCode": "US",
@@ -156719,6 +157390,17 @@
       "subjectLabel": "Life Sciences Medicine",
       "subjectRank": 6,
       "subjectRankDisplay": "=6",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Karolinska Institutet",
+      "country": "Sweden",
+      "countryCode": "SE",
+      "subject": "life-sciences-medicine",
+      "subjectLabel": "Life Sciences Medicine",
+      "subjectRank": 11,
+      "subjectRankDisplay": "11",
       "overallRank": null,
       "overallRankDisplay": null
     },
@@ -156756,6 +157438,72 @@
       "overallRankDisplay": null
     },
     {
+      "name": "London Business School",
+      "country": "United Kingdom",
+      "countryCode": "GB",
+      "subject": "marketing",
+      "subjectLabel": "Marketing",
+      "subjectRank": 16,
+      "subjectRankDisplay": "16",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Copenhagen Business School",
+      "country": "Denmark",
+      "countryCode": "DK",
+      "subject": "marketing",
+      "subjectLabel": "Marketing",
+      "subjectRank": 18,
+      "subjectRankDisplay": "18",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Universitat Ramon Llull",
+      "country": "Spain",
+      "countryCode": "ES",
+      "subject": "marketing",
+      "subjectLabel": "Marketing",
+      "subjectRank": 19,
+      "subjectRankDisplay": "19",
+      "overallRank": 436,
+      "overallRankDisplay": "=436"
+    },
+    {
+      "name": "Indian Institute of Management (IIM) - Ahmedabad",
+      "country": "India",
+      "countryCode": "IN",
+      "subject": "marketing",
+      "subjectLabel": "Marketing",
+      "subjectRank": 21,
+      "subjectRankDisplay": "21",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "University of St.Gallen",
+      "country": "Switzerland",
+      "countryCode": "CH",
+      "subject": "marketing",
+      "subjectLabel": "Marketing",
+      "subjectRank": 23,
+      "subjectRankDisplay": "=23",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Institute of Science Tokyo",
+      "country": "Japan",
+      "countryCode": "JP",
+      "subject": "mechanical-aeronautical-manufacturing-engineering",
+      "subjectLabel": "Mechanical Aeronautical Manufacturing Engineering",
+      "subjectRank": 15,
+      "subjectRankDisplay": "15",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
       "name": "University of California, San Francisco",
       "country": "United States",
       "countryCode": "US",
@@ -156778,6 +157526,28 @@
       "overallRankDisplay": null
     },
     {
+      "name": "Charité - Universitätsmedizin Berlin",
+      "country": "Germany",
+      "countryCode": "DE",
+      "subject": "medicine",
+      "subjectLabel": "Medicine",
+      "subjectRank": 18,
+      "subjectRankDisplay": "18",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "London School of Hygiene & Tropical Medicine",
+      "country": "United Kingdom",
+      "countryCode": "GB",
+      "subject": "medicine",
+      "subjectLabel": "Medicine",
+      "subjectRank": 21,
+      "subjectRankDisplay": "21",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
       "name": "Colorado School of Mines",
       "country": "United States",
       "countryCode": "US",
@@ -156787,6 +157557,39 @@
       "subjectRankDisplay": "1",
       "overallRank": 571,
       "overallRankDisplay": "=571"
+    },
+    {
+      "name": "Empress Catherine II Saint Petersburg Mining University",
+      "country": "Russia",
+      "countryCode": "RU",
+      "subject": "mineral-mining-engineering",
+      "subjectLabel": "Mineral & mining engineering",
+      "subjectRank": 11,
+      "subjectRankDisplay": "=11",
+      "overallRank": 1001,
+      "overallRankDisplay": "1001-1200"
+    },
+    {
+      "name": "Virginia Polytechnic Institute and State University",
+      "country": "United States",
+      "countryCode": "US",
+      "subject": "mineral-mining-engineering",
+      "subjectLabel": "Mineral & mining engineering",
+      "subjectRank": 14,
+      "subjectRankDisplay": "14",
+      "overallRank": 358,
+      "overallRankDisplay": "=358"
+    },
+    {
+      "name": "Indian Institute of Technology (Indian School of Mines), Dhanbad",
+      "country": "India",
+      "countryCode": "IN",
+      "subject": "mineral-mining-engineering",
+      "subjectLabel": "Mineral & mining engineering",
+      "subjectRank": 21,
+      "subjectRankDisplay": "21",
+      "overallRank": null,
+      "overallRankDisplay": null
     },
     {
       "name": "The Juilliard School",
@@ -156899,6 +157702,149 @@
       "overallRankDisplay": null
     },
     {
+      "name": "The Royal Danish Academy of Music",
+      "country": "Denmark",
+      "countryCode": "DK",
+      "subject": "music",
+      "subjectLabel": "Music",
+      "subjectRank": 11,
+      "subjectRankDisplay": "11",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Royal Irish Academy of Music",
+      "country": "Ireland",
+      "countryCode": "IE",
+      "subject": "music",
+      "subjectLabel": "Music",
+      "subjectRank": 12,
+      "subjectRankDisplay": "12",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Sibelius Academy, University of the Arts Helsinki",
+      "country": "Finland",
+      "countryCode": "FI",
+      "subject": "music",
+      "subjectLabel": "Music",
+      "subjectRank": 13,
+      "subjectRankDisplay": "=13",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Indiana University Bloomington",
+      "country": "United States",
+      "countryCode": "US",
+      "subject": "music",
+      "subjectLabel": "Music",
+      "subjectRank": 16,
+      "subjectRankDisplay": "16",
+      "overallRank": 306,
+      "overallRankDisplay": "=306"
+    },
+    {
+      "name": "Liszt Ferenc Academy of Music",
+      "country": "Hungary",
+      "countryCode": "HU",
+      "subject": "music",
+      "subjectLabel": "Music",
+      "subjectRank": 17,
+      "subjectRankDisplay": "17",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Norwegian Academy of Music",
+      "country": "Norway",
+      "countryCode": "NO",
+      "subject": "music",
+      "subjectLabel": "Music",
+      "subjectRank": 18,
+      "subjectRankDisplay": "18",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Universität für Musik und darstellende Kunst Wien",
+      "country": "Austria",
+      "countryCode": "AT",
+      "subject": "music",
+      "subjectLabel": "Music",
+      "subjectRank": 19,
+      "subjectRankDisplay": "19",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Trinity Laban",
+      "country": "United Kingdom",
+      "countryCode": "GB",
+      "subject": "music",
+      "subjectLabel": "Music",
+      "subjectRank": 20,
+      "subjectRankDisplay": "20",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "The Gnesins Russian Academy of Music",
+      "country": "Russia",
+      "countryCode": "RU",
+      "subject": "music",
+      "subjectLabel": "Music",
+      "subjectRank": 22,
+      "subjectRankDisplay": "22",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Chopin University of Music",
+      "country": "Poland",
+      "countryCode": "PL",
+      "subject": "music",
+      "subjectLabel": "Music",
+      "subjectRank": 23,
+      "subjectRankDisplay": "23",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "St. Petersburg Conservatory",
+      "country": "Russia",
+      "countryCode": "RU",
+      "subject": "music",
+      "subjectLabel": "Music",
+      "subjectRank": 25,
+      "subjectRankDisplay": "25",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Karolinska Institutet",
+      "country": "Sweden",
+      "countryCode": "SE",
+      "subject": "nursing",
+      "subjectLabel": "Nursing",
+      "subjectRank": 16,
+      "subjectRankDisplay": "=16",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Sultan Qaboos University",
+      "country": "Oman",
+      "countryCode": "OM",
+      "subject": "nursing",
+      "subjectLabel": "Nursing",
+      "subjectRank": 25,
+      "subjectRankDisplay": "=25",
+      "overallRank": 334,
+      "overallRankDisplay": "=334"
+    },
+    {
       "name": "The Juilliard School",
       "country": "United States",
       "countryCode": "US",
@@ -156998,6 +157944,127 @@
       "overallRankDisplay": null
     },
     {
+      "name": "Royal Northern College of Music (RNCM)",
+      "country": "United Kingdom",
+      "countryCode": "GB",
+      "subject": "performing-arts",
+      "subjectLabel": "Performing Arts",
+      "subjectRank": 11,
+      "subjectRankDisplay": "11",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Shanghai Conservatory of Music",
+      "country": "China",
+      "countryCode": "CN",
+      "subject": "performing-arts",
+      "subjectLabel": "Performing Arts",
+      "subjectRank": 12,
+      "subjectRankDisplay": "12",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Trinity Laban",
+      "country": "United Kingdom",
+      "countryCode": "GB",
+      "subject": "performing-arts",
+      "subjectLabel": "Performing Arts",
+      "subjectRank": 13,
+      "subjectRankDisplay": "13",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Moscow State Conservatory P. I. Tchaikovsky",
+      "country": "Russia",
+      "countryCode": "RU",
+      "subject": "performing-arts",
+      "subjectLabel": "Performing Arts",
+      "subjectRank": 14,
+      "subjectRankDisplay": "14",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "The Royal Danish Academy of Music",
+      "country": "Denmark",
+      "countryCode": "DK",
+      "subject": "performing-arts",
+      "subjectLabel": "Performing Arts",
+      "subjectRank": 16,
+      "subjectRankDisplay": "16",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "University Mozarteum Salzburg",
+      "country": "Austria",
+      "countryCode": "AT",
+      "subject": "performing-arts",
+      "subjectLabel": "Performing Arts",
+      "subjectRank": 17,
+      "subjectRankDisplay": "17",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Korea National University of Arts",
+      "country": "South Korea",
+      "countryCode": "KR",
+      "subject": "performing-arts",
+      "subjectLabel": "Performing Arts",
+      "subjectRank": 21,
+      "subjectRankDisplay": "=21",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Sibelius Academy, University of the Arts Helsinki",
+      "country": "Finland",
+      "countryCode": "FI",
+      "subject": "performing-arts",
+      "subjectLabel": "Performing Arts",
+      "subjectRank": 21,
+      "subjectRankDisplay": "=21",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Indiana University Bloomington",
+      "country": "United States",
+      "countryCode": "US",
+      "subject": "performing-arts",
+      "subjectLabel": "Performing Arts",
+      "subjectRank": 25,
+      "subjectRankDisplay": "25",
+      "overallRank": 306,
+      "overallRankDisplay": "=306"
+    },
+    {
+      "name": "University of California, San Francisco",
+      "country": "United States",
+      "countryCode": "US",
+      "subject": "pharmacy-pharmacology",
+      "subjectLabel": "Pharmacy Pharmacology",
+      "subjectRank": 11,
+      "subjectRankDisplay": "11",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Karolinska Institutet",
+      "country": "Sweden",
+      "countryCode": "SE",
+      "subject": "pharmacy-pharmacology",
+      "subjectLabel": "Pharmacy Pharmacology",
+      "subjectRank": 15,
+      "subjectRankDisplay": "15",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
       "name": "Rutgers University–New Brunswick",
       "country": "United States",
       "countryCode": "US",
@@ -157007,6 +158074,28 @@
       "subjectRankDisplay": "2",
       "overallRank": 328,
       "overallRankDisplay": "=328"
+    },
+    {
+      "name": "Ruhr-Universität Bochum",
+      "country": "Germany",
+      "countryCode": "DE",
+      "subject": "philosophy",
+      "subjectLabel": "Philosophy",
+      "subjectRank": 23,
+      "subjectRankDisplay": "23",
+      "overallRank": 395,
+      "overallRankDisplay": "=395"
+    },
+    {
+      "name": "Institute of Science Tokyo",
+      "country": "Japan",
+      "countryCode": "JP",
+      "subject": "physics-astronomy",
+      "subjectLabel": "Physics Astronomy",
+      "subjectRank": 20,
+      "subjectRankDisplay": "20",
+      "overallRank": null,
+      "overallRankDisplay": null
     },
     {
       "name": "Sciences Po",
@@ -157020,6 +158109,39 @@
       "overallRankDisplay": "=367"
     },
     {
+      "name": "SOAS University of London",
+      "country": "United Kingdom",
+      "countryCode": "GB",
+      "subject": "politics",
+      "subjectLabel": "Politics",
+      "subjectRank": 16,
+      "subjectRankDisplay": "16",
+      "overallRank": 511,
+      "overallRankDisplay": "=511"
+    },
+    {
+      "name": "George Washington University",
+      "country": "United States",
+      "countryCode": "US",
+      "subject": "politics",
+      "subjectLabel": "Politics",
+      "subjectRank": 21,
+      "subjectRankDisplay": "21",
+      "overallRank": 358,
+      "overallRankDisplay": "=358"
+    },
+    {
+      "name": "Luiss University",
+      "country": "Italy",
+      "countryCode": "IT",
+      "subject": "politics",
+      "subjectLabel": "Politics",
+      "subjectRank": 23,
+      "subjectRankDisplay": "23",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
       "name": "Syracuse University",
       "country": "United States",
       "countryCode": "US",
@@ -157029,6 +158151,50 @@
       "subjectRankDisplay": "7",
       "overallRank": 741,
       "overallRankDisplay": "741-750"
+    },
+    {
+      "name": "Sciences Po",
+      "country": "France",
+      "countryCode": "FR",
+      "subject": "social-policy-administration",
+      "subjectLabel": "Social Policy Administration",
+      "subjectRank": 17,
+      "subjectRankDisplay": "17",
+      "overallRank": 367,
+      "overallRankDisplay": "=367"
+    },
+    {
+      "name": "Indiana University Bloomington",
+      "country": "United States",
+      "countryCode": "US",
+      "subject": "social-policy-administration",
+      "subjectLabel": "Social Policy Administration",
+      "subjectRank": 22,
+      "subjectRankDisplay": "22",
+      "overallRank": 306,
+      "overallRankDisplay": "=306"
+    },
+    {
+      "name": "Bocconi University",
+      "country": "Italy",
+      "countryCode": "IT",
+      "subject": "social-sciences-management",
+      "subjectLabel": "Social Sciences Management",
+      "subjectRank": 12,
+      "subjectRankDisplay": "=12",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "INSEAD",
+      "country": "France",
+      "countryCode": "FR",
+      "subject": "social-sciences-management",
+      "subjectLabel": "Social Sciences Management",
+      "subjectRank": 24,
+      "subjectRankDisplay": "24",
+      "overallRank": null,
+      "overallRankDisplay": null
     },
     {
       "name": "Norwegian School of Sports Sciences",
@@ -157053,6 +158219,28 @@
       "overallRankDisplay": null
     },
     {
+      "name": "Liverpool John Moores University",
+      "country": "United Kingdom",
+      "countryCode": "GB",
+      "subject": "sports-related-subjects",
+      "subjectLabel": "Sports Related Subjects",
+      "subjectRank": 16,
+      "subjectRankDisplay": "16",
+      "overallRank": 851,
+      "overallRankDisplay": "851-900"
+    },
+    {
+      "name": "Auckland University of Technology (AUT)",
+      "country": "New Zealand",
+      "countryCode": "NZ",
+      "subject": "sports-related-subjects",
+      "subjectLabel": "Sports Related Subjects",
+      "subjectRank": 23,
+      "subjectRankDisplay": "23",
+      "overallRank": 410,
+      "overallRankDisplay": "=410"
+    },
+    {
       "name": "Boston College",
       "country": "United States",
       "countryCode": "US",
@@ -157062,6 +158250,39 @@
       "subjectRankDisplay": "5",
       "overallRank": 526,
       "overallRankDisplay": "=526"
+    },
+    {
+      "name": "Australian Catholic University",
+      "country": "Australia",
+      "countryCode": "AU",
+      "subject": "theology-divinity-religious-studies",
+      "subjectLabel": "Theology Divinity Religious Studies",
+      "subjectRank": 18,
+      "subjectRankDisplay": "18",
+      "overallRank": 851,
+      "overallRankDisplay": "851-900"
+    },
+    {
+      "name": "University of Münster",
+      "country": "Germany",
+      "countryCode": "DE",
+      "subject": "theology-divinity-religious-studies",
+      "subjectLabel": "Theology Divinity Religious Studies",
+      "subjectRank": 20,
+      "subjectRankDisplay": "20",
+      "overallRank": 350,
+      "overallRankDisplay": "=350"
+    },
+    {
+      "name": "International Islamic University Malaysia (IIUM)",
+      "country": "Malaysia",
+      "countryCode": "MY",
+      "subject": "theology-divinity-religious-studies",
+      "subjectLabel": "Theology Divinity Religious Studies",
+      "subjectRank": 25,
+      "subjectRankDisplay": "=25",
+      "overallRank": 613,
+      "overallRankDisplay": "=613"
     },
     {
       "name": "Royal Veterinary College, University of London",
@@ -157106,6 +158327,39 @@
       "subjectRankDisplay": "10",
       "overallRank": 449,
       "overallRankDisplay": "449"
+    },
+    {
+      "name": "Vetsuisse Faculty Bern and Zurich",
+      "country": "Switzerland",
+      "countryCode": "CH",
+      "subject": "veterinary-science",
+      "subjectLabel": "Veterinary Science",
+      "subjectRank": 12,
+      "subjectRankDisplay": "12",
+      "overallRank": null,
+      "overallRankDisplay": null
+    },
+    {
+      "name": "Tufts University",
+      "country": "United States",
+      "countryCode": "US",
+      "subject": "veterinary-science",
+      "subjectLabel": "Veterinary Science",
+      "subjectRank": 22,
+      "subjectRankDisplay": "22",
+      "overallRank": 334,
+      "overallRankDisplay": "=334"
+    },
+    {
+      "name": "Swedish University of Agricultural Sciences",
+      "country": "Sweden",
+      "countryCode": "SE",
+      "subject": "veterinary-science",
+      "subjectLabel": "Veterinary Science",
+      "subjectRank": 23,
+      "subjectRankDisplay": "=23",
+      "overallRank": null,
+      "overallRankDisplay": null
     }
   ],
   "countryAtlas": {

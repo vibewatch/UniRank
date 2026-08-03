@@ -17,12 +17,12 @@ const subjects = [...new Map(items.map((item) => [item.subject, item.subjectLabe
     <label>
       <span>Filter by subject</span>
       <CustomSelect data-specialist-subject aria-label="Filter specialist examples by subject">
-        <option value="">All {subjects.length} qualifying subjects</option>
+        <option value="">All {subjects.length} qualifying subjects ({items.length} placements)</option>
         {subjects.map((subject) => <option value={subject.value}>{subject.label}</option>)}
       </CustomSelect>
     </label>
     <p data-specialist-count aria-live="polite">
-      {items.length} qualifying subject placements
+      {items.length} placements across {subjects.length} qualifying subjects
     </p>
   </div>
 
@@ -82,7 +82,7 @@ const subjects = [...new Map(items.map((item) => [item.subject, item.subjectLabe
 
       const first = matches.length ? start + 1 : 0;
       const last = Math.min(start + SPECIALIST_PAGE_SIZE, matches.length);
-      if (count) count.textContent = `${first}–${last} of ${matches.length} qualifying placement${matches.length === 1 ? '' : 's'}`;
+      if (count) count.textContent = `${first}–${last} of ${matches.length} matching placement${matches.length === 1 ? '' : 's'}`;
       if (pageLabel) pageLabel.textContent = `Page ${page + 1} of ${pages}`;
       if (pagination) pagination.hidden = pages <= 1;
       if (previous) previous.disabled = page === 0;

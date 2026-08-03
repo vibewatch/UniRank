@@ -195,11 +195,19 @@ test("analytical outputs preserve publisher semantics", () => {
   );
 
   const outperformers = payload.qsSubjectOutperformers as Array<Record<string, any>>;
-  assert.equal(outperformers.length, 76);
-  assert.equal(new Set(outperformers.map((entry) => entry.subject)).size, 25);
+  assert.equal(outperformers.length, 190);
+  assert.equal(new Set(outperformers.map((entry) => entry.subject)).size, 42);
   assert.ok(
     outperformers.every(
-      (entry) => entry.subjectRank <= 10 && (entry.overallRank === null || entry.overallRank >= 300),
+      (entry) => entry.subjectRank <= 25 && (entry.overallRank === null || entry.overallRank >= 300),
+    ),
+  );
+  assert.ok(
+    outperformers.some(
+      (entry) =>
+        entry.name === "Syracuse University" &&
+        entry.subject === "library-information-management" &&
+        entry.subjectRankDisplay === "=25",
     ),
   );
   assert.equal(
