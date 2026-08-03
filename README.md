@@ -106,6 +106,122 @@ Node's built-in type stripping runs the scraper's `.ts` sources directly, so no
 build step or transpiler is required. Type-check the scraper with
 `npm run typecheck:scraper`.
 
+## Direct university-site enrichment
+
+The official-site enrichment crawler adds institution-level facts and useful
+links without treating another ranking publisher as the source. Its default
+pilot scope is the US and UK institutions in the latest OpenAlex snapshot. The
+`--all-ranked` scope adds every institution in the generated ranking directory:
+OpenAlex rows use their ROR identifiers directly, while directory-only rows use
+ROR's chosen affiliation match with country validation. Conservative recovery
+can also use a unique country-scoped ROR query result or an exact Wikidata
+label/alias carrying a validated ROR cross-identifier. The crawler then fetches
+each resolved university site directly.
+
+```bash
+# Inspect the current US/UK seed set without making requests
+npm run enrich:universities -- --dry-run
+
+# Small resumable pilot
+npm run enrich:universities -- --limit 10
+
+# Full US + UK collection
+npm run enrich:universities
+
+# Every institution represented in the ranking directory
+npm run enrich:universities -- --all-ranked --workers 12
+
+# Preserve ROR metadata for failed website crawls without contacting the sites
+npm run enrich:universities -- --all-ranked --registry-only --workers 12
+
+# Retry only transient and safely discoverable failures
+npm run enrich:universities -- --all-ranked --retry-failures recoverable \
+  --workers 24 --timeout 10 --attempts 1
+
+# Retry only unresolved identities
+npm run enrich:universities -- --all-ranked --retry-failures all \
+  --retry-stage registry --workers 24 --attempts 1
+
+# Refresh one institution while developing an extractor
+npm run enrich:universities -- --name "University of Oxford" --refresh
+```
+
+The crawler identifies itself as `UniversitySignalsBot`, checks `robots.txt`
+before every page (including after host-changing redirects), honors the most
+specific allow/disallow rule and `crawl-delay`, keeps one request at a time per
+university origin, and never uses the browser/proxy/Wayback fallback chain. A missing
+`robots.txt` permits the small crawl under RFC 9309; a temporarily unreachable
+file pauses that origin. Redirects and discovered links are restricted to
+public HTTP(S) addresses on validated ROR/OpenAlex/Wikidata institutional
+domains.
+
+Each profile contains ROR identity/location metadata plus direct-site JSON-LD,
+short explicitly worded facts, admissions/program/research links, social links,
+source URLs, page hashes, and robots status. It does not retain page bodies or
+infer facts from ambiguous numbers. Output is checkpointed atomically to
+`data/restricted/university-profiles.json` by default because source-site terms
+still apply; successful records resume automatically and failures are retried
+on the next run. Long runs save atomically every 100 results by default. Use
+`--help` for ranking-directory, concurrency, delay, checkpoint, page-budget,
+country, input, and output controls.
+
+After an interrupted run, pass `--skip-failures` to finish only seeds with no
+checkpoint while preserving already-recorded failures.
+
+Failed website crawls can retain a separate `registryOnlyProfiles` baseline
+without being counted as direct-site successes. Recovery tries ROR website and
+domain variants first, then free OpenAlex singleton cross-ID metadata, and
+finally Wikidata websites linked by ROR/OpenAlex QID with country validation.
+Identity recovery requires a unique exact, token-equivalent, or high-overlap
+official name with a clear margin over other candidates; ambiguous and
+cross-country results remain failures. It never bypasses an explicit robots rule
+or access-control response. ROR, OpenAlex, and Wikidata metadata is CC0; direct
+website fields remain subject to source-site terms. Set `ROR_CLIENT_ID` when
+ROR's client-ID program is available; the value is sent only in the API header.
+
+### Normalized common facts
+
+Build the comparison-safe fact model after creating or updating the profile
+checkpoint:
+
+```bash
+npm run facts:universities
+
+# Explicit inputs and output
+npm run facts:universities -- \
+  --profiles data/restricted/university-profiles.json \
+  --openalex data/open/openalex_worldwide_all_rankings_2025.csv \
+  --output data/restricted/university-common-facts.json
+```
+
+This is an offline transformation and does not re-crawl sites or call external
+APIs. The normalized artifact has four layers:
+
+- `institutions` contains the ROR-backed identity, location, official website,
+  and whether a direct profile was obtained.
+- `sources` deduplicates ROR records, official pages, and the OpenAlex snapshot,
+  retaining retrieval dates, content hashes, and licenses.
+- `observations` preserves every source-reported value with a canonical metric,
+  structured value, population and institution scope, period, extraction
+  method, evidence, confidence, and conflict group.
+- `canonical` points to the selected observation and repeats its normalized
+  value for query-friendly snapshots, together with the selection rule,
+  confidence, and machine-readable reason.
+
+Explicit, plausible official-site establishment years and same-snapshot
+OpenAlex research metrics are comparison eligible. ROR supplies the
+establishment-year fallback only when no usable official value was extracted.
+Official-site enrollment, workforce, ratio, and admissions values remain
+display-only when their reporting period or institution/campus scope is absent.
+Conflicting values are retained rather than overwritten. Founded-year conflicts
+prefer an official value independently corroborated by ROR, then a uniquely
+strong institution-specific statement. If neither exists, the ROR value is
+retained as an explicitly low-confidence fallback instead of treating dates
+about faculties, libraries, buildings, or other subunits as the university's
+founding year. If no ROR date exists, the best-supported official value is
+retained at low confidence. The output remains under `data/restricted/` because
+it contains source-site observations alongside CC0 ROR and OpenAlex data.
+
 ## Providers
 
 | Provider | CLI name | Implemented coverage | Access and data policy |

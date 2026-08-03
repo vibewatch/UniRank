@@ -16,6 +16,8 @@
     "test": "node --test tests/*.test.ts",
     "verify": "npm run typecheck:scraper && npm run check:data && npm run check && npm test && npm run build",
     "scrape": "node scraper/cli.ts",
+    "enrich:universities": "node scraper/universities/cli.ts",
+    "facts:universities": "node scraper/universities/facts-cli.ts",
     "insights": "node scraper/insights/generate.ts",
     "data": "npm run insights"
   },
@@ -32,6 +34,7 @@
     "linkedom": "^0.18.12",
     "pdfjs-dist": "^4.7.76",
     "playwright-core": "^1.61.1",
+    "tldts": "^7.4.9",
     "topojson-client": "^3.1.0",
     "world-atlas": "^2.0.2"
   },

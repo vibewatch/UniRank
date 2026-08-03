@@ -1,0 +1,121 @@
+---
+import type { ResearchProfiles } from '../data/schema';
+import { compact, number } from '../lib/format';
+
+interface Props {
+  data: ResearchProfiles;
+}
+
+const { data } = Astro.props;
+---
+
+<section class="research-leaders surface" aria-label="Research output leaderboard">
+  <ol class="rl-list">
+    {data.leaders.map((leader, index) => (
+      <li>
+        <span class="rank mono">{String(index + 1).padStart(2, '0')}</span>
+        <span class="identity">
+          <strong>{leader.name}</strong>
+          <span class="meta">{leader.country}</span>
+        </span>
+        <span class="metrics">
+          <b class="chip" title="OpenAlex h-index across all recorded works">h-index {number.format(leader.hIndex)}</b>
+          {leader.lifetimeWorks !== null && (
+            <b class="chip" title="Lifetime works recorded by OpenAlex">{compact.format(leader.lifetimeWorks)} works</b>
+          )}
+          {leader.lifetimeCitations !== null && (
+            <b class="chip" title="Lifetime citations recorded by OpenAlex">{compact.format(leader.lifetimeCitations)} citations</b>
+          )}
+        </span>
+        <span class="consensus">
+          {leader.consensusRank !== null ? `Consensus #${number.format(leader.consensusRank)}` : 'Outside consensus top 40'}
+        </span>
+      </li>
+    ))}
+  </ol>
+  <p class="fine-print">
+    Ranked by OpenAlex h-index across {number.format(data.institutionCount)} institutions with a
+    resolved research-output profile ({data.source}). This is a productivity signal, not a quality
+    ranking—large, long-established research universities accumulate high h-index scores over
+    decades regardless of where they land in any single-year table.
+  </p>
+</section>
+
+<style>
+  .research-leaders {
+    padding: clamp(1.25rem, 2.5vw, 2rem);
+    display: grid;
+    gap: 1.25rem;
+  }
+  .rl-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.6rem;
+  }
+  .rl-list li {
+    display: grid;
+    grid-template-columns: 1.75rem minmax(0, 1.4fr) minmax(0, 1.6fr) auto;
+    align-items: center;
+    gap: 0.6rem 0.9rem;
+    padding: 0.7rem 0.9rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface-2, transparent);
+  }
+  .rank {
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+  .identity {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+  }
+  .identity strong {
+    font-size: 0.92rem;
+  }
+  .identity .meta {
+    color: var(--muted);
+    font-size: 0.74rem;
+  }
+  .metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+  .chip {
+    font-weight: 600;
+    font-size: 0.68rem;
+    color: var(--muted);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0.1rem 0.5rem;
+    white-space: nowrap;
+  }
+  .consensus {
+    color: var(--muted);
+    font-size: 0.76rem;
+    text-align: right;
+    white-space: nowrap;
+  }
+  .fine-print {
+    margin: 0;
+  }
+  @media (max-width: 640px) {
+    .rl-list li {
+      grid-template-columns: 1fr auto;
+    }
+    .rank {
+      display: none;
+    }
+    .metrics {
+      grid-column: 1 / -1;
+    }
+    .consensus {
+      text-align: left;
+    }
+  }
+</style>

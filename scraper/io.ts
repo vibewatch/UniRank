@@ -21,8 +21,7 @@ const { parse: parseCsv } = require("csv-parse/sync") as {
 };
 
 /** Reads a CSV into row objects, keeping every value as a string (""=empty). */
-export function readCsv(path: string): RankRecord[] {
-  const text = readFileSync(path, "utf8");
+export function parseCsvText(text: string): RankRecord[] {
   const rows = parseCsv(text, {
     columns: true,
     skip_empty_lines: true,
@@ -30,6 +29,11 @@ export function readCsv(path: string): RankRecord[] {
     bom: true,
   });
   return rows as RankRecord[];
+}
+
+/** Reads a CSV into row objects, keeping every value as a string (""=empty). */
+export function readCsv(path: string): RankRecord[] {
+  return parseCsvText(readFileSync(path, "utf8"));
 }
 
 /** Column order = union of keys across rows, in first-appearance order. */

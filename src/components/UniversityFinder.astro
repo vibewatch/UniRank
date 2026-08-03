@@ -163,6 +163,21 @@ const serializedBoards = JSON.stringify(boards).replaceAll('<', '\u003c');
     detailPath: string;
   }
 
+  interface InstitutionFacts {
+    foundedYear: number | null;
+    enrollmentTotal: number | null;
+    facultyCount: number | null;
+    studentFacultyRatio: number | null;
+    hIndex: number | null;
+    i10Index: number | null;
+    lifetimeWorks: number | null;
+    lifetimeCitations: number | null;
+    city: string | null;
+    latitude: number | null;
+    longitude: number | null;
+    officialWebsite: string | null;
+  }
+
   interface DirectoryInstitution {
     name: string;
     country: string;
@@ -170,6 +185,7 @@ const serializedBoards = JSON.stringify(boards).replaceAll('<', '\u003c');
     providerCount: number;
     consensusRank: number | null;
     ranks: Record<string, DirectoryRank>;
+    facts?: InstitutionFacts | null;
     _haystack?: string;
   }
 
@@ -378,15 +394,40 @@ const serializedBoards = JSON.stringify(boards).replaceAll('<', '\u003c');
       return row;
     };
 
+    const factsSummary = (facts: InstitutionFacts | null | undefined): string => {
+      if (!facts) return '';
+      const parts: string[] = [];
+      if (facts.foundedYear) parts.push(`Founded ${facts.foundedYear}`);
+      if (facts.city) parts.push(facts.city);
+      if (facts.hIndex) parts.push(`h-index ${resultNumber.format(facts.hIndex)}`);
+      return parts.join(' · ');
+    };
+
     const overallRow = (institution: DirectoryInstitution): HTMLTableRowElement => {
       const row = document.createElement('tr');
       const identityCell = document.createElement('td');
       const name = document.createElement('strong');
       name.className = 'institution-name';
-      name.textContent = institution.name;
+      if (institution.facts?.officialWebsite) {
+        const link = document.createElement('a');
+        link.href = institution.facts.officialWebsite;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer nofollow';
+        link.textContent = institution.name;
+        name.append(link);
+      } else {
+        name.textContent = institution.name;
+      }
       const country = document.createElement('small');
       country.textContent = institution.country;
       identityCell.append(name, country);
+      const facts = factsSummary(institution.facts);
+      if (facts) {
+        const factsLine = document.createElement('small');
+        factsLine.className = 'institution-facts';
+        factsLine.textContent = facts;
+        identityCell.append(factsLine);
+      }
       if (institution.consensusRank !== null) {
         const badge = document.createElement('span');
         badge.className = 'consensus-badge';
@@ -823,6 +864,20 @@ const serializedBoards = JSON.stringify(boards).replaceAll('<', '\u003c');
     display: block;
     color: var(--muted);
     font-size: 0.62rem;
+  }
+
+  tbody :global(.institution-facts) {
+    margin-top: 2px;
+  }
+
+  tbody :global(.institution-name a) {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  tbody :global(.institution-name a:hover),
+  tbody :global(.institution-name a:focus-visible) {
+    text-decoration: underline;
   }
 
   tbody :global(.subject-rank) {
