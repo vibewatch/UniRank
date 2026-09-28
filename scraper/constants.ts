@@ -23,6 +23,8 @@ export type Source = (typeof VALID_SOURCES)[number];
 
 export const LATEST_THE_YEAR = 2026;
 export const LATEST_QS_YEAR = 2026;
+export const LATEST_ARWU_YEAR = 2026;
+export const LATEST_NTU_YEAR = 2026;
 
 export const LATEST_YEARS: Record<Source, number> = {
   usnews: 2026,
@@ -31,11 +33,11 @@ export const LATEST_YEARS: Record<Source, number> = {
   leiden: 2025,
   openalex: 2025,
   cwur: 2026,
-  ntu: 2025,
-  arwu: 2025,
+  ntu: LATEST_NTU_YEAR,
+  arwu: LATEST_ARWU_YEAR,
   scimago: 2026,
   nature: 2026,
-  webometrics: 2025,
+  webometrics: 2026,
 };
 
 export const YEARLY_SOURCES: Set<string> = new Set(
@@ -316,9 +318,9 @@ export const SOURCE_ATTRIBUTIONS: Record<string, string> = {
   scimago: "SCImago Institutions Rankings (SIR), scimagoir.com",
   nature: "Nature Index, Springer Nature, nature.com/nature-index",
   webometrics:
-    "Aguillo, Isidro F. (2025). Ranking Web of Universities " +
-    "(webometrics.info), July 2025 edition. figshare. " +
-    "https://doi.org/10.6084/m9.figshare.29588921.v3",
+    "Aguillo, Isidro F. (2026). Ranking Web of Universities " +
+    "(webometrics.info), July 2026 edition. figshare. " +
+    "https://doi.org/10.6084/m9.figshare.33062150.v3",
 };
 
 export const REGIONS: Record<string, string[]> = {
@@ -543,11 +545,19 @@ export const LEIDEN_EDITIONS: Record<number, LeidenEdition> = {
   },
 };
 
+/**
+ * `complete` editions list every ranked institution with its world rank only;
+ * `top-per-country` editions (July 2026 onward) publish just the top 15
+ * institutions of each country, with country rank, country, region, and domain.
+ */
+export type WebometricsLayout = "complete" | "top-per-country";
+
 export interface WebometricsEdition {
   edition: string;
   article_id: number;
   file_id: number;
   doi: string;
+  layout: WebometricsLayout;
 }
 
 export const WEBOMETRICS_EDITIONS: Record<number, WebometricsEdition> = {
@@ -556,8 +566,23 @@ export const WEBOMETRICS_EDITIONS: Record<number, WebometricsEdition> = {
     article_id: 29588921,
     file_id: 57084614,
     doi: "10.6084/m9.figshare.29588921.v3",
+    layout: "complete",
+  },
+  2026: {
+    edition: "July",
+    article_id: 33062150,
+    file_id: 67397631,
+    doi: "10.6084/m9.figshare.33062150.v3",
+    layout: "top-per-country",
   },
 };
+
+/** Year-specific Figshare citation for a Webometrics edition. */
+export function webometricsAttribution(year: number): string | null {
+  const edition = WEBOMETRICS_EDITIONS[year];
+  if (!edition) return null;
+  return `Aguillo, Isidro F. (${year}). Ranking Web of Universities (webometrics.info), ${edition.edition} ${year} edition. figshare. https://doi.org/${edition.doi}`;
+}
 
 export const ROR_URL_RE = /^https:\/\/ror\.org\/[0-9a-z]+$/;
 
@@ -574,7 +599,7 @@ export const URLS = {
   readerProxy: "https://r.jina.ai/",
   openalexApi: "https://api.openalex.org",
   cwurBase: "https://cwur.org",
-  ntuBase: "http://nturanking.csti.tw",
+  ntuBase: "https://nturanking.csti.tw",
   arwuApi: "https://www.shanghairanking.com/api/pub/v1",
   scimago: "https://www.scimagoir.com/getdata.php",
   natureIndex: "https://www.nature.com/nature-index",

@@ -26,6 +26,8 @@ export interface Provider {
   subjectViews: number;
   license: string;
   attribution: string | null;
+  /** Retrieval date (YYYY-MM-DD) of the provider's newest archived file. */
+  latestRetrieved: string | null;
 }
 
 export interface ProviderRank {
@@ -217,14 +219,34 @@ export interface WebVisibilityEntry {
   webAdvantage: number;
 }
 
+export interface WebVisibilityLatestLeader extends WebVisibilityLeader {
+  /** World rank in the complete edition used for the cohort comparison. */
+  previousRank: number | null;
+}
+
+/** A newer Webometrics edition that only lists each country's top institutions. */
+export interface WebVisibilityLatestEdition {
+  year: number;
+  coverage: "top-per-country";
+  perCountry: number;
+  listed: number;
+  countries: number;
+  /** Every world rank from 1 through this value is present in the edition. */
+  exactThrough: number;
+  leaders: WebVisibilityLatestLeader[];
+}
+
 export interface WebVisibility {
+  /** Institutions in the latest complete edition. */
   total: number;
+  /** Year of the latest complete edition. */
   year: number;
   matched: number;
   cohortSize: number;
   leaders: WebVisibilityLeader[];
   webForward: WebVisibilityEntry[];
   webQuiet: WebVisibilityEntry[];
+  latestEdition: WebVisibilityLatestEdition | null;
 }
 
 export interface CountryAtlasMetric {
@@ -386,6 +408,44 @@ export interface ResearchProfiles {
   leaders: ResearchOutputLeader[];
 }
 
+export interface EditionMove {
+  name: string;
+  country: string;
+  countryCode: string | null;
+  rank: number | null;
+  rankDisplay: string | null;
+  previousRank: number | null;
+  previousDisplay: string | null;
+  /** Places gained (positive) or lost; null when either placement is banded or missing. */
+  change: number | null;
+}
+
+export interface EditionMoverBoard {
+  provider: string;
+  label: string;
+  color: string;
+  year: number;
+  previousYear: number;
+  retrievedAt: string | null;
+  /** Institutions inside the window in both editions with exact ranks. */
+  stayed: number;
+  unchanged: number;
+  meanAbsoluteMove: number | null;
+  top10: EditionMove[];
+  /** Largest gains and drops among institutions inside the window in both editions. */
+  risers: EditionMove[];
+  fallers: EditionMove[];
+  entrantCount: number;
+  exitCount: number;
+  entrants: EditionMove[];
+  exits: EditionMove[];
+}
+
+export interface EditionMovers {
+  window: number;
+  providers: EditionMoverBoard[];
+}
+
 export interface InsightsData {
   meta: ArchiveMeta;
   providers: Provider[];
@@ -402,6 +462,9 @@ export interface InsightsData {
   nationalRankings: NationalRankings;
   webVisibility: WebVisibility;
   qsSubjectOutperformers: QsSubjectOutperformer[];
+  /** QS edition that supplies subject tables (newer editions may be overall-only). */
+  qsSubjectYear: number;
+  editionMovers: EditionMovers;
   countryAtlas: CountryAtlas;
   openAlexGrowth: OpenAlexGrowth[];
   openAlexCountryMomentum: OpenAlexCountryMomentum;
@@ -418,8 +481,12 @@ export interface InsightsData {
   };
 }
 
-/** A single provider placement in the institution directory: [rank, displayRank, editionYear]. */
-export type DirectoryRank = [number, string, number];
+/**
+ * A single provider placement in the institution directory:
+ * [rank, displayRank, editionYear, previousEditionRank?]. The fourth element is
+ * present only when both editions give an exact (unbanded) rank.
+ */
+export type DirectoryRank = [number, string, number] | [number, string, number, number];
 
 export interface DirectoryInstitution {
   id: string;
@@ -438,6 +505,7 @@ export interface DirectoryProvider {
   color: string;
   kind: string;
   year: number | null;
+  previousYear: number | null;
 }
 
 export interface DirectoryMeta {

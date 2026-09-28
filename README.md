@@ -36,8 +36,16 @@ executed directly with Node's native TypeScript support (Node 22+/24).
 
 `src/` contains **University Signals**, a static Astro data-atlas generated from
 the committed ranking snapshots. It provides cross-provider consensus, historical
-trajectories, subject strengths, research geography, ranking-universe growth, and
-publication-scale versus citation-impact analysis.
+trajectories, subject strengths, research geography, ranking-universe growth,
+publication-scale versus citation-impact analysis, and edition movers that
+compare each publisher's latest overall table with its previous one.
+
+Edition years are read from the snapshots rather than hard-coded, so adding a
+new edition and running `npm run insights` updates the site's year labels,
+timelines, and movers. As of September 2026 the archive holds ARWU/GRAS 2026,
+NTU 2026, QS 2027 (subjects 2026), THE 2026, CWUR/SCImago/Nature Index 2026,
+U.S. News 2026, and Webometrics July 2026; THE 2027 and CWTS Leiden 2026 had
+not been published yet.
 
 ```bash
 # Install dependencies (site + scraper)
@@ -63,8 +71,10 @@ static site can expose every ranked institution and country without loading the
 full 157,000-row subject corpus on the first page view. The institution
 directory combines the ten providers whose snapshots carry a usable country
 field. Webometrics remains part of the broader archive and analytical insights,
-but is excluded from the directory because its snapshot has no country field
-for entity grouping.
+but is excluded from the directory because only its partial July 2026
+edition carries a country code, and the complete July 2025 edition has no
+country field for entity grouping. Directory placements record the previous
+edition's rank when both editions are exact, and the finder shows the move.
 
 Subject detail files use a versioned compact tuple schema. `countries` stores
 `[countryCode, countryName, count]`, `rankDisplays` stores only non-default
@@ -232,11 +242,11 @@ it contains source-site observations alongside CC0 ROR and OpenAlex data.
 | Leiden Open Edition | `leiden` | 2023-2025 overall and five fields | Official Zenodo files, CC0 |
 | OpenAlex | `openalex` | Derived annual research-output ranking | Official API, CC0 |
 | CWUR | `cwur` | 2012-2026 overall | Public HTML; provider-controlled; included under separate permission |
-| NTU Ranking | `ntu` | 2007-2025 overall, fields, and subjects | Public JSON; provider-controlled; included under separate permission |
-| ShanghaiRanking | `arwu` | ARWU 2003-2017 and 2019-2025; GRAS 2017-2025 | Public JSON; provider-controlled; included under separate permission |
+| NTU Ranking | `ntu` | 2007-2026 overall, fields, and subjects | Public JSON; provider-controlled; included under separate permission |
+| ShanghaiRanking | `arwu` | ARWU 2003-2017 and 2019-2026; GRAS 2017-2026 | Public JSON; provider-controlled; included under separate permission |
 | SCImago SIR | `scimago` | 2009-2026 overall; 19 subject areas 2021-2026 | Public download with attribution; included under separate permission; direct access is Cloudflare-blocked |
 | Nature Index | `nature` | 2016-2026 overall, academic, and eight discipline views | Annual institution tables; CC BY-NC-SA 4.0 numerical data; included under separate permission; direct access returns HTTP 406 |
-| Webometrics | `webometrics` | July 2025 overall, 32,053 institutions | Official Figshare PDF, CC BY 4.0 |
+| Webometrics | `webometrics` | July 2025 overall (complete, 32,053 institutions); July 2026 overall (top 15 per country, 2,272 institutions) | Official Figshare PDF, CC BY 4.0 |
 
 Leiden downloads each large edition once per process, streams it through a
 temporary file, and applies the ranking site's defaults: latest publication
@@ -253,10 +263,16 @@ current institution snapshot and annual publication counts; they are not
 archived league-table editions.
 
 Webometrics' July 2025 PDF contains institution name, world rank, and an
-optional ROR identifier, but no country column. Country filtering is therefore
-unavailable. The January 2026 Figshare paper contains methodology and country
-aggregates rather than institution-level ranking pages, so July 2025 remains the
-latest machine-extractable open edition.
+optional ROR identifier, but no country column. The July 2026 PDF
+(doi:10.6084/m9.figshare.33062150.v3) changes layout: it adds country rank,
+country TLD, region, and web domain, but lists only each country's top 15
+institutions, so world ranks after #21 have gaps and some institutions the
+publisher flags for web-mirror abuse are omitted. The adapter records this as
+`edition_coverage=top-per-country` (`complete` otherwise), keeps multi-country
+and `int` codes in `country_tld`, and validates rank order per country rather
+than global contiguity. Country filtering at scrape time remains unavailable.
+The insights generator keeps the web-versus-academic cohort comparison on the
+latest complete edition and reports only the newer edition's exact head.
 
 ShanghaiRanking's current public API metadata omits the 2018 ARWU edition. The
 official 2018 page renders only its first 30 rows and its bulk endpoint returns
@@ -315,10 +331,10 @@ node scraper/cli.ts \
   --website openalex --worldwide --overall-only \
   --year 2025 --output-dir data/open
 
-# Webometrics July 2025
+# Webometrics July edition (2025 complete; 2026 top 15 per country)
 node scraper/cli.ts \
   --website webometrics --worldwide --overall-only \
-  --year 2025 --output-dir data/open
+  --year 2026 --output-dir data/open
 
 # Provider-controlled snapshots: collect only with appropriate permission
 node scraper/cli.ts \
@@ -327,11 +343,11 @@ node scraper/cli.ts \
 
 node scraper/cli.ts \
   --website ntu --worldwide --all-subjects --include-overall \
-  --year 2025 --output-dir data/restricted
+  --year 2026 --output-dir data/restricted
 
 node scraper/cli.ts \
   --website arwu --worldwide --all-subjects --include-overall \
-  --year 2025 --output-dir data/restricted
+  --year 2026 --output-dir data/restricted
 
 node scraper/cli.ts \
   --website scimago --worldwide --all-subjects --include-overall \
@@ -431,13 +447,13 @@ node scraper/cli.ts \
 # NTU automatically skips fields and subjects before their launch years
 node scraper/cli.ts \
   --website ntu --worldwide --all-subjects --include-overall \
-  --start-year 2007 --end-year 2025 \
+  --start-year 2007 --end-year 2026 \
   --output-dir data/restricted
 
 # ARWU overall plus all available GRAS subjects
 node scraper/cli.ts \
   --website arwu --worldwide --all-subjects --include-overall \
-  --start-year 2003 --end-year 2025 \
+  --start-year 2003 --end-year 2026 \
   --output-dir data/restricted
 
 # SCImago overall history plus subject areas; the adapter maps edition years to
@@ -493,8 +509,9 @@ The repository's existing snapshots contain:
 | Historical THE and QS | 167,259 |
 | Leiden Open Edition 2023-2025 | 27,825 |
 | Derived OpenAlex 2016-2025 | 96,232 |
-| Webometrics July 2025 | 32,053 |
-| **Additional open-data total** | **156,110** |
+| Webometrics July 2025 (complete) | 32,053 |
+| Webometrics July 2026 (top 15 per country) | 2,272 |
+| **Additional open-data total** | **158,382** |
 
 The validated provider-controlled collection committed in `data/restricted/`
 under separate permission contains:
@@ -502,11 +519,11 @@ under separate permission contains:
 | Dataset | Coverage | Records |
 | --- | --- | ---: |
 | CWUR | Overall, 2012-2026 | 21,200 |
-| NTU | Overall, fields, and available subjects, 2007-2025 | 157,371 |
-| ARWU/GRAS | ARWU except 2018; available GRAS subjects, 2003-2025 | 181,898 |
+| NTU | Overall, fields, and available subjects, 2007-2026 | 173,220 |
+| ARWU/GRAS | ARWU except 2018; available GRAS subjects, 2003-2026 | 202,548 |
 | SCImago | Overall 2009-2026; 19 areas 2021-2026 | 355,225 |
 | Nature Index | All-sector and academic tables with available disciplines, 2016-2026 | 43,761 |
-| **Approved provider-controlled total** | | **759,455** |
+| **Approved provider-controlled total** | | **795,954** |
 
 ## Node / TypeScript API
 

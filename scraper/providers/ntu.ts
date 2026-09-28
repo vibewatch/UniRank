@@ -1,5 +1,5 @@
 /** NTU provider scraper. */
-import { HEADERS, NTU_SCOPE_CODES, URLS } from "../constants.ts";
+import { HEADERS, LATEST_NTU_YEAR, NTU_SCOPE_CODES, URLS } from "../constants.ts";
 import { countryMatches } from "../country.ts";
 import { ScraperClient, listField, request } from "../http.ts";
 import { ScraperError } from "../types.ts";
@@ -10,7 +10,7 @@ const RENAME: Record<string, string> = { univ__OrgName_EN: "name", univ__Country
 
 /** Scrapes one NTU overall, field, or subject ranking. */
 export async function scrapeNtu(subject: string, opts: ProviderOptions = {}): Promise<RankRecord[]> {
-  const options = optionDefaults({ ...opts, year: opts.year ?? 2025 });
+  const options = optionDefaults({ ...opts, year: opts.year ?? LATEST_NTU_YEAR });
   let url: string;
   if (subject) {
     const scope = NTU_SCOPE_CODES[subject];

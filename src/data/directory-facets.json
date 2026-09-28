@@ -1,8 +1,8 @@
 {
   "meta": {
-    "count": 13031,
+    "count": 13020,
     "providerCount": 10,
-    "consensusCount": 1140,
+    "consensusCount": 1133,
     "note": "Latest overall or broad edition per provider; institutions merged by normalized name and country."
   },
   "providers": [
@@ -11,70 +11,80 @@
       "label": "U.S. News",
       "color": "#ff6b4a",
       "kind": "Publisher ranking",
-      "year": 2026
+      "year": 2026,
+      "previousYear": null
     },
     {
       "id": "times",
       "label": "Times Higher Education",
       "color": "#7c6cff",
       "kind": "Publisher ranking",
-      "year": 2026
+      "year": 2026,
+      "previousYear": 2025
     },
     {
       "id": "qs",
       "label": "QS",
       "color": "#ef4f91",
       "kind": "Publisher ranking",
-      "year": 2027
+      "year": 2027,
+      "previousYear": 2026
     },
     {
       "id": "cwur",
       "label": "CWUR",
       "color": "#e5a83b",
       "kind": "Publisher ranking",
-      "year": 2026
+      "year": 2026,
+      "previousYear": 2025
     },
     {
       "id": "ntu",
       "label": "NTU Ranking",
       "color": "#4d9d57",
       "kind": "Bibliometric ranking",
-      "year": 2025
+      "year": 2026,
+      "previousYear": 2025
     },
     {
       "id": "arwu",
       "label": "ShanghaiRanking",
       "color": "#d64c5b",
       "kind": "Publisher ranking",
-      "year": 2025
+      "year": 2026,
+      "previousYear": 2025
     },
     {
       "id": "scimago",
       "label": "SCImago SIR",
       "color": "#4c74c9",
       "kind": "Bibliometric ranking",
-      "year": 2026
+      "year": 2026,
+      "previousYear": 2025
     },
     {
       "id": "nature",
       "label": "Nature Index",
       "color": "#18a47d",
       "kind": "Research-output ranking",
-      "year": 2026
+      "year": 2026,
+      "previousYear": 2025
     },
     {
       "id": "openalex",
       "label": "OpenAlex",
       "color": "#1689ca",
       "kind": "Derived research output",
-      "year": 2025
+      "year": 2025,
+      "previousYear": 2024
     },
     {
       "id": "leiden",
       "label": "Leiden Open Edition",
       "color": "#27b8a2",
       "kind": "Bibliometric ranking",
-      "year": 2025
+      "year": 2025,
+      "previousYear": 2024
     }
   ],
   "countries": [

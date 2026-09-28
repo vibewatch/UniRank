@@ -116,6 +116,23 @@ test("finder is subject-first without redundant ranking controls", () => {
   assert.doesNotMatch(page, /Ranked by|Best coverage|Most rankings/);
 });
 
+test("edition years come from the data instead of hard-coded labels", () => {
+  const trends = readFileSync("src/pages/trends.astro", "utf8");
+  const layout = readFileSync("src/layouts/BaseLayout.astro", "utf8");
+  const timeline = readFileSync("src/components/ProviderTimeline.astro", "utf8");
+  const concentration = readFileSync("src/components/ConcentrationTrend.astro", "utf8");
+
+  // The latest-editions movers section is wired into Trends and linked from the home strip.
+  assert.match(trends, /<EditionMovers movers=\{insights\.editionMovers\}/);
+  assert.match(trends, /id="latest-editions"/);
+  assert.match(readFileSync("src/pages/index.astro", "utf8"), /href="\/trends\/#latest-editions"/);
+
+  assert.doesNotMatch(layout, /Signals \/ \d{4}/);
+  assert.doesNotMatch(timeline, /start = \d{4}|end = \d{4}|<span>20\d\d<\/span>/);
+  assert.doesNotMatch(trends, /2003 → 2025|Leiden 2025|edition\.year === 2003/);
+  assert.doesNotMatch(concentration, /2003 to 2025/);
+});
+
 test("Google Analytics is validated, production-only, and configured by the deploy workflow", () => {
   const layout = readFileSync("src/layouts/BaseLayout.astro", "utf8");
   const workflow = readFileSync(".github/workflows/deploy-pages.yml", "utf8");

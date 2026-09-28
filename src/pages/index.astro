@@ -19,6 +19,17 @@ subjectLeaderCountries.forEach((country) => {
 });
 const dominantSubjectCountry = [...leaderCountryCount.entries()]
   .sort((a, b) => b[1] - a[1])[0];
+// Providers refreshed alongside the newest archive retrieval.
+const FRESH_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
+const newestRetrieval = Date.parse(insights.meta.latestRetrieval);
+const freshProviders = insights.providers.filter(
+  (provider) => provider.latestRetrieved && newestRetrieval - Date.parse(provider.latestRetrieved) <= FRESH_WINDOW_MS,
+);
+const leaderFor = (id: string) =>
+  insights.editionMovers.providers.find((board) => board.provider === id)?.top10[0]?.name ??
+  (id === 'webometrics' ? insights.webVisibility.latestEdition?.leaders[0]?.name : undefined);
+const retrievalDate = new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' })
+  .format(new Date(insights.meta.latestRetrieval));
 ---
 
 <BaseLayout
@@ -112,6 +123,24 @@ const dominantSubjectCountry = [...leaderCountryCount.entries()]
           index="02"
         />
       </div>
+      {freshProviders.length > 0 && (
+        <aside class="fresh-strip surface" aria-label="Newest editions in the archive">
+          <span class="mono">NEW IN THE ARCHIVE · {retrievalDate.toUpperCase()}</span>
+          <ul>
+            {freshProviders.map((provider) => {
+              const leader = leaderFor(provider.id);
+              return (
+                <li style={`--provider:${provider.color}`}>
+                  <i></i>
+                  <strong>{provider.label} {provider.lastYear}</strong>
+                  {leader && <small>#1 {leader}</small>}
+                </li>
+              );
+            })}
+          </ul>
+          <a href="/trends/#latest-editions">See what moved <span aria-hidden="true">→</span></a>
+        </aside>
+      )}
     </div>
   </section>
 
@@ -438,6 +467,55 @@ const dominantSubjectCountry = [...leaderCountryCount.entries()]
 
   .start-grid {
     margin-top: 8px;
+  }
+
+  .fresh-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 24px;
+    margin-top: 16px;
+    padding: 16px 20px;
+  }
+
+  .fresh-strip > span {
+    color: var(--muted);
+    font-size: 0.6rem;
+  }
+
+  .fresh-strip ul {
+    display: flex;
+    flex: 1;
+    flex-wrap: wrap;
+    gap: 10px 22px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .fresh-strip li {
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
+    font-size: 0.78rem;
+  }
+
+  .fresh-strip li i {
+    width: 8px;
+    height: 8px;
+    flex: none;
+    border-radius: 50%;
+    background: var(--provider);
+  }
+
+  .fresh-strip li small {
+    color: var(--muted);
+    font-size: 0.66rem;
+  }
+
+  .fresh-strip a {
+    font-size: 0.74rem;
+    font-weight: 700;
   }
 
   .start-card {

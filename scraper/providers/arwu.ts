@@ -1,5 +1,5 @@
 /** ShanghaiRanking ARWU/GRAS provider scraper. */
-import { ARWU_SUBJECT_CODES, HEADERS, URLS } from "../constants.ts";
+import { ARWU_SUBJECT_CODES, HEADERS, LATEST_ARWU_YEAR, URLS } from "../constants.ts";
 import { countryMatches } from "../country.ts";
 import { ScraperClient, listField, requestJson } from "../http.ts";
 import { columnSlug } from "../text.ts";
@@ -28,15 +28,15 @@ function rankingApiRecords(payload: Record<string, unknown>, provider: string): 
 
 /** Scrapes one ARWU overall or GRAS subject ranking. */
 export async function scrapeArwu(subject: string, opts: ProviderOptions = {}): Promise<RankRecord[]> {
-  const options = optionDefaults({ ...opts, year: opts.year ?? 2025 });
+  const options = optionDefaults({ ...opts, year: opts.year ?? LATEST_ARWU_YEAR });
   let url: string; let params: Record<string, string | number>; let provider: string;
   if (subject) {
-    if (!(2017 <= options.year && options.year <= 2025)) throw new Error("GRAS subject editions are available from 2017 through 2025");
+    if (!(2017 <= options.year && options.year <= LATEST_ARWU_YEAR)) throw new Error(`GRAS subject editions are available from 2017 through ${LATEST_ARWU_YEAR}`);
     const subjectCode = ARWU_SUBJECT_CODES[subject];
     if (!subjectCode) throw new Error(`Unsupported ARWU subject: ${subject}`);
     url = `${URLS.arwuApi}/gras/rank`; params = { version: options.year, subj_code: subjectCode }; provider = "ShanghaiRanking GRAS";
   } else {
-    if (!(2003 <= options.year && options.year <= 2025)) throw new Error("ARWU editions are available from 2003 through 2025");
+    if (!(2003 <= options.year && options.year <= LATEST_ARWU_YEAR)) throw new Error(`ARWU editions are available from 2003 through ${LATEST_ARWU_YEAR}`);
     if (options.year === 2018) throw new ScraperError("ShanghaiRanking's public API omits the 2018 ARWU edition; the official page exposes only its first 30 rows without a working bulk endpoint");
     url = `${URLS.arwuApi}/arwu/rank`; params = { version: options.year }; provider = "ShanghaiRanking ARWU";
   }

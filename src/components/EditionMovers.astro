@@ -1,0 +1,321 @@
+---
+import type { EditionMove, EditionMovers } from '../data/schema';
+import { decimal, number } from '../lib/format';
+
+interface Props {
+  movers: EditionMovers;
+  /** ISO timestamp of the newest archived file; boards retrieved close to it are flagged as new. */
+  latestRetrieval: string;
+}
+
+const { movers, latestRetrieval } = Astro.props;
+const FRESH_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
+const newest = Date.parse(latestRetrieval);
+const isFresh = (retrievedAt: string | null) =>
+  retrievedAt !== null && Number.isFinite(newest) && newest - Date.parse(retrievedAt) <= FRESH_WINDOW_MS;
+const retrievedLabel = (retrievedAt: string | null) => (retrievedAt ? retrievedAt.slice(0, 10) : 'unknown date');
+
+// Tied displays already carry a marker ("=42"), so only plain ranks get a "#".
+const place = (display: string | null) => (display === null ? '—' : display.startsWith('=') ? display : `#${display}`);
+const moveLabel = (move: EditionMove) => {
+  if (move.change === null) return move.previousDisplay === null ? 'new' : '';
+  if (move.change === 0) return '=';
+  return move.change > 0 ? `▲${number.format(move.change)}` : `▼${number.format(-move.change)}`;
+};
+const moveClass = (move: EditionMove) =>
+  move.change === null ? 'flat' : move.change > 0 ? 'up' : move.change < 0 ? 'down' : 'flat';
+const moveTitle = (move: EditionMove, previousYear: number, year: number) =>
+  `${move.name}: ${place(move.previousDisplay)} in ${previousYear}, ${move.rankDisplay === null ? 'not listed' : place(move.rankDisplay)} in ${year}`;
+---
+
+<div class="movers-grid">
+  {movers.providers.map((board) => {
+    const lists = [
+      { title: 'Biggest risers', items: board.risers.slice(0, 3), empty: 'No exact-rank gains inside the window.' },
+      { title: 'Biggest fallers', items: board.fallers.slice(0, 3), empty: 'No exact-rank drops inside the window.' },
+      { title: `New to the top ${movers.window}`, items: board.entrants.slice(0, 3), empty: 'The same institutions as last edition.' },
+    ];
+    return (
+      <article class="mover-card surface" style={`--provider:${board.color}`}>
+        <header>
+          <div>
+            <strong>{board.label}</strong>
+            <span class="mono">{board.previousYear} → {board.year}</span>
+          </div>
+          {isFresh(board.retrievedAt) && <b class="fresh mono">New edition</b>}
+        </header>
+        <dl class="mover-stats">
+          <div>
+            <dt>Mean move</dt>
+            <dd>{board.meanAbsoluteMove === null ? '—' : decimal.format(board.meanAbsoluteMove)}<small> places</small></dd>
+          </div>
+          <div>
+            <dt>Unchanged</dt>
+            <dd>{number.format(board.unchanged)}<small> of {number.format(board.stayed)}</small></dd>
+          </div>
+          <div>
+            <dt>Entered / left</dt>
+            <dd>{number.format(board.entrantCount)}<small> / {number.format(board.exitCount)}</small></dd>
+          </div>
+        </dl>
+        {lists.map((list) => (
+          <section class="mover-list">
+            <h4 class="mono">{list.title}</h4>
+            {list.items.length ? (
+              <ol>
+                {list.items.map((move) => (
+                  <li title={moveTitle(move, board.previousYear, board.year)}>
+                    <span class="identity">
+                      <span class="name">{move.name}</span>
+                      <span class="meta">{move.country}</span>
+                    </span>
+                    <span class="places mono">{place(move.previousDisplay)} → {place(move.rankDisplay)}</span>
+                    <span class={`move mono ${moveClass(move)}`}>{moveLabel(move)}</span>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p class="empty">{list.empty}</p>
+            )}
+          </section>
+        ))}
+        <details>
+          <summary>Top 10 and every window change</summary>
+          <h4 class="mono">Top 10, {board.year}</h4>
+          <ol class="compact">
+            {board.top10.map((move) => (
+              <li title={moveTitle(move, board.previousYear, board.year)}>
+                <span class="places mono">{place(move.rankDisplay)}</span>
+                <span class="name">{move.name}</span>
+                <span class={`move mono ${moveClass(move)}`}>{moveLabel(move)}</span>
+              </li>
+            ))}
+          </ol>
+          {board.entrants.length > 0 && (
+            <>
+              <h4 class="mono">Entered the top {movers.window}</h4>
+              <ol class="compact">
+                {board.entrants.map((move) => (
+                  <li title={moveTitle(move, board.previousYear, board.year)}>
+                    <span class="places mono">{place(move.rankDisplay)}</span>
+                    <span class="name">{move.name}</span>
+                    <span class="move mono flat">was {move.previousDisplay === null ? 'unlisted' : place(move.previousDisplay)}</span>
+                  </li>
+                ))}
+              </ol>
+            </>
+          )}
+          {board.exits.length > 0 && (
+            <>
+              <h4 class="mono">Left the top {movers.window}</h4>
+              <ol class="compact">
+                {board.exits.map((move) => (
+                  <li title={moveTitle(move, board.previousYear, board.year)}>
+                    <span class="places mono">{place(move.previousDisplay)}</span>
+                    <span class="name">{move.name}</span>
+                    <span class="move mono flat">now {move.rankDisplay === null ? 'unlisted' : place(move.rankDisplay)}</span>
+                  </li>
+                ))}
+              </ol>
+            </>
+          )}
+          <p class="retrieved">Archived {retrievedLabel(board.retrievedAt)}.</p>
+        </details>
+      </article>
+    );
+  })}
+</div>
+<p class="fine-print">
+  Each card compares a publisher’s latest overall edition with the previous one it
+  published, matching institutions by normalized name and country. Moves are only
+  computed when both placements are exact; banded placements (such as 101–150) still
+  count toward entries and exits, which are listed separately from risers and fallers. “Unlisted” means no matching row in that edition—often
+  a rename, merger, or an institution that did not submit data—so treat it as a prompt to
+  check, not as a verdict.
+</p>
+
+<style>
+  .movers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+  }
+
+  .mover-card {
+    display: grid;
+    align-content: start;
+    gap: 16px;
+    padding: 20px;
+    border-top: 4px solid var(--provider);
+  }
+
+  .mover-card header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .mover-card header div {
+    display: grid;
+    gap: 2px;
+  }
+
+  .mover-card header strong {
+    font-size: 0.95rem;
+  }
+
+  .mover-card header span {
+    color: var(--muted);
+    font-size: 0.66rem;
+  }
+
+  .fresh {
+    padding: 3px 8px;
+    border-radius: 999px;
+    color: white;
+    background: var(--teal-dark);
+    font-size: 0.56rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .mover-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin: 0;
+    padding: 12px 0;
+    border-block: 1px solid var(--line);
+  }
+
+  .mover-stats div {
+    display: grid;
+    gap: 2px;
+  }
+
+  .mover-stats dt {
+    color: var(--muted);
+    font-size: 0.57rem;
+  }
+
+  .mover-stats dd {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 750;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .mover-stats small {
+    color: var(--muted);
+    font-size: 0.6rem;
+    font-weight: 500;
+  }
+
+  .mover-list,
+  details {
+    display: grid;
+    gap: 8px;
+  }
+
+  h4 {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  ol {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .mover-list li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto 3.4rem;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.76rem;
+  }
+
+  .identity {
+    display: grid;
+    min-width: 0;
+  }
+
+  .name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .meta,
+  .places,
+  .empty,
+  .retrieved {
+    color: var(--muted);
+    font-size: 0.64rem;
+  }
+
+  .empty,
+  .retrieved {
+    margin: 0;
+  }
+
+  .move {
+    font-size: 0.66rem;
+    font-weight: 700;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .move.up {
+    color: var(--teal-dark);
+  }
+
+  .move.down {
+    color: #b64738;
+  }
+
+  .move.flat {
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  details {
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+  }
+
+  summary {
+    cursor: pointer;
+    font-size: 0.72rem;
+    font-weight: 650;
+  }
+
+  details[open] summary {
+    margin-bottom: 6px;
+  }
+
+  details h4 {
+    margin-top: 8px;
+  }
+
+  .compact li {
+    display: grid;
+    grid-template-columns: 3rem minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 0.72rem;
+  }
+
+  .fine-print {
+    margin: 16px 2px 0;
+  }
+</style>

@@ -22,9 +22,9 @@ const subjectFilePath = (url: string): string =>
 
 test("archive inventory and consensus invariants", () => {
   const meta = payload.meta;
-  assert.equal(meta.archiveRows, 1_154_280);
-  assert.equal(meta.globalRows, 1_148_637);
-  assert.equal(meta.csvFiles, 129);
+  assert.equal(meta.archiveRows, 1_193_051);
+  assert.equal(meta.globalRows, 1_187_408);
+  assert.equal(meta.csvFiles, 132);
   assert.equal(meta.providers, 11);
   assert.equal(meta.countries, 194);
   assert.equal(meta.failedScopes, 6);
@@ -44,7 +44,8 @@ test("archive inventory and consensus invariants", () => {
   );
 
   const rankOf = (name: string): number => consensus.find((row) => row.name === name)!.consensusRank;
-  assert.ok(rankOf("Yale University") < rankOf("University of Pennsylvania"));
+  // NTU 2026 lifted Penn from #12 to #8, moving it just ahead of Yale.
+  assert.ok(rankOf("University of Pennsylvania") < rankOf("Yale University"));
 
   const byCanonical = (canonical: string) => consensus.find((row) => row.canonical === canonical)!;
   assert.equal(byCanonical("swiss federal institute of technology lausanne").providerCount, 6);
@@ -82,23 +83,24 @@ test("analytical outputs preserve publisher semantics", () => {
   );
   assert.deepEqual(
     payload.arwuConcentration.map((row: Record<string, any>) => row.countryHhi),
-    [0.348, 0.174],
+    [0.348, 0.181],
   );
+  assert.deepEqual(payload.arwuConcentration.map((row: Record<string, any>) => row.year), [2003, 2026]);
 
   const arwuTrend = payload.arwuConcentrationTrend;
   assert.equal(arwuTrend.firstYear, 2003);
-  assert.equal(arwuTrend.lastYear, 2025);
-  assert.equal(arwuTrend.points.length, 22);
+  assert.equal(arwuTrend.lastYear, 2026);
+  assert.equal(arwuTrend.points.length, 23);
   assert.ok(!arwuTrend.points.some((point: Record<string, any>) => point.year === 2018));
   assert.deepEqual(
     [arwuTrend.points[0].countryHhi, arwuTrend.points.at(-1).countryHhi],
-    [0.348, 0.174],
+    [0.348, 0.181],
   );
   const trendUs = arwuTrend.countries.find((country: Record<string, any>) => country.countryCode === 'US');
   const trendCn = arwuTrend.countries.find((country: Record<string, any>) => country.countryCode === 'CN');
   assert.ok(trendUs.points.at(-1).share < trendUs.points[0].share);
   assert.ok(trendCn.points.at(-1).share > trendCn.points[0].share);
-  assert.equal(arwuTrend.countries.every((country: Record<string, any>) => country.points.length === 22), true);
+  assert.equal(arwuTrend.countries.every((country: Record<string, any>) => country.points.length === 23), true);
 
   const subjectBoards = payload.subjectBoards as Array<Record<string, any>>;
   const subjectProviders = new Set(subjectBoards.map((board) => board.provider));
@@ -124,7 +126,7 @@ test("analytical outputs preserve publisher semantics", () => {
   assert.equal(subjectIndex.length, subjectBoards.length);
   assert.equal(
     subjectIndex.reduce((total, entry) => total + entry.institutions, 0),
-    157_369,
+    157_438,
   );
   assert.equal(
     subjectIndex.reduce((total, entry) => total + entry.institutions, 0),
@@ -164,7 +166,7 @@ test("analytical outputs preserve publisher semantics", () => {
       (institution) => institution.countryCode === null,
     ).length;
   }
-  assert.equal(decodedInstitutions, 157_369);
+  assert.equal(decodedInstitutions, 157_438);
   assert.equal(uncodedInstitutions, 83);
   assert.ok(subjectBytes < 7_500_000, `subject detail payloads too large: ${subjectBytes}`);
 
@@ -272,6 +274,48 @@ test("analytical outputs preserve publisher semantics", () => {
     [...web.webQuiet.map((entry: Record<string, any>) => entry.webAdvantage)].sort((a, b) => a - b),
   );
   assert.ok(web.webForward[0].webAdvantage > 0 && web.webQuiet[0].webAdvantage < 0);
+
+  // The July 2026 edition is capped at 15 per country, so the cohort stays on
+  // the complete 2025 table and the newer edition contributes only its exact head.
+  const latestWeb = web.latestEdition as Record<string, any>;
+  assert.equal(latestWeb.year, 2026);
+  assert.equal(latestWeb.coverage, "top-per-country");
+  assert.equal(latestWeb.listed, 2272);
+  assert.equal(latestWeb.exactThrough, 21);
+  assert.equal(latestWeb.leaders.length, 12);
+  assert.deepEqual(
+    latestWeb.leaders.slice(0, 3).map((leader: Record<string, any>) => [leader.rank, leader.name, leader.previousRank]),
+    [[1, "Harvard University", 1], [2, "Stanford University", 2], [3, "Massachusetts Institute of Technology", 3]],
+  );
+  assert.ok(latestWeb.leaders.every((leader: Record<string, any>) => leader.rank <= latestWeb.exactThrough));
+});
+
+test("edition movers compare each provider's latest two overall editions", () => {
+  const movers = payload.editionMovers as Record<string, any>;
+  assert.equal(movers.window, 100);
+  const boards = movers.providers as Array<Record<string, any>>;
+  const byProvider = new Map(boards.map((board) => [board.provider, board]));
+  assert.deepEqual([...byProvider.keys()].sort(), ["arwu", "cwur", "nature", "ntu", "qs", "scimago", "times"]);
+  // ARWU 2018 published no overall table, but the latest pair is 2025 → 2026.
+  assert.deepEqual([byProvider.get("arwu")!.previousYear, byProvider.get("arwu")!.year], [2025, 2026]);
+  assert.deepEqual([byProvider.get("ntu")!.previousYear, byProvider.get("ntu")!.year], [2025, 2026]);
+  assert.deepEqual([byProvider.get("qs")!.previousYear, byProvider.get("qs")!.year], [2026, 2027]);
+
+  for (const board of boards) {
+    assert.equal(board.top10.length, 10, board.provider);
+    assert.ok(board.risers.every((move: Record<string, any>) => move.change > 0 && move.rank <= 100 && move.previousRank <= 100), board.provider);
+    assert.ok(board.fallers.every((move: Record<string, any>) => move.change < 0 && move.rank <= 100 && move.previousRank <= 100), board.provider);
+    assert.ok(board.entrants.every((move: Record<string, any>) => move.rank <= 100 && (move.previousRank === null || move.previousRank > 100)), board.provider);
+    assert.ok(board.exits.every((move: Record<string, any>) => move.previousRank <= 100 && (move.rank === null || move.rank > 100)), board.provider);
+    assert.ok(board.unchanged <= board.stayed && board.stayed <= 100, board.provider);
+    assert.ok(!board.entrants.some((move: Record<string, any>) => /\*\s*$/.test(move.name)), board.provider);
+  }
+
+  // Renames resolve through NAME_ALIASES instead of surfacing as a false exit + entry.
+  const arwu = byProvider.get("arwu")!;
+  assert.ok(!arwu.entrants.some((move: Record<string, any>) => move.name === "LMU Munich"));
+  assert.ok(!arwu.exits.some((move: Record<string, any>) => move.name === "University of Munich"));
+  assert.ok(!byProvider.get("qs")!.exits.some((move: Record<string, any>) => /Tokyo Institute of Technology/.test(move.name)));
 });
 
 test("research metrics match fixed cohorts", () => {
@@ -327,7 +371,7 @@ test("institution directory spans every provider and stays query-ready", () => {
   assert.ok(institutions.length > 10_000);
   assert.equal(directory.meta.count, institutions.length);
   assert.equal(directory.meta.providerCount, 10);
-  assert.equal(directory.meta.consensusCount, 1140);
+  assert.equal(directory.meta.consensusCount, 1133);
 
   // Ten provider snapshots feed the directory (webometrics is excluded — no country).
   const providerIds = directory.providers.map((provider: Record<string, any>) => provider.id);
@@ -354,6 +398,22 @@ test("institution directory spans every provider and stays query-ready", () => {
     institutions.length,
     new Set(institutions.map((institution) => institution.id)).size,
   );
+
+  // Rank tuples are [rank, display, year] with an optional exact previous-edition rank.
+  const providerYears = new Map(directory.providers.map((provider: Record<string, any>) => [provider.id, provider]));
+  assert.equal((providerYears.get("arwu") as Record<string, any>).previousYear, 2025);
+  assert.ok(
+    institutions.every((institution) =>
+      Object.entries(institution.ranks).every(([provider, rank]: [string, any]) =>
+        (rank.length === 3 || (rank.length === 4 && Number.isInteger(rank[3]) && /^=?\d+=?$/.test(rank[1]))) &&
+        rank[2] === (providerYears.get(provider) as Record<string, any>).year,
+      ),
+    ),
+  );
+  // ARWU's 2025 "University of Munich" and 2026 "LMU Munich" resolve to one row.
+  const lmu = institutions.find((institution) => institution.ranks.arwu?.[1] === "49" && institution.countryCode === "DE")!;
+  assert.deepEqual(lmu.ranks.arwu, [49, "49", 2026, 42]);
+  assert.ok(lmu.consensusRank !== null);
 
   // The consensus is a strict subset: an institution present in the finder covers
   // the "can't find it in the explorer" gap (e.g. China University of Mining & Technology).

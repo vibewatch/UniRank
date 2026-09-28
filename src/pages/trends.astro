@@ -2,6 +2,7 @@
 import BarChart from '../components/BarChart.astro';
 import ConcentrationTrend from '../components/ConcentrationTrend.astro';
 import CountryShift from '../components/CountryShift.astro';
+import EditionMovers from '../components/EditionMovers.astro';
 import MomentumChart from '../components/MomentumChart.astro';
 import OutputGrowth from '../components/OutputGrowth.astro';
 import ResearchOutputLeaders from '../components/ResearchOutputLeaders.astro';
@@ -24,6 +25,8 @@ const theUniverse = insights.rankingUniverse.find((item) => item.provider === 't
 const theFirst = theUniverse?.points[0];
 const theLatest = theUniverse?.points.at(-1);
 const theExpansion = theFirst && theLatest ? theLatest.size / theFirst.size : 0;
+const moverWindow = insights.editionMovers.window;
+const web = insights.webVisibility;
 ---
 
 <BaseLayout
@@ -50,6 +53,17 @@ const theExpansion = theFirst && theLatest ? theLatest.size / theFirst.size : 0;
           latest edition.
         </p>
       </aside>
+    </div>
+  </section>
+
+  <section class="section" id="latest-editions">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="Latest editions"
+        title="What moved since each publisher’s previous table."
+        description={`Edition-over-edition change inside each provider’s top ${moverWindow}: who climbed, who slipped, and who crossed the line. Every comparison stays within one publisher’s method.`}
+      />
+      <EditionMovers movers={insights.editionMovers} latestRetrieval={insights.meta.latestRetrieval} />
     </div>
   </section>
 
@@ -185,18 +199,18 @@ const theExpansion = theFirst && theLatest ? theLatest.size / theFirst.size : 0;
                 detail: `${decimal.format(country.share)}%`,
               }))}
               max={60}
-              color={edition.year === 2003 ? 'var(--violet)' : 'var(--coral)'}
+              color={edition === arwuEarly ? 'var(--violet)' : 'var(--coral)'}
             />
           </article>
         ))}
         <div class="arwu-story">
-          <span class="mono">2003 → 2025</span>
+          <span class="mono">{arwuEarly.year} → {arwuLatest.year}</span>
           <strong>{arwuCountry(arwuEarly, 'US')} → {arwuCountry(arwuLatest, 'US')}</strong>
           <p>U.S. institutions in the ARWU top 100.</p>
           <strong>{arwuCountry(arwuEarly, 'CN')} → {arwuCountry(arwuLatest, 'CN')}</strong>
           <p>Mainland Chinese institutions; Hong Kong remains separate.</p>
           <small>
-            The 2003 denominator is 101 because the published rank 99 was tied.
+            The {arwuEarly.year} denominator is {arwuEarly.top100Size} because the published rank 99 was tied.
             Lower HHI indicates less country concentration.
           </small>
         </div>
@@ -231,7 +245,7 @@ const theExpansion = theFirst && theLatest ? theLatest.size / theFirst.size : 0;
       <SectionHeading
         eyebrow="Scale is not impact"
         title="Publishing more and being cited more intensely are different signals."
-        description={`Across ${number.format(insights.leidenSummary.institutionCount)} Leiden 2025 institutions, output rank and field-normalized impact rank have a Spearman correlation of ${insights.leidenSummary.scaleImpactSpearman.toFixed(3)}. Only ${insights.leidenSummary.scaleImpactTop100Overlap} institutions overlap their two top 100s.`}
+        description={`Across ${number.format(insights.leidenSummary.institutionCount)} Leiden ${insights.leidenSummary.year} institutions, output rank and field-normalized impact rank have a Spearman correlation of ${insights.leidenSummary.scaleImpactSpearman.toFixed(3)}. Only ${insights.leidenSummary.scaleImpactTop100Overlap} institutions overlap their two top 100s.`}
         href="/methodology/#research-metrics"
         linkLabel="Read metric definitions"
       />
@@ -277,7 +291,7 @@ const theExpansion = theFirst && theLatest ? theLatest.size / theFirst.size : 0;
       <SectionHeading
         eyebrow="Web presence vs. academic standing"
         title="A large web footprint is its own signal, distinct from scholarly rank."
-        description={`Webometrics ranks ${number.format(insights.webVisibility.total)} institutions by web visibility. Against the academic consensus for the ${number.format(insights.webVisibility.matched)} shared universities, some punch far above their scholarly weight online while others stay comparatively quiet.`}
+        description={`Webometrics' complete ${web.year} edition ranks ${number.format(web.total)} institutions by web visibility${web.latestEdition ? `; its July ${web.latestEdition.year} edition publishes only the top ${web.latestEdition.perCountry} per country` : ''}. Against the academic consensus for the ${number.format(web.matched)} shared universities, some punch far above their scholarly weight online while others stay comparatively quiet.`}
         href="/methodology/#providers"
         linkLabel="See data sources"
       />

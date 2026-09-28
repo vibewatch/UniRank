@@ -149,7 +149,8 @@ const serializedBoards = JSON.stringify(boards).replaceAll('<', '\u003c');
   } from '../lib/subject-detail';
 
   type FinderView = 'subject' | 'overall';
-  type DirectoryRank = [number, string, number];
+  /** [rank, displayRank, editionYear, previousEditionRank?] */
+  type DirectoryRank = [number, string, number] | [number, string, number, number];
   type SubjectDetail = DecodedSubjectDetail;
   type SubjectInstitution = DecodedSubjectInstitution;
 
@@ -194,6 +195,7 @@ const serializedBoards = JSON.stringify(boards).replaceAll('<', '\u003c');
     label: string;
     color: string;
     year: number | null;
+    previousYear?: number | null;
   }
 
   interface Directory {
@@ -366,11 +368,22 @@ const serializedBoards = JSON.stringify(boards).replaceAll('<', '\u003c');
         const rank = institution.ranks[provider.id];
         if (!rank) continue;
         const chip = document.createElement('span');
-        chip.title = `${provider.label} ${rank[2]}: ${rank[1]}`;
+        const previous = rank.length === 4 ? rank[3] : null;
+        const change = previous === null ? 0 : previous - rank[0];
+        chip.title = previous === null || !provider.previousYear
+          ? `${provider.label} ${rank[2]}: ${rank[1]}`
+          : `${provider.label} ${rank[2]}: ${rank[1]} (#${previous} in ${provider.previousYear})`;
         chip.style.setProperty('--chip', provider.color || 'var(--muted)');
         const abbreviation = document.createElement('b');
         abbreviation.textContent = PROVIDER_ABBR[provider.id] ?? provider.id.toUpperCase();
         chip.append(abbreviation, document.createTextNode(rank[1]));
+        if (change !== 0) {
+          const move = document.createElement('i');
+          move.className = change > 0 ? 'up' : 'down';
+          move.textContent = change > 0 ? `▲${change}` : `▼${-change}`;
+          move.setAttribute('aria-label', change > 0 ? `up ${change} since ${provider.previousYear}` : `down ${-change} since ${provider.previousYear}`);
+          chip.append(move);
+        }
         chips.append(chip);
       }
       return chips;
@@ -476,7 +489,7 @@ const serializedBoards = JSON.stringify(boards).replaceAll('<', '\u003c');
       body.replaceChildren(...overallResults.slice(start, end).map(overallRow));
       if (empty) empty.hidden = overallResults.length !== 0;
       count.textContent = `${resultNumber.format(overallResults.length)} institution${overallResults.length === 1 ? '' : 's'}`;
-      if (note) note.textContent = 'Ordered by the broad-ranking consensus signal, then coverage; each provider’s published rank remains visible separately.';
+      if (note) note.textContent = 'Ordered by the broad-ranking consensus signal, then coverage; each provider’s published rank remains visible separately. ▲/▼ marks the move since that provider’s previous edition when both ranks are exact.';
       wrap.removeAttribute('aria-busy');
     };
 
@@ -933,6 +946,19 @@ const serializedBoards = JSON.stringify(boards).replaceAll('<', '\u003c');
 
   tbody :global(.rank-chips b) {
     color: var(--ink);
+  }
+
+  tbody :global(.rank-chips i) {
+    font-style: normal;
+    font-size: 0.5rem;
+  }
+
+  tbody :global(.rank-chips i.up) {
+    color: var(--teal-dark);
+  }
+
+  tbody :global(.rank-chips i.down) {
+    color: #b64738;
   }
 
   .empty {

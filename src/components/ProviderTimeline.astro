@@ -7,16 +7,31 @@ interface Props {
   end?: number;
 }
 
-const { providers, start = 2003, end = 2027 } = Astro.props;
-const span = end - start;
+const {
+  providers,
+  start = Math.min(...providers.map((provider) => provider.firstYear)),
+  end = Math.max(...providers.map((provider) => provider.lastYear)),
+} = Astro.props;
+const span = Math.max(1, end - start);
+const pct = (year: number) => (year - start) / span * 100;
+// Roughly four intervals, always ending on the final edition year.
+const step = Math.max(1, Math.ceil(span / 4));
+const ticks: number[] = [];
+for (let year = start; year < end; year += step) ticks.push(year);
+if (ticks.length > 1 && end - ticks[ticks.length - 1] < step / 2) ticks.pop();
+ticks.push(end);
+const gridlines = ticks.slice(1, -1);
 ---
 
 <div class="timeline surface">
-  <div class="axis mono">
-    <span>{start}</span><span>2011</span><span>2019</span><span>{end}</span>
+  <div class="axis mono" aria-hidden="true">
+    <span></span>
+    <div class="ticks">
+      {ticks.map((year) => <span style={`--left:${pct(year)}%`}>{year}</span>)}
+    </div>
   </div>
   {providers.map((provider) => {
-    const left = (provider.firstYear - start) / span * 100;
+    const left = pct(provider.firstYear);
     const width = Math.max(2, (provider.lastYear - provider.firstYear) / span * 100);
     return (
       <div class="timeline-row">
@@ -28,6 +43,7 @@ const span = end - start;
           </span>
         </div>
         <div class="rail">
+          {gridlines.map((year) => <i class="gridline" style={`--left:${pct(year)}%`}></i>)}
           <span
             class="range"
             style={`--left:${left}%;--width:${width}%;--provider:${provider.color}`}
@@ -53,15 +69,29 @@ const span = end - start;
   }
 
   .axis {
+    min-width: 460px;
     margin: 0 0 8px;
-    padding-left: 208px;
     color: #8b9499;
     font-size: 0.58rem;
-    grid-template-columns: repeat(4, 1fr);
   }
 
-  .axis span:last-child {
-    text-align: right;
+  .ticks {
+    position: relative;
+    height: 1.2em;
+  }
+
+  .ticks span {
+    position: absolute;
+    left: var(--left);
+    transform: translateX(-50%);
+  }
+
+  .ticks span:first-child {
+    transform: none;
+  }
+
+  .ticks span:last-child {
+    transform: translateX(-100%);
   }
 
   .timeline-row {
@@ -107,11 +137,16 @@ const span = end - start;
     position: relative;
     height: 7px;
     border-radius: 999px;
-    background:
-      linear-gradient(90deg, transparent 24.8%, #dcd9d1 25%, transparent 25.2%),
-      linear-gradient(90deg, transparent 49.8%, #dcd9d1 50%, transparent 50.2%),
-      linear-gradient(90deg, transparent 74.8%, #dcd9d1 75%, transparent 75.2%),
-      #ece9e2;
+    background: #ece9e2;
+  }
+
+  .gridline {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--left);
+    width: 1px;
+    background: #dcd9d1;
   }
 
   .range {

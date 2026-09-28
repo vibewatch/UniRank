@@ -28,7 +28,7 @@ const defaultIndex = preferred >= 0 ? preferred : 0;
 const serialized = JSON.stringify(boards).replaceAll('<', '\\u003c');
 const fineNote =
   note ??
-  `QS 2026 subject tables. Bars count how many ranked institutions each country contributes to this field (top eight shown); the leaderboard lists the highest-placed institutions. Banded ranks use their lower bound, and a country's presence reflects listing counts, not per-program quality.`;
+  `QS ${boards.find((board) => board.provider === 'qs')?.year ?? ''} subject tables. Bars count how many ranked institutions each country contributes to this field (top eight shown); the leaderboard lists the highest-placed institutions. Banded ranks use their lower bound, and a country's presence reflects listing counts, not per-program quality.`;
 ---
 
 <section class="subject-explorer surface" data-subject-explorer>

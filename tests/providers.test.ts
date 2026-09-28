@@ -1,7 +1,8 @@
 /**
  * Provider + normaliser regression tests (deterministic, no network). Ports the
  * pure-function cases from test_scraper.py: Nature markdown parsing, the US News
- * and QS normalisers, and the shared min-rank helper used by Leiden/OpenAlex.
+ * and QS normalisers, the shared min-rank helper used by Leiden/OpenAlex, and
+ * the Webometrics top-per-country PDF layout parser.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -11,6 +12,11 @@ import { rankMin } from "../scraper/providers/shared.ts";
 import { normalizeUsnews, normalizeQs, normalizeTimes } from "../scraper/normalizers.ts";
 import { QS_SUBJECT_NIDS } from "../scraper/constants.ts";
 import { buildWaybackUrl } from "../scraper/fetch/strategies.ts";
+import {
+  validateTopPerCountry,
+  webometricsCountry,
+  webometricsTopPerCountryPageRows,
+} from "../scraper/providers/webometrics.ts";
 import type { RankRecord } from "../scraper/types.ts";
 
 const NATURE_URL =
@@ -151,4 +157,55 @@ test("buildWaybackUrl falls back to the current year for missing/invalid years",
   assert.equal(buildWaybackUrl(url), expected);
   assert.equal(buildWaybackUrl(url, 0), expected);
   assert.equal(buildWaybackUrl(url, Number.NaN), expected);
+});
+
+/** Builds a pdf.js-style text item at page coordinates (x, y). */
+const item = (x: number, y: number, str: string) => ({ str, transform: [1, 0, 0, 1, x, y] });
+const WEBOMETRICS_HEADER = [
+  item(54, 502, "WR"), item(104, 502, "CR"), item(134.5, 502, "NAME"), item(441, 502, "ROR"),
+  item(586, 502, "COUNTRY"), item(650, 502, "REGION"), item(702, 502, "DOMAINS"),
+];
+
+test("webometrics top-per-country parser reads rank, country, wrapped names, and domains", () => {
+  const rows = webometricsTopPerCountryPageRows([
+    item(221, 525, "RANKING WEB OF UNIVERSITIES. JULY 2026"),
+    ...WEBOMETRICS_HEADER,
+    item(60, 487, "1"), item(107, 487, "1"), item(134.5, 487, "Harvard University"),
+    item(441, 487, "https://ror.org/03vek6s52"), item(603, 487, "us"), item(662, 487, "NA"), item(702, 487, "harvard.edu"),
+    item(60, 472, "4"), item(107, 472, "1"), item(134.5, 472, "University of Oxford"),
+    item(603, 472, "uk"), item(662, 472, "EU"), item(702, 472, "ox.ac.uk"),
+    item(51, 391, "3862"), item(107, 391, "1"), item(134.5, 397, "V I Vernadsky Crimean Federal University /"),
+    item(134.5, 384, "Second line"), item(441, 391, "https://ror.org/05erbjx97"), item(662, 391, "EU"), item(702, 391, "cfuv.ru"),
+  ], 5);
+
+  assert.equal(rows.length, 3);
+  assert.deepEqual(
+    { ...rows[0], source_page: undefined },
+    { ranking: 1, country_ranking: 1, name: "Harvard University", ror_id: "https://ror.org/03vek6s52", country: "United States", country_code: "US", country_tld: "us", region: "NA", domain: "harvard.edu", source_page: undefined },
+  );
+  assert.equal(rows[1]!.country_code, "GB");
+  assert.equal(rows[1]!.ror_id, null);
+  assert.equal(rows[2]!.name, "V I Vernadsky Crimean Federal University / Second line");
+  assert.equal(rows[2]!.country_code, null);
+  assert.doesNotThrow(() => validateTopPerCountry(rows));
+});
+
+test("webometrics top-per-country parser ignores pages without the ranking header", () => {
+  assert.deepEqual(webometricsTopPerCountryPageRows([item(36, 795, "Abstract"), item(60, 487, "1")], 1), []);
+});
+
+test("webometrics country mapping handles ccTLDs, international, and shared entries", () => {
+  assert.deepEqual(webometricsCountry("uk"), { code: "GB", name: "United Kingdom" });
+  assert.deepEqual(webometricsCountry("KY"), { code: "KY", name: "Cayman Islands" });
+  assert.deepEqual(webometricsCountry("int"), { code: null, name: "International" });
+  assert.deepEqual(webometricsCountry("de/ua"), { code: null, name: "Germany / Ukraine" });
+});
+
+test("webometrics top-per-country validation allows omitted slots but rejects disorder", () => {
+  const row = (ranking: number, countryRank: number, tld = "nl"): RankRecord => ({ ranking, country_ranking: countryRank, country_tld: tld });
+  // Country rank 4 is withheld by the publisher; the slot is skipped, not renumbered.
+  assert.doesNotThrow(() => validateTopPerCountry([row(47, 1), row(56, 2), row(81, 3), row(110, 5)]));
+  assert.throws(() => validateTopPerCountry([row(47, 1), row(40, 2)]), /out of order/);
+  assert.throws(() => validateTopPerCountry([row(47, 2), row(56, 1)]), /inconsistent/);
+  assert.throws(() => validateTopPerCountry([row(47, 16)]), /outside 1–15/);
 });

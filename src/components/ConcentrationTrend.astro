@@ -49,7 +49,7 @@ const hhiLast = trend.points[trend.points.length - 1].countryHhi;
   </div>
   <div class="chart-scroll">
     <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-labelledby="arwu-trend-title arwu-trend-desc">
-      <title id="arwu-trend-title">Share of the ARWU world top 100 by country, 2003 to 2025</title>
+      <title id="arwu-trend-title">Share of the ARWU world top 100 by country, {trend.firstYear} to {trend.lastYear}</title>
       <desc id="arwu-trend-desc">
         Percentage of the ShanghaiRanking ARWU top 100 held by each leading country across every
         available edition. The 2018 overall edition was not published, so the line connects 2017 to 2019.

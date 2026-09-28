@@ -1,0 +1,15 @@
+{
+  "source": "webometrics",
+  "country": null,
+  "coverage": "worldwide",
+  "ranking_year": 2026,
+  "retrieval_method": "figshare",
+  "data_license": "CC-BY-4.0",
+  "data_attribution": "Aguillo, Isidro F. (2026). Ranking Web of Universities (webometrics.info), July 2026 edition. figshare. https://doi.org/10.6084/m9.figshare.33062150.v3",
+  "retrieved_at": "2026-09-28T01:22:12+00:00",
+  "records": 2272,
+  "records_by_scope": {
+    "overall": 2272
+  },
+  "failures": []
+}

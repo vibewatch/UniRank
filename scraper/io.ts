@@ -13,7 +13,7 @@ import { createRequire } from "node:module";
 
 import type { RankRecord, ScopeFailure } from "./types.ts";
 import { ScraperError } from "./types.ts";
-import { SUBJECTS, YEARLY_SOURCES, SOURCE_LICENSES, SOURCE_ATTRIBUTIONS } from "./constants.ts";
+import { SUBJECTS, YEARLY_SOURCES, SOURCE_LICENSES, SOURCE_ATTRIBUTIONS, webometricsAttribution } from "./constants.ts";
 
 const require = createRequire(import.meta.url);
 const { parse: parseCsv } = require("csv-parse/sync") as {
@@ -281,7 +281,7 @@ export function writeBatch(args: WriteBatchArgs): string {
     ranking_year: YEARLY_SOURCES.has(source) ? year : null,
     retrieval_method: readerProxy ? "reader-proxy" : (RETRIEVAL_METHODS[source] ?? "direct"),
     data_license: SOURCE_LICENSES[source as keyof typeof SOURCE_LICENSES],
-    data_attribution: SOURCE_ATTRIBUTIONS[source] ?? null,
+    data_attribution: (source === "webometrics" ? webometricsAttribution(year) : null) ?? SOURCE_ATTRIBUTIONS[source] ?? null,
     retrieved_at: retrievedAt,
     records: rows.length,
     records_by_scope: countByScope(rows),

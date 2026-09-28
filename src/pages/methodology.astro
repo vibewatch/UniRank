@@ -85,6 +85,7 @@ const formatDate = new Intl.DateTimeFormat('en-US', {
               <th>Provider</th>
               <th>Lens</th>
               <th>Coverage</th>
+              <th>Latest edition</th>
               <th>Reuse status</th>
             </tr>
           </thead>
@@ -93,7 +94,14 @@ const formatDate = new Intl.DateTimeFormat('en-US', {
               <tr>
                 <td><strong>{provider.label}</strong></td>
                 <td>{provider.kind}</td>
-                <td>{provider.firstYear}—{provider.lastYear} · {provider.subjectViews} subject views</td>
+                <td>
+                  {provider.firstYear === provider.lastYear ? provider.lastYear : `${provider.firstYear}—${provider.lastYear}`} · {provider.editions} {provider.editions === 1 ? 'edition' : 'editions'}{provider.subjectViews > 0 && ` · ${provider.subjectViews} subject views`}
+                  <small>{provider.coverage}</small>
+                </td>
+                <td>
+                  <strong>{provider.lastYear}</strong>
+                  {provider.latestRetrieved && <small>Archived {formatDate.format(new Date(provider.latestRetrieved))}</small>}
+                </td>
                 <td>
                   <span class:list={{ restricted: restrictedProviders.has(provider.id), open: !restrictedProviders.has(provider.id) }}>
                     {restrictedProviders.has(provider.id) ? 'Provider-controlled' : provider.license}
@@ -109,7 +117,11 @@ const formatDate = new Intl.DateTimeFormat('en-US', {
         permission. That permission does not replace publisher terms or
         automatically grant downstream redistribution rights. OpenAlex and
         Leiden are CC0; Webometrics is CC BY 4.0; Nature Index numerical data is
-        CC BY-NC-SA 4.0.
+        CC BY-NC-SA 4.0. Edition years follow each publisher’s own label, so a
+        “2027” QS table and a “2026” ARWU table can be released in the same summer.
+        Publishers occasionally trim a release: Webometrics’ July 2026 edition lists
+        only each country’s top 15, so web-visibility comparisons use the most
+        recent complete edition.
       </p>
     </div>
   </section>
@@ -344,6 +356,13 @@ const formatDate = new Intl.DateTimeFormat('en-US', {
 
   .provider-table td:nth-child(3) {
     min-width: 220px;
+  }
+
+  .provider-table td small {
+    display: block;
+    margin-top: 2px;
+    color: var(--muted);
+    font-size: 0.62rem;
   }
 
   .provider-table span {
