@@ -23,9 +23,13 @@ export function localeFromPath(pathname: string): Locale {
   return ZH_PREFIX.test(pathname) ? 'zh' : 'en';
 }
 
-/** Reads the locale of the current document in client scripts. */
-export function documentLocale(doc: Document = document): Locale {
-  return doc.documentElement.lang.toLowerCase().startsWith('zh') ? 'zh' : 'en';
+/**
+ * Reads the locale of the current document in client scripts. Typed without
+ * the DOM lib so the module also type-checks under the scraper's Node config.
+ */
+export function documentLocale(): Locale {
+  const page = globalThis as { document?: { documentElement: { lang: string } } };
+  return page.document?.documentElement.lang.toLowerCase().startsWith('zh') ? 'zh' : 'en';
 }
 
 /** Removes the locale prefix from a root-relative path: `/zh/trends/` → `/trends/`. */
