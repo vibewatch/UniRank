@@ -1,4 +1,6 @@
 ---
+import { pageI18n } from '../i18n/page';
+
 interface Props {
   eyebrow: string;
   title: string;
@@ -7,7 +9,8 @@ interface Props {
   linkLabel?: string;
 }
 
-const { eyebrow, title, description, href, linkLabel = 'Explore' } = Astro.props;
+const { t } = pageI18n(Astro.url);
+const { eyebrow, title, description, href, linkLabel = t('Explore', '探索') } = Astro.props;
 ---
 
 <header class="section-heading">

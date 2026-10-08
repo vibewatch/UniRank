@@ -1,5 +1,6 @@
 ---
 import type { NatureSubject, SubjectMatrixRow } from '../data/schema';
+import { pageI18n } from '../i18n/page';
 
 interface Props {
   subjects: NatureSubject[];
@@ -7,6 +8,8 @@ interface Props {
 }
 
 const { subjects, rows } = Astro.props;
+const { t, locale, country, subject: subjectName } = pageI18n(Astro.url);
+const shortLabel = (label: string) => (locale === 'zh' ? subjectName(label) : label.replace(' sciences', ''));
 const cellClass = (rank: number | null) => {
   if (rank === null) return 'missing';
   if (rank <= 10) return 'elite';
@@ -20,9 +23,9 @@ const cellClass = (rank: number | null) => {
   <table>
     <thead>
       <tr>
-        <th>Institution</th>
+        <th>{t('Institution', '院校')}</th>
         {subjects.map((subject) => (
-          <th title={subject.label}>{subject.label.replace(' sciences', '')}</th>
+          <th title={subjectName(subject.label)}>{shortLabel(subject.label)}</th>
         ))}
       </tr>
     </thead>
@@ -31,7 +34,7 @@ const cellClass = (rank: number | null) => {
         <tr>
           <td>
             <strong>{row.name}</strong>
-            <small>{row.country}</small>
+            <small>{country(row.country)}</small>
           </td>
           {subjects.map((subject) => {
             const rank = row.ranks[subject.subject] ?? null;
@@ -39,7 +42,7 @@ const cellClass = (rank: number | null) => {
               <td>
                 <span
                   class={cellClass(rank)}
-                  title={`${row.name} · ${subject.label}: ${rank ? `#${rank}` : 'outside published table'}`}
+                  title={`${row.name} · ${subjectName(subject.label)}: ${rank ? `#${rank}` : t('outside published table', '不在已发布榜单内')}`}
                 >
                   {rank ? rank : '—'}
                 </span>
@@ -52,10 +55,10 @@ const cellClass = (rank: number | null) => {
   </table>
 </div>
 <div class="matrix-legend">
-  <span><i class="elite"></i>Top 10</span>
-  <span><i class="strong"></i>Top 50</span>
-  <span><i class="visible"></i>Top 100</span>
-  <span><i class="tracked"></i>Top 500</span>
+  <span><i class="elite"></i>{t('Top 10', '前 10')}</span>
+  <span><i class="strong"></i>{t('Top 50', '前 50')}</span>
+  <span><i class="visible"></i>{t('Top 100', '前 100')}</span>
+  <span><i class="tracked"></i>{t('Top 500', '前 500')}</span>
 </div>
 
 <style>

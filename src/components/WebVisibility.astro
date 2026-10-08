@@ -1,26 +1,34 @@
 ---
 import type { WebVisibility, WebVisibilityEntry } from '../data/schema';
-import { number } from '../lib/format';
+import { pageI18n } from '../i18n/page';
 
 interface Props {
   data: WebVisibility;
 }
 
 const { data } = Astro.props;
+const { t, fmt, country } = pageI18n(Astro.url);
+const { number } = fmt;
 
 const columns: { key: 'webForward' | 'webQuiet'; eyebrow: string; title: string; blurb: string; entries: WebVisibilityEntry[] }[] = [
   {
     key: 'webForward',
-    eyebrow: 'Web-forward',
-    title: 'Louder online than the rankings suggest',
-    blurb: 'Universities whose Webometrics web-presence rank sits far ahead of their academic consensus rank.',
+    eyebrow: t('Web-forward', '网络领先'),
+    title: t('Louder online than the rankings suggest', '网上声量超出排名所示'),
+    blurb: t(
+      'Universities whose Webometrics web-presence rank sits far ahead of their academic consensus rank.',
+      'Webometrics 网络影响力排名远高于其学术共识排名的大学。',
+    ),
     entries: data.webForward,
   },
   {
     key: 'webQuiet',
-    eyebrow: 'Web-quiet',
-    title: 'Academic strength the web understates',
-    blurb: 'Universities the consensus rates highly but whose public web footprint trails their peers.',
+    eyebrow: t('Web-quiet', '网络低调'),
+    title: t('Academic strength the web understates', '学术实力被网络低估'),
+    blurb: t(
+      'Universities the consensus rates highly but whose public web footprint trails their peers.',
+      '学术共识评价很高、但公开网络足迹落后于同侪的大学。',
+    ),
     entries: data.webQuiet,
   },
 ];
@@ -33,22 +41,21 @@ const leaders = latest
   : data.leaders.slice(0, 6).map((leader) => ({ ...leader, previousRank: null, change: null }));
 ---
 
-<section class="web-visibility surface" aria-label="Web presence versus academic standing">
+<section class="web-visibility surface" aria-label={t('Web presence versus academic standing', '网络影响力与学术地位对比')}>
   <header class="wv-head">
     <div>
-      <p class="mono">Webometrics {data.year}{latest ? ` · ${latest.year} leaders` : ''}</p>
-      <h3>Where web presence and academic standing diverge.</h3>
+      <p class="mono">Webometrics {data.year}{latest ? t(` · ${latest.year} leaders`, ` · ${latest.year} 领先者`) : ''}</p>
+      <h3>{t('Where web presence and academic standing diverge.', '网络影响力与学术地位的分歧之处。')}</h3>
       <p class="wv-lede">
-        Webometrics ranks {number.format(data.total)} institutions by the size and
-        visibility of their web footprint. Comparing that with the academic
-        consensus across the {number.format(data.matched)} shared universities
-        ({matchPct}% of the {number.format(data.cohortSize)}-strong cohort) shows
-        who is over- and under-represented online relative to scholarly standing.
+        {t(
+          `Webometrics ranks ${number.format(data.total)} institutions by the size and visibility of their web footprint. Comparing that with the academic consensus across the ${number.format(data.matched)} shared universities (${matchPct}% of the ${number.format(data.cohortSize)}-strong cohort) shows who is over- and under-represented online relative to scholarly standing.`,
+          `Webometrics 按网络足迹的规模和可见度为 ${number.format(data.total)} 所院校排名。将其与 ${number.format(data.matched)} 所共同院校（占 ${number.format(data.cohortSize)} 所共识院校的 ${matchPct}%）的学术共识对照，可以看出哪些院校在网上的表现高于或低于其学术地位。`,
+        )}
       </p>
     </div>
     <div class="wv-leaders-wrap">
-      <p class="mono">{latest ? `World top, July ${latest.year}` : 'World top'}</p>
-      <ol class="wv-leaders" aria-label={`Webometrics ${latest?.year ?? data.year} global leaders`}>
+      <p class="mono">{latest ? t(`World top, July ${latest.year}`, `全球前列，${latest.year} 年 7 月`) : t('World top', '全球前列')}</p>
+      <ol class="wv-leaders" aria-label={t(`Webometrics ${latest?.year ?? data.year} global leaders`, `Webometrics ${latest?.year ?? data.year} 全球领先者`)}>
         {leaders.map((leader) => (
           <li>
             <span class="rank mono">{String(leader.rank).padStart(2, '0')}</span>
@@ -56,9 +63,11 @@ const leaders = latest
             {latest && (
               <span
                 class={`move mono ${leader.change === null ? '' : leader.change > 0 ? 'up' : leader.change < 0 ? 'down' : 'flat'}`}
-                title={leader.previousRank === null ? `Not matched in ${data.year}` : `#${leader.previousRank} in ${data.year}`}
+                title={leader.previousRank === null
+                  ? t(`Not matched in ${data.year}`, `${data.year} 年未匹配`)
+                  : t(`#${leader.previousRank} in ${data.year}`, `${data.year} 年第 ${leader.previousRank} 名`)}
               >
-                {leader.change === null ? 'new' : leader.change > 0 ? `▲${leader.change}` : leader.change < 0 ? `▼${-leader.change}` : '='}
+                {leader.change === null ? t('new', '新') : leader.change > 0 ? `▲${leader.change}` : leader.change < 0 ? `▼${-leader.change}` : '='}
               </span>
             )}
           </li>
@@ -80,13 +89,16 @@ const leaders = latest
             <li>
               <span class="identity">
                 <strong>{entry.name}</strong>
-                <span class="meta">{entry.country}</span>
+                <span class="meta">{country(entry.country)}</span>
               </span>
               <span class="positions">
-                <b class="chip">Web #{number.format(entry.webPos)}</b>
-                <b class="chip">Academic #{number.format(entry.academicPos)}</b>
+                <b class="chip">{t('Web', '网络')} #{number.format(entry.webPos)}</b>
+                <b class="chip">{t('Academic', '学术')} #{number.format(entry.academicPos)}</b>
               </span>
-              <span class={`delta ${entry.webAdvantage >= 0 ? 'up' : 'down'}`} title="Web position minus academic position within the shared cohort">
+              <span
+                class={`delta ${entry.webAdvantage >= 0 ? 'up' : 'down'}`}
+                title={t('Web position minus academic position within the shared cohort', '共同院校范围内网络名次领先学术名次的位数')}
+              >
                 {entry.webAdvantage >= 0 ? '+' : ''}{number.format(entry.webAdvantage)}
               </span>
             </li>
@@ -97,16 +109,17 @@ const leaders = latest
   </div>
 
   <p class="fine-print">
-    Positions are ranks within the {number.format(data.matched)} universities that
-    appear in both Webometrics and the multi-source academic consensus, so the two
-    scales are directly comparable. A positive delta means the web footprint ranks
-    ahead of academic standing; a negative delta means the reverse.
+    {t(
+      `Positions are ranks within the ${number.format(data.matched)} universities that appear in both Webometrics and the multi-source academic consensus, so the two scales are directly comparable. A positive delta means the web footprint ranks ahead of academic standing; a negative delta means the reverse.`,
+      `名次是在同时出现于 Webometrics 和多来源学术共识中的 ${number.format(data.matched)} 所大学范围内计算的，因此两种尺度可以直接比较。正值表示网络足迹的名次领先于学术地位，负值则相反。`,
+    )}
     {latest && (
       <>
-        {' '}The July {latest.year} edition lists only the top {latest.perCountry} institutions
-        per country ({number.format(latest.listed)} across {number.format(latest.countries)} countries),
-        so its world ranks are exact only through #{latest.exactThrough} and the
-        cohort comparison stays on the complete {data.year} table of {number.format(data.total)}.
+        {' '}
+        {t(
+          `The July ${latest.year} edition lists only the top ${latest.perCountry} institutions per country (${number.format(latest.listed)} across ${number.format(latest.countries)} countries), so its world ranks are exact only through #${latest.exactThrough} and the cohort comparison stays on the complete ${data.year} table of ${number.format(data.total)}.`,
+          `${latest.year} 年 7 月版只列出每个国家的前 ${latest.perCountry} 所院校（${number.format(latest.countries)} 个国家和地区共 ${number.format(latest.listed)} 所），因此其全球名次仅在第 ${latest.exactThrough} 名以内是确切的；对照分析仍基于 ${data.year} 年完整的 ${number.format(data.total)} 所院校榜单。`,
+        )}
       </>
     )}
   </p>

@@ -12,8 +12,11 @@ import TrendExplorer from '../components/TrendExplorer.astro';
 import UniverseGrowth from '../components/UniverseGrowth.astro';
 import WebVisibility from '../components/WebVisibility.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { pageI18n } from '../i18n/page';
 import { insights } from '../lib/data';
-import { decimal, number, signedPercent } from '../lib/format';
+
+const { t, href, fmt, country: countryName, provider: providerName } = pageI18n(Astro.url);
+const { decimal, number, signedPercent } = fmt;
 
 const chinaNature = insights.natureCountryShift.find((item) => item.countryCode === 'CN');
 const usNature = insights.natureCountryShift.find((item) => item.countryCode === 'US');
@@ -30,27 +33,32 @@ const web = insights.webVisibility;
 ---
 
 <BaseLayout
-  title="Trends"
-  description="Follow historical university ranking trajectories, changing table universes, research geography, and the difference between research scale and impact."
+  title={t('Trends', '趋势')}
+  description={t(
+    'Follow historical university ranking trajectories, changing table universes, research geography, and the difference between research scale and impact.',
+    '追踪大学排名的历史轨迹、不断变化的榜单规模、科研地理分布，以及科研规模与影响力之间的差异。',
+  )}
 >
   <section class="page-hero">
     <div class="shell hero-grid">
       <div>
-        <p class="eyebrow">Change over time</p>
-        <h1>A rank moves. So does the frame around it.</h1>
+        <p class="eyebrow">{t('Change over time', '随时间的变化')}</p>
+        <h1>{t('A rank moves. So does the frame around it.', '名次在变，衡量它的框架也在变。')}</h1>
         <p class="lede">
-          Trajectories only become useful when table expansion, ties, coverage,
-          and measurement windows remain visible. Follow the line—then inspect
-          the universe that produced it.
+          {t(
+            'Trajectories only become useful when table expansion, ties, coverage, and measurement windows remain visible. Follow the line—then inspect the universe that produced it.',
+            '只有当榜单扩容、并列名次、覆盖范围和统计窗口都清晰可见时，排名轨迹才有意义。先看曲线，再审视产生它的榜单全貌。',
+          )}
         </p>
       </div>
       <aside class="hero-note">
-        <span class="mono">THE OVERALL TABLE</span>
+        <span class="mono">{t('THE OVERALL TABLE', '泰晤士综合榜单')}</span>
         <strong>{decimal.format(theExpansion)}×</strong>
         <p>
-          larger from {theFirst?.year} to {theLatest?.year}, including
-          {` ${number.format(theLatest?.unranked ?? 0)} `}unranked reporters in the
-          latest edition.
+          {t(
+            `larger from ${theFirst?.year} to ${theLatest?.year}, including ${number.format(theLatest?.unranked ?? 0)} unranked reporters in the latest edition.`,
+            `从 ${theFirst?.year} 年到 ${theLatest?.year} 年扩大的倍数；最新一版还包括 ${number.format(theLatest?.unranked ?? 0)} 所提交数据但未获排名的院校。`,
+          )}
         </p>
       </aside>
     </div>
@@ -59,9 +67,12 @@ const web = insights.webVisibility;
   <section class="section" id="latest-editions">
     <div class="shell">
       <SectionHeading
-        eyebrow="Latest editions"
-        title="What moved since each publisher’s previous table."
-        description={`Edition-over-edition change inside each provider’s top ${moverWindow}: who climbed, who slipped, and who crossed the line. Every comparison stays within one publisher’s method.`}
+        eyebrow={t('Latest editions', '最新版本')}
+        title={t('What moved since each publisher’s previous table.', '与各发布方上一版相比，名次有何变动。')}
+        description={t(
+          `Edition-over-edition change inside each provider’s top ${moverWindow}: who climbed, who slipped, and who crossed the line. Every comparison stays within one publisher’s method.`,
+          `各排名前 ${moverWindow} 名的逐版变化：谁上升、谁下滑、谁进出了门槛。每项比较都只在同一发布方的方法内进行。`,
+        )}
       />
       <EditionMovers movers={insights.editionMovers} latestRetrieval={insights.meta.latestRetrieval} />
     </div>
@@ -70,9 +81,12 @@ const web = insights.webVisibility;
   <section class="section">
     <div class="shell">
       <SectionHeading
-        eyebrow="Institution trajectories"
-        title="Follow one method at a time."
-        description="Choose an institution and provider. Rank 1 is at the top; bands use their lower bound. A line is not drawn across providers because each source defines and sizes its table differently."
+        eyebrow={t('Institution trajectories', '院校排名轨迹')}
+        title={t('Follow one method at a time.', '一次只看一种方法。')}
+        description={t(
+          'Choose an institution and provider. Rank 1 is at the top; bands use their lower bound. A line is not drawn across providers because each source defines and sizes its table differently.',
+          '选择院校和排名机构。第 1 名位于顶部；区间名次按其下限计。不同排名之间不连线，因为每个来源对榜单的定义和规模都不同。',
+        )}
       />
       <TrendExplorer trends={insights.institutionTrends} />
     </div>
@@ -81,9 +95,12 @@ const web = insights.webVisibility;
   <section class="section">
     <div class="shell">
       <SectionHeading
-        eyebrow="The denominator changed"
-        title="Ranking universes expanded—sometimes dramatically."
-        description="A stable institution can move as hundreds or thousands of entrants are added. Overall-table row counts are shown exactly as published; THE’s latest total separates ranked entries from reporters."
+        eyebrow={t('The denominator changed', '分母变了')}
+        title={t('Ranking universes expanded—sometimes dramatically.', '排名覆盖的院校数在扩张——有时非常剧烈。')}
+        description={t(
+          'A stable institution can move as hundreds or thousands of entrants are added. Overall-table row counts are shown exactly as published; THE’s latest total separates ranked entries from reporters.',
+          '当新增数百乃至数千所参评院校时，一所实力稳定的学校的名次也可能变化。综合榜单的条目数按发布原样显示；泰晤士最新总数将获排名者与仅提交数据者分开计算。',
+        )}
       />
       <UniverseGrowth series={insights.rankingUniverse} />
     </div>
@@ -92,9 +109,12 @@ const web = insights.webVisibility;
   <section class="section method-section">
     <div class="shell">
       <SectionHeading
-        eyebrow="Method changes the map"
-        title="The same “top 100” tells six geographic stories."
-        description="Latest broad publisher editions. Counts include every institution whose displayed rank lower bound is 100 or better, so QS has 102 records because rank 100 is tied."
+        eyebrow={t('Method changes the map', '方法改变版图')}
+        title={t('The same “top 100” tells six geographic stories.', '同样的“前 100 名”，讲出六种地理故事。')}
+        description={t(
+          'Latest broad publisher editions. Counts include every institution whose displayed rank lower bound is 100 or better, so QS has 102 records because rank 100 is tied.',
+          '各发布方最新综合榜单。统计所有显示名次下限在 100 以内的院校，因此 QS 第 100 名并列，共有 102 条记录。',
+        )}
       />
       <div class="provider-mix">
         {insights.providerTop100.map((provider) => {
@@ -107,38 +127,40 @@ const web = insights.webVisibility;
             <article class="surface">
               <header>
                 <div>
-                  <strong>{provider.label}</strong>
-                  <span>{provider.year} · {number.format(provider.universeSize)} ranked</span>
+                  <strong>{providerName(provider.provider, provider.label)}</strong>
+                  <span>{t(`${provider.year} · ${number.format(provider.universeSize)} ranked`, `${provider.year} · ${number.format(provider.universeSize)} 所上榜`)}</span>
                 </div>
                 <b>{provider.top100Size}</b>
               </header>
-              <div class="stack" aria-label={`${provider.label} top-100 country composition`}>
+              <div class="stack" aria-label={t(`${provider.label} top-100 country composition`, `${providerName(provider.provider, provider.label)}前 100 名的国家构成`)}>
                 {selected.map((country) => (
                   <i
                     class={`country-${country.code.toLowerCase()}`}
                     style={`--width:${country.count / provider.top100Size * 100}%`}
-                    title={`${country.code}: ${country.count}`}
+                    title={`${countryName(country.code, country.code)}: ${country.count}`}
                   ></i>
                 ))}
                 <i
                   class="country-other"
                   style={`--width:${(provider.top100Size - known) / provider.top100Size * 100}%`}
-                  title={`Other countries: ${provider.top100Size - known}`}
+                  title={t(`Other countries: ${provider.top100Size - known}`, `其他国家和地区：${provider.top100Size - known}`)}
                 ></i>
               </div>
               <dl>
                 {selected.map((country) => (
-                  <div><dt>{country.code}</dt><dd>{country.count}</dd></div>
+                  <div><dt>{countryName(country.code, country.code)}</dt><dd>{country.count}</dd></div>
                 ))}
-                <div><dt>Other</dt><dd>{provider.top100Size - known}</dd></div>
+                <div><dt>{t('Other', '其他')}</dt><dd>{provider.top100Size - known}</dd></div>
               </dl>
             </article>
           );
         })}
       </div>
       <p class="fine-print">
-        Hong Kong remains separate from mainland China. These are placements,
-        not shares of national systems and not a pooled global league table.
+        {t(
+          'Hong Kong remains separate from mainland China. These are placements, not shares of national systems and not a pooled global league table.',
+          '中国香港与中国内地分开统计。这些是上榜席位数，不是国家高教体系的占比，也不是合并后的全球排行榜。',
+        )}
       </p>
     </div>
   </section>
@@ -146,35 +168,40 @@ const web = insights.webVisibility;
   <section class="section" id="geography">
     <div class="shell">
       <SectionHeading
-        eyebrow="Research geography"
-        title="Two long-run views point toward wider Asian representation."
-        description="Nature Index academic Share and ARWU top-100 composition measure different things. Their direction is informative; their magnitudes are not directly comparable."
+        eyebrow={t('Research geography', '科研地理')}
+        title={t('Two long-run views point toward wider Asian representation.', '两种长期视角都指向亚洲占比的扩大。')}
+        description={t(
+          'Nature Index academic Share and ARWU top-100 composition measure different things. Their direction is informative; their magnitudes are not directly comparable.',
+          '自然指数学术份额与 ARWU 前 100 名构成衡量的是不同的东西。二者的方向有参考价值，但幅度不能直接比较。',
+        )}
       />
       <div class="nature-grid">
         <CountryShift items={insights.natureCountryShift.slice(0, 12)} />
         <aside class="nature-callout">
-          <span class="mono">NATURE ACADEMIC TOP 20</span>
+          <span class="mono">{t('NATURE ACADEMIC TOP 20', '自然指数学术前 20')}</span>
           <div>
             <strong>{chinaNature?.top20In2015} → {chinaNature?.top20In2025}</strong>
-            <p>Chinese institutions, 2015 to 2025 output</p>
+            <p>{t('Chinese institutions, 2015 to 2025 output', '中国院校，2015 至 2025 年产出')}</p>
           </div>
           <div>
             <strong>{usNature?.top20In2015} → {usNature?.top20In2025}</strong>
-            <p>U.S. institutions over the same editions</p>
+            <p>{t('U.S. institutions over the same editions', '美国院校，同期各版')}</p>
           </div>
           <small>
-            Nature Share covers a selected journal set. Journal and methodology
-            changes prevent a causal “growth” interpretation.
+            {t(
+              'Nature Share covers a selected journal set. Journal and methodology changes prevent a causal “growth” interpretation.',
+              '自然指数份额只覆盖一组精选期刊。期刊与方法的变化使其不能被解读为因果意义上的“增长”。',
+            )}
           </small>
         </aside>
       </div>
 
       <div class="arwu-trend">
         <p class="trend-lead">
-          Across two decades the ARWU top 100 grew less concentrated. The U.S.
-          share of seats declined while mainland China rose from none to a
-          double-digit presence—visible as a single continuous trajectory before
-          the two-edition snapshots below.
+          {t(
+            'Across two decades the ARWU top 100 grew less concentrated. The U.S. share of seats declined while mainland China rose from none to a double-digit presence—visible as a single continuous trajectory before the two-edition snapshots below.',
+            '二十多年间，ARWU 前 100 名的集中度在下降。美国所占席位减少，中国内地则从零增长到两位数——下方先以连续轨迹呈现，再给出两个版本的快照。',
+          )}
         </p>
         <ConcentrationTrend trend={insights.arwuConcentrationTrend} />
       </div>
@@ -185,16 +212,16 @@ const web = insights.webVisibility;
             <header>
               <div>
                 <span class="mono">ARWU {edition.year}</span>
-                <strong>{edition.top100Size} seats</strong>
+                <strong>{t(`${edition.top100Size} seats`, `${edition.top100Size} 个席位`)}</strong>
               </div>
               <div>
-                <span>Country HHI</span>
+                <span>{t('Country HHI', '国家 HHI 指数')}</span>
                 <strong>{edition.countryHhi.toFixed(3)}</strong>
               </div>
             </header>
             <BarChart
               items={edition.countries.slice(0, 8).map((country) => ({
-                label: country.country,
+                label: countryName(country.country, country.countryCode),
                 value: country.count,
                 detail: `${decimal.format(country.share)}%`,
               }))}
@@ -206,12 +233,14 @@ const web = insights.webVisibility;
         <div class="arwu-story">
           <span class="mono">{arwuEarly.year} → {arwuLatest.year}</span>
           <strong>{arwuCountry(arwuEarly, 'US')} → {arwuCountry(arwuLatest, 'US')}</strong>
-          <p>U.S. institutions in the ARWU top 100.</p>
+          <p>{t('U.S. institutions in the ARWU top 100.', 'ARWU 前 100 名中的美国院校。')}</p>
           <strong>{arwuCountry(arwuEarly, 'CN')} → {arwuCountry(arwuLatest, 'CN')}</strong>
-          <p>Mainland Chinese institutions; Hong Kong remains separate.</p>
+          <p>{t('Mainland Chinese institutions; Hong Kong remains separate.', '中国内地院校；中国香港单独统计。')}</p>
           <small>
-            The {arwuEarly.year} denominator is {arwuEarly.top100Size} because the published rank 99 was tied.
-            Lower HHI indicates less country concentration.
+            {t(
+              `The ${arwuEarly.year} denominator is ${arwuEarly.top100Size} because the published rank 99 was tied. Lower HHI indicates less country concentration.`,
+              `${arwuEarly.year} 年的分母为 ${arwuEarly.top100Size}，因为当年公布的第 99 名并列。HHI 越低，表示国家集中度越低。`,
+            )}
           </small>
         </div>
       </div>
@@ -221,9 +250,12 @@ const web = insights.webVisibility;
   <section class="section">
     <div class="shell">
       <SectionHeading
-        eyebrow="Indexed-output momentum"
-        title="OpenAlex coverage shows a changing publication footprint."
-        description={`For the fixed cohort of ${number.format(insights.openAlexCountryMomentum.cohortSize)} institutions present in all ten annual files, summed institution-work associations rose ${signedPercent(insights.openAlexCountryMomentum.totalChangePercent)} through 2022.`}
+        eyebrow={t('Indexed-output momentum', '收录产出势头')}
+        title={t('OpenAlex coverage shows a changing publication footprint.', 'OpenAlex 覆盖数据显示出不断变化的发表版图。')}
+        description={t(
+          `For the fixed cohort of ${number.format(insights.openAlexCountryMomentum.cohortSize)} institutions present in all ten annual files, summed institution-work associations rose ${signedPercent(insights.openAlexCountryMomentum.totalChangePercent)} through 2022.`,
+          `对十个年度文件中均出现的 ${number.format(insights.openAlexCountryMomentum.cohortSize)} 所固定院校而言，机构论著关联数之和到 2022 年变化了 ${signedPercent(insights.openAlexCountryMomentum.totalChangePercent)}。`,
+        )}
       />
       <MomentumChart momentum={insights.openAlexCountryMomentum} />
     </div>
@@ -232,9 +264,12 @@ const web = insights.webVisibility;
   <section class="section">
     <div class="shell">
       <SectionHeading
-        eyebrow="Institution output growth"
-        title="A handful of institutions multiplied their annual output."
-        description="Consensus-leading universities ranked by absolute growth in OpenAlex institution-work associations from 2016 to 2025. This is the institution-level counterpart to the country momentum above—scale, not citation impact."
+        eyebrow={t('Institution output growth', '院校产出增长')}
+        title={t('A handful of institutions multiplied their annual output.', '少数院校的年产出成倍增长。')}
+        description={t(
+          'Consensus-leading universities ranked by absolute growth in OpenAlex institution-work associations from 2016 to 2025. This is the institution-level counterpart to the country momentum above—scale, not citation impact.',
+          '按 2016 至 2025 年 OpenAlex 机构论著关联数的绝对增长，对共识领先的大学排序。这是上方国家层面势头在院校层面的对应——反映规模，而非引用影响力。',
+        )}
       />
       <OutputGrowth items={insights.openAlexGrowth} />
     </div>
@@ -243,30 +278,34 @@ const web = insights.webVisibility;
   <section class="section impact-section">
     <div class="shell">
       <SectionHeading
-        eyebrow="Scale is not impact"
-        title="Publishing more and being cited more intensely are different signals."
-        description={`Across ${number.format(insights.leidenSummary.institutionCount)} Leiden ${insights.leidenSummary.year} institutions, output rank and field-normalized impact rank have a Spearman correlation of ${insights.leidenSummary.scaleImpactSpearman.toFixed(3)}. Only ${insights.leidenSummary.scaleImpactTop100Overlap} institutions overlap their two top 100s.`}
-        href="/methodology/#research-metrics"
-        linkLabel="Read metric definitions"
+        eyebrow={t('Scale is not impact', '规模不等于影响力')}
+        title={t('Publishing more and being cited more intensely are different signals.', '发表得更多与被引用得更密集，是两种不同的信号。')}
+        description={t(
+          `Across ${number.format(insights.leidenSummary.institutionCount)} Leiden ${insights.leidenSummary.year} institutions, output rank and field-normalized impact rank have a Spearman correlation of ${insights.leidenSummary.scaleImpactSpearman.toFixed(3)}. Only ${insights.leidenSummary.scaleImpactTop100Overlap} institutions overlap their two top 100s.`,
+          `在莱顿 ${insights.leidenSummary.year} 的 ${number.format(insights.leidenSummary.institutionCount)} 所院校中，产出排名与领域归一化影响力排名的 Spearman 相关系数为 ${insights.leidenSummary.scaleImpactSpearman.toFixed(3)}。两个前 100 名中只有 ${insights.leidenSummary.scaleImpactTop100Overlap} 所院校重合。`,
+        )}
+        href={href('/methodology/#research-metrics')}
+        linkLabel={t('Read metric definitions', '阅读指标定义')}
       />
       <div class="impact-grid">
         <ScaleImpactPlot points={insights.leidenScaleImpact} />
         <aside>
           {insights.leidenSummary.spotlights.map((institution) => (
             <article class="surface">
-              <span>{institution.country}</span>
+              <span>{countryName(institution.country)}</span>
               <h3>{institution.name}</h3>
               <dl>
-                <div><dt>Output rank</dt><dd>#{number.format(institution.scaleRank)}</dd></div>
-                <div><dt>MNCS rank</dt><dd>#{number.format(institution.impactRank)}</dd></div>
-                <div><dt>Top-10% rank</dt><dd>#{number.format(institution.top10Rank)}</dd></div>
+                <div><dt>{t('Output rank', '产出排名')}</dt><dd>#{number.format(institution.scaleRank)}</dd></div>
+                <div><dt>{t('MNCS rank', 'MNCS 排名')}</dt><dd>#{number.format(institution.impactRank)}</dd></div>
+                <div><dt>{t('Top-10% rank', '前 10% 论文排名')}</dt><dd>#{number.format(institution.top10Rank)}</dd></div>
               </dl>
             </article>
           ))}
           <p class="fine-print">
-            The plot shows the top 140 by fractional publication count. An
-            impact specialist such as Rockefeller sits outside that scale
-            window—which is precisely the point.
+            {t(
+              'The plot shows the top 140 by fractional publication count. An impact specialist such as Rockefeller sits outside that scale window—which is precisely the point.',
+              '散点图显示按分数式论文计数排名前 140 的院校。像洛克菲勒大学这样以影响力见长的院校落在这个规模窗口之外——这正说明了问题。',
+            )}
           </p>
         </aside>
       </div>
@@ -276,11 +315,14 @@ const web = insights.webVisibility;
   <section class="section">
     <div class="shell">
       <SectionHeading
-        eyebrow="Research output leaderboard"
-        title="Decades of accumulated output separate a small group of institutions."
-        description={`OpenAlex-derived h-index, lifetime works, and lifetime citations for ${number.format(insights.researchProfiles.institutionCount)} institutions with a resolved research profile. Several leaders here sit well outside any single ranking's top tier—this is a cumulative-output signal, independent of the consensus above.`}
-        href="/methodology/#research-metrics"
-        linkLabel="Read metric definitions"
+        eyebrow={t('Research output leaderboard', '科研产出排行榜')}
+        title={t('Decades of accumulated output separate a small group of institutions.', '数十年的累积产出，让一小批院校脱颖而出。')}
+        description={t(
+          `OpenAlex-derived h-index, lifetime works, and lifetime citations for ${number.format(insights.researchProfiles.institutionCount)} institutions with a resolved research profile. Several leaders here sit well outside any single ranking's top tier—this is a cumulative-output signal, independent of the consensus above.`,
+          `基于 OpenAlex 的 h 指数、累计论著数和累计被引次数，涵盖 ${number.format(insights.researchProfiles.institutionCount)} 所已确认科研档案的院校。这里有几所领先院校远在任何单一排名的第一梯队之外——这是累积产出信号，与上文的共识无关。`,
+        )}
+        href={href('/methodology/#research-metrics')}
+        linkLabel={t('Read metric definitions', '阅读指标定义')}
       />
       <ResearchOutputLeaders data={insights.researchProfiles} />
     </div>
@@ -289,11 +331,14 @@ const web = insights.webVisibility;
   <section class="section">
     <div class="shell">
       <SectionHeading
-        eyebrow="Web presence vs. academic standing"
-        title="A large web footprint is its own signal, distinct from scholarly rank."
-        description={`Webometrics' complete ${web.year} edition ranks ${number.format(web.total)} institutions by web visibility${web.latestEdition ? `; its July ${web.latestEdition.year} edition publishes only the top ${web.latestEdition.perCountry} per country` : ''}. Against the academic consensus for the ${number.format(web.matched)} shared universities, some punch far above their scholarly weight online while others stay comparatively quiet.`}
-        href="/methodology/#providers"
-        linkLabel="See data sources"
+        eyebrow={t('Web presence vs. academic standing', '网络影响力与学术地位')}
+        title={t('A large web footprint is its own signal, distinct from scholarly rank.', '庞大的网络足迹是一种独立信号，有别于学术排名。')}
+        description={t(
+          `Webometrics' complete ${web.year} edition ranks ${number.format(web.total)} institutions by web visibility${web.latestEdition ? `; its July ${web.latestEdition.year} edition publishes only the top ${web.latestEdition.perCountry} per country` : ''}. Against the academic consensus for the ${number.format(web.matched)} shared universities, some punch far above their scholarly weight online while others stay comparatively quiet.`,
+          `Webometrics ${web.year} 完整版按网络可见度为 ${number.format(web.total)} 所院校排名${web.latestEdition ? `；其 ${web.latestEdition.year} 年 7 月版只公布每个国家的前 ${web.latestEdition.perCountry} 名` : ''}。与学术共识对照这 ${number.format(web.matched)} 所共同院校，有些在网上的影响力远超其学术分量，另一些则相对低调。`,
+        )}
+        href={href('/methodology/#providers')}
+        linkLabel={t('See data sources', '查看数据来源')}
       />
       <WebVisibility data={insights.webVisibility} />
     </div>

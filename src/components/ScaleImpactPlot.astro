@@ -1,12 +1,14 @@
 ---
 import type { LeidenPoint } from '../data/schema';
-import { compact, decimal } from '../lib/format';
+import { pageI18n } from '../i18n/page';
 
 interface Props {
   points: LeidenPoint[];
 }
 
 const { points } = Astro.props;
+const { t, fmt, country } = pageI18n(Astro.url);
+const { compact, decimal } = fmt;
 const width = 900;
 const height = 440;
 const margin = { left: 62, right: 24, top: 28, bottom: 54 };
@@ -32,10 +34,12 @@ const yTicks = Array.from({ length: 5 }, (_, index) =>
 
 <div class="plot surface">
   <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-labelledby="plot-title plot-desc">
-    <title id="plot-title">Leiden publication scale versus normalized citation impact</title>
+    <title id="plot-title">{t('Leiden publication scale versus normalized citation impact', '莱顿：论文规模与归一化引用影响力')}</title>
     <desc id="plot-desc">
-      Each point is a university in the top 140 by fractional publication count.
-      Points farther right publish more; points higher up have greater field-normalized impact.
+      {t(
+        'Each point is a university in the top 140 by fractional publication count. Points farther right publish more; points higher up have greater field-normalized impact.',
+        '每个点代表按分数式论文计数排名前 140 的一所大学。越靠右发表越多；越靠上领域归一化影响力越高。',
+      )}
     </desc>
     {yTicks.map((tick) => (
       <g>
@@ -66,7 +70,7 @@ const yTicks = Array.from({ length: 5 }, (_, index) =>
       </g>
     ))}
     <text x={margin.left + innerWidth / 2} y={height - 12} text-anchor="middle" class="axis-label">
-      Fractional publication count (log scale)
+      {t('Fractional publication count (log scale)', '分数式论文计数（对数刻度）')}
     </text>
     <text
       x={16}
@@ -75,7 +79,7 @@ const yTicks = Array.from({ length: 5 }, (_, index) =>
       class="axis-label"
       transform={`rotate(-90 16 ${margin.top + innerHeight / 2})`}
     >
-      Field-normalized citation impact
+      {t('Field-normalized citation impact', '领域归一化引用影响力')}
     </text>
     {points.map((point) => (
       <circle
@@ -85,12 +89,20 @@ const yTicks = Array.from({ length: 5 }, (_, index) =>
         class:list={{ standout: point.top10Share >= 20 }}
       >
         <title>
-          {`${point.name} · ${point.country}\n${compact.format(point.publicationCount)} publications · ${decimal.format(point.normalizedImpact)} normalized impact · ${decimal.format(point.top10Share)}% top-10% papers`}
+          {t(
+            `${point.name} · ${point.country}\n${compact.format(point.publicationCount)} publications · ${decimal.format(point.normalizedImpact)} normalized impact · ${decimal.format(point.top10Share)}% top-10% papers`,
+            `${point.name} · ${country(point.country)}\n论文 ${compact.format(point.publicationCount)} · 归一化影响力 ${decimal.format(point.normalizedImpact)} · 前 10% 论文占 ${decimal.format(point.top10Share)}%`,
+          )}
         </title>
       </circle>
     ))}
   </svg>
-  <p>Hover a point for institution detail. Larger coral points have at least 20% of publications in the field-normalized top 10%.</p>
+  <p>
+    {t(
+      'Hover a point for institution detail. Larger coral points have at least 20% of publications in the field-normalized top 10%.',
+      '将鼠标悬停在点上查看院校详情。较大的珊瑚色点表示至少 20% 的论文位于领域归一化前 10%。',
+    )}
+  </p>
 </div>
 
 <style>

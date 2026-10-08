@@ -9,7 +9,17 @@ import sitemap from '@astrojs/sitemap';
 const SITE = process.env.SITE_URL ?? 'https://unirank.genisisiq.com';
 
 // https://astro.build/config
+// English is served unprefixed; Simplified Chinese mirrors every page under /zh/.
 export default defineConfig({
   site: SITE,
-  integrations: [sitemap()],
+  i18n: {
+    locales: ['en', 'zh'],
+    defaultLocale: 'en',
+    routing: { prefixDefaultLocale: false },
+  },
+  integrations: [
+    sitemap({
+      i18n: { defaultLocale: 'en', locales: { en: 'en', zh: 'zh-CN' } },
+    }),
+  ],
 });

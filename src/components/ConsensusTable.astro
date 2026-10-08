@@ -1,5 +1,6 @@
 ---
 import type { ConsensusInstitution } from '../data/schema';
+import { pageI18n } from '../i18n/page';
 import CustomSelect from './CustomSelect.astro';
 
 interface Props {
@@ -13,6 +14,7 @@ const {
   limit = institutions.length,
   interactive = false,
 } = Astro.props;
+const { t, country: countryName, provider } = pageI18n(Astro.url);
 const shown = institutions.slice(0, limit);
 const countries = [...new Set(shown.map((item) => item.country))].sort();
 const providerShort: Record<string, string> = {
@@ -33,58 +35,58 @@ const providerShort: Record<string, string> = {
   {interactive && (
     <div class="filters surface">
       <label class="search">
-        <span>Search institution</span>
-        <input type="search" placeholder="Try Oxford, Tsinghua, Toronto…" data-search />
+        <span>{t('Search institution', '搜索院校')}</span>
+        <input type="search" placeholder={t('Try Oxford, Tsinghua, Toronto…', '试试 Oxford、Tsinghua、Toronto…')} data-search />
       </label>
       <label>
-        <span>Country</span>
-        <CustomSelect data-country aria-label="Filter by country">
-          <option value="">All countries</option>
-          {countries.map((country) => <option value={country}>{country}</option>)}
+        <span>{t('Country', '国家/地区')}</span>
+        <CustomSelect data-country aria-label={t('Filter by country', '按国家/地区筛选')}>
+          <option value="">{t('All countries', '全部国家/地区')}</option>
+          {countries.map((country) => <option value={country}>{countryName(country)}</option>)}
         </CustomSelect>
       </label>
       <label>
-        <span>Coverage</span>
-        <CustomSelect data-coverage aria-label="Filter by provider coverage">
-          <option value="4">4+ providers</option>
-          <option value="5">5+ providers</option>
-          <option value="6">All 6 providers</option>
+        <span>{t('Coverage', '覆盖')}</span>
+        <CustomSelect data-coverage aria-label={t('Filter by provider coverage', '按排名覆盖数筛选')}>
+          <option value="4">{t('4+ providers', '4 家及以上')}</option>
+          <option value="5">{t('5+ providers', '5 家及以上')}</option>
+          <option value="6">{t('All 6 providers', '全部 6 家')}</option>
         </CustomSelect>
       </label>
-      <p data-result-count aria-live="polite">{shown.length} institutions</p>
+      <p data-result-count aria-live="polite">{t(`${shown.length} institutions`, `${shown.length} 所院校`)}</p>
     </div>
   )}
   <div class="table-wrap">
     <table>
       <thead>
         <tr>
-          <th>Signal rank</th>
-          <th>Institution</th>
-          <th>Consensus</th>
-          <th>Provider evidence</th>
+          <th>{t('Signal rank', '信号排名')}</th>
+          <th>{t('Institution', '院校')}</th>
+          <th>{t('Consensus', '共识分')}</th>
+          <th>{t('Provider evidence', '各家排名')}</th>
         </tr>
       </thead>
       <tbody>
         {shown.map((institution) => (
           <tr
             data-row
-            data-search={`${institution.name} ${institution.country}`.toLowerCase()}
+            data-search={`${institution.name} ${institution.country} ${countryName(institution.country, institution.countryCode)}`.toLowerCase()}
             data-country={institution.country}
             data-provider-count={institution.providerCount}
           >
             <td><strong class="signal-rank">#{institution.consensusRank}</strong></td>
             <td>
               <strong class="institution-name">{institution.name}</strong>
-              <small>{institution.country}</small>
+              <small>{countryName(institution.country, institution.countryCode)}</small>
             </td>
             <td>
               <strong class="score">{institution.score.toFixed(1)}</strong>
-              <small>{institution.providerCount}/6 sources</small>
+              <small>{t(`${institution.providerCount}/6 sources`, `${institution.providerCount}/6 个来源`)}</small>
             </td>
             <td>
               <div class="rank-chips">
                 {institution.ranks.map((rank) => (
-                  <span title={`${rank.providerLabel} ${rank.year}: ${rank.rankDisplay}`}>
+                  <span title={`${provider(rank.provider, rank.providerLabel)} ${rank.year}: ${rank.rankDisplay}`}>
                     <b>{providerShort[rank.provider] ?? rank.provider.toUpperCase()}</b>
                     {rank.rankDisplay}
                   </span>
@@ -99,7 +101,10 @@ const providerShort: Record<string, string> = {
 </div>
 
 <script>
+  import { documentLocale, translator } from '../i18n';
+
   const initializeConsensusTables = () => {
+    const t = translator(documentLocale());
     document.querySelectorAll<HTMLElement>('[data-consensus-table][data-interactive="true"]')
       .forEach((root) => {
         if (root.dataset.initialized === 'true') return;
@@ -123,7 +128,7 @@ const providerShort: Record<string, string> = {
             row.hidden = !matches;
             if (matches) visible += 1;
           });
-          if (count) count.textContent = `${visible} institution${visible === 1 ? '' : 's'}`;
+          if (count) count.textContent = t(`${visible} institution${visible === 1 ? '' : 's'}`, `${visible} 所院校`);
           writeUrl();
         };
 

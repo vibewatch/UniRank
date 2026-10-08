@@ -1,20 +1,27 @@
 ---
 import type { InstitutionTrend } from '../data/schema';
+import { pageI18n } from '../i18n/page';
 import CustomSelect from './CustomSelect.astro';
 
 interface Props {
   trends: InstitutionTrend[];
 }
 
-const { trends } = Astro.props;
+const { t, country, provider } = pageI18n(Astro.url);
+// Localize display labels before the client script renders them.
+const trends = Astro.props.trends.map((trend) => ({
+  ...trend,
+  country: country(trend.country),
+  series: trend.series.map((series) => ({ ...series, label: provider(series.provider, series.label) })),
+}));
 const serialized = JSON.stringify(trends).replaceAll('<', '\\u003c');
 ---
 
 <section class="trend-explorer surface" data-trend-explorer>
   <div class="controls">
     <label>
-      <span>Institution</span>
-      <CustomSelect data-institution aria-label="Choose an institution">
+      <span>{t('Institution', '院校')}</span>
+      <CustomSelect data-institution aria-label={t('Choose an institution', '选择院校')}>
         {trends.map((trend, index) => (
           <option value={trend.id} selected={index === 0}>
             {trend.name}
@@ -23,8 +30,8 @@ const serialized = JSON.stringify(trends).replaceAll('<', '\\u003c');
       </CustomSelect>
     </label>
     <label>
-      <span>Provider lens</span>
-      <CustomSelect data-provider placeholder="Select provider" aria-label="Choose a provider lens" />
+      <span>{t('Provider lens', '排名视角')}</span>
+      <CustomSelect data-provider placeholder={t('Select provider', '选择排名')} aria-label={t('Choose a provider lens', '选择排名视角')} />
     </label>
     <div class="trend-summary" data-summary aria-live="polite"></div>
   </div>
@@ -33,13 +40,15 @@ const serialized = JSON.stringify(trends).replaceAll('<', '\\u003c');
       data-chart
       viewBox="0 0 900 360"
       role="img"
-      aria-label="Historical rank trajectory"
+      aria-label={t('Historical rank trajectory', '历史排名轨迹')}
     ></svg>
   </div>
   <div class="point-list" data-point-list></div>
   <p class="fine-print">
-    Rank 1 is at the top. Each provider is viewed separately because table size,
-    methodology, and rank bands differ. Banded ranks use their lower bound.
+    {t(
+      'Rank 1 is at the top. Each provider is viewed separately because table size, methodology, and rank bands differ. Banded ranks use their lower bound.',
+      '第 1 名位于顶部。由于榜单规模、方法和名次区间各不相同，每家排名单独查看。区间名次按其下限计。',
+    )}
   </p>
   <script
     id="trend-explorer-data"
@@ -50,6 +59,8 @@ const serialized = JSON.stringify(trends).replaceAll('<', '\\u003c');
 </section>
 
 <script>
+  import { documentLocale, translator } from '../i18n';
+
   interface Point {
     year: number;
     rank: number;
@@ -73,6 +84,7 @@ const serialized = JSON.stringify(trends).replaceAll('<', '\\u003c');
     const dataElement = document.querySelector<HTMLScriptElement>('#trend-explorer-data');
     if (!root || !dataElement || root.dataset.initialized === 'true') return;
     root.dataset.initialized = 'true';
+    const t = translator(documentLocale());
     const trends = JSON.parse(dataElement.textContent || '[]') as Trend[];
     const institutionSelect = root.querySelector<HTMLSelectElement>('[data-institution]');
     const providerSelect = root.querySelector<HTMLSelectElement>('[data-provider]');
@@ -138,7 +150,10 @@ const serialized = JSON.stringify(trends).replaceAll('<', '\\u003c');
 
       chart.replaceChildren();
       const title = svgElement('title', {});
-      title.textContent = `${trend.name}: ${series.label} rank from ${minYear} to ${maxYear}`;
+      title.textContent = t(
+        `${trend.name}: ${series.label} rank from ${minYear} to ${maxYear}`,
+        `${trend.name}：${minYear}–${maxYear} 年${series.label}排名`,
+      );
       chart.append(title);
 
       for (let index = 0; index < 5; index += 1) {
@@ -213,10 +228,10 @@ const serialized = JSON.stringify(trends).replaceAll('<', '\\u003c');
       const movement = first.rank - latest.rank;
       const movementLabel =
         movement > 0
-          ? `improved ${Math.round(movement)} places`
+          ? t(`improved ${Math.round(movement)} places`, `上升 ${Math.round(movement)} 位`)
           : movement < 0
-            ? `moved down ${Math.abs(Math.round(movement))} places`
-            : 'held the same rank';
+            ? t(`moved down ${Math.abs(Math.round(movement))} places`, `下降 ${Math.abs(Math.round(movement))} 位`)
+            : t('held the same rank', '名次不变');
       const summaryCountry = document.createElement('span');
       summaryCountry.textContent = trend.country;
       const summaryRanks = document.createElement('strong');

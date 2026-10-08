@@ -1,5 +1,6 @@
 ---
 import type { Provider } from '../data/schema';
+import { pageI18n } from '../i18n/page';
 
 interface Props {
   providers: Provider[];
@@ -12,6 +13,7 @@ const {
   start = Math.min(...providers.map((provider) => provider.firstYear)),
   end = Math.max(...providers.map((provider) => provider.lastYear)),
 } = Astro.props;
+const { provider: providerName, kind } = pageI18n(Astro.url);
 const span = Math.max(1, end - start);
 const pct = (year: number) => (year - start) / span * 100;
 // Roughly four intervals, always ending on the final edition year.
@@ -38,8 +40,8 @@ const gridlines = ticks.slice(1, -1);
         <div class="provider">
           <i style={`--provider:${provider.color}`}></i>
           <span>
-            <strong>{provider.label}</strong>
-            <small>{provider.kind}</small>
+            <strong>{providerName(provider.id, provider.label)}</strong>
+            <small>{kind(provider.kind)}</small>
           </span>
         </div>
         <div class="rail">

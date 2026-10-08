@@ -1,5 +1,6 @@
 ---
-import type { CountryAtlas } from '../data/schema';
+import type { CountryAtlas, CountryAtlasMetric } from '../data/schema';
+import { pageI18n } from '../i18n/page';
 
 interface Props {
   atlas: CountryAtlas;
@@ -7,17 +8,65 @@ interface Props {
 }
 
 const { atlas, initialMetric = 'consensusTop100' } = Astro.props;
+const { locale, t, country: countryName } = pageI18n(Astro.url);
+
+// Chinese copy for the generator's metric descriptions. Edition years are read
+// back out of the English text so the labels follow the data.
+const localizeMetric = (metric: CountryAtlasMetric): CountryAtlasMetric => {
+  if (locale === 'en') return metric;
+  const [y1 = '', y2 = y1] = `${metric.short} ${metric.description}`.match(/\b(?:19|20)\d{2}\b/g) ?? [];
+  const zh: Record<string, Pick<CountryAtlasMetric, 'label' | 'short' | 'unit' | 'description'>> = {
+    consensusTop100: {
+      label: '前 100 名席位',
+      short: '前 100 席位',
+      unit: '所院校',
+      description: '六家共识排名最新综合榜单中进入前 100 名的院校数。同一国家可在每家排名中各计一次。',
+    },
+    providerReach: {
+      label: '排名覆盖',
+      short: '进入前 100 的排名数',
+      unit: '家排名（共 6 家）',
+      description: '六家共识排名中，有几家至少有一所该国院校进入前 100 名。',
+    },
+    natureShare: {
+      label: '自然指数份额',
+      short: `自然指数 ${y1} 份额`,
+      unit: '分数式份额',
+      description: `自然指数 ${y1} 学术机构榜单中各国份额（Share）之和。仅覆盖一组精选的自然科学与健康科学期刊。`,
+    },
+    natureShareShift: {
+      label: '自然指数份额变化',
+      short: `${y1}–${y2} 变化`,
+      unit: '份额变化',
+      description: `自然指数学术份额从 ${y1} 版到 ${y2} 版的变化。方向具有参考价值；幅度反映的是固定的期刊篮子。`,
+    },
+    arwuTop100: {
+      label: '软科 ARWU 前 100 席位',
+      short: `ARWU ${y1} 前 100`,
+      unit: '所院校',
+      description: `进入软科世界大学学术排名（ARWU）${y1} 全球前 100 的院校数。`,
+    },
+    openAlexWorks: {
+      label: 'OpenAlex 产出',
+      short: `${y1} 论著`,
+      unit: '论著关联数',
+      description: `${y1} 年 OpenAlex 重建数据中各机构论著关联数之和。这是规模指标，而非质量指标。`,
+    },
+  };
+  return { ...metric, ...(zh[metric.id] ?? {}) };
+};
+const metrics = atlas.metrics.map(localizeMetric);
 const serialized = JSON.stringify({
-  metrics: atlas.metrics,
-  countries: atlas.countries,
-  campuses: atlas.campuses,
+  metrics,
+  countries: atlas.countries.map((entry) => ({ ...entry, country: countryName(entry.country, entry.iso2) })),
+  campuses: atlas.campuses.map((campus) => ({ ...campus, country: countryName(campus.country, campus.countryCode) })),
   initialMetric,
 }).replaceAll('<', '\\u003c');
 ---
 
 <figure class="worldmap" data-worldmap>
-  <div class="map-controls" data-metric-buttons role="tablist" aria-label="Choose a country metric">
-    {atlas.metrics.map((metric) => (
+  <div class="map-controls" data-metric-buttons role="tablist" aria-label={t('Choose a country metric', '选择国家指标')}>
+    {metrics.map((metric) => (
       <button
         type="button"
         role="tab"
@@ -29,7 +78,7 @@ const serialized = JSON.stringify({
       </button>
     ))}
     <button type="button" class="campus-toggle" data-campus-toggle aria-pressed="false">
-      Show consensus campuses
+      {t('Show consensus campuses', '显示共识院校位置')}
     </button>
   </div>
 
@@ -37,7 +86,7 @@ const serialized = JSON.stringify({
 
   <div class="map-stage">
     <div class="map-frame">
-      <svg data-map viewBox="0 0 960 500" role="img" aria-label="World choropleth of the selected university metric">
+      <svg data-map viewBox="0 0 960 500" role="img" aria-label={t('World choropleth of the selected university metric', '所选大学指标的世界分级地图')}>
         <rect x="0" y="0" width="960" height="500" fill="#f7f4ec"></rect>
       </svg>
       <div class="map-tooltip" data-tooltip hidden aria-hidden="true"></div>
@@ -67,6 +116,7 @@ const serialized = JSON.stringify({
   import { feature } from 'topojson-client';
   import type { Feature, Geometry } from 'geojson';
   import topology from 'world-atlas/countries-110m.json';
+  import { documentLocale, formatters, translator } from '../i18n';
 
   type Metric = {
     id: string;
@@ -121,9 +171,9 @@ const serialized = JSON.stringify({
     const POS = ['#d7efe7', '#9dd6c3', '#54b699', '#178a6f'];
     const NEG = ['#f8ded5', '#f0b09c', '#e17a5f', '#c1462c'];
 
-    const numberFmt = new Intl.NumberFormat('en-US');
-    const compactFmt = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 });
-    const decimalFmt = new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 });
+    const locale = documentLocale();
+    const t = translator(locale);
+    const { number: numberFmt, compact: compactFmt, decimal: decimalFmt } = formatters(locale);
 
     const formatValue = (value: number, metric: Metric): string => {
       if (metric.format === 'compact') return compactFmt.format(value);
@@ -301,7 +351,7 @@ const serialized = JSON.stringify({
       const nochip = document.createElement('i');
       nochip.style.background = NEUTRAL;
       const nolabel = document.createElement('b');
-      nolabel.textContent = metric.diverging ? 'no change' : 'none';
+      nolabel.textContent = metric.diverging ? t('no change', '无变化') : t('none', '无');
       nodata.append(nochip, nolabel);
       scale.append(nodata);
       legend.append(scale);
@@ -309,7 +359,7 @@ const serialized = JSON.stringify({
 
     const renderRankList = (metric: Metric) => {
       if (!rankList || !rankTitle) return;
-      rankTitle.textContent = `Leading systems · ${metric.short}`;
+      rankTitle.textContent = t(`Leading systems · ${metric.short}`, `领先体系 · ${metric.short}`);
       const ranked = [...payload.countries]
         .filter((country) => (metric.diverging ? country.values[metric.id] !== 0 : country.values[metric.id] > 0))
         .sort((a, b) => Math.abs(b.values[metric.id]) - Math.abs(a.values[metric.id]))
@@ -361,7 +411,7 @@ const serialized = JSON.stringify({
       highlight(id, true);
       const country = byId.get(id);
       const geoName =
-        mapFeatures.find((shape) => String(shape.id ?? '') === id)?.properties?.name ?? 'Unknown';
+        mapFeatures.find((shape) => String(shape.id ?? '') === id)?.properties?.name ?? t('Unknown', '未知');
       const heading = document.createElement('strong');
       heading.textContent = country ? country.country : geoName;
       const content: HTMLElement[] = [heading];
@@ -379,13 +429,13 @@ const serialized = JSON.stringify({
         if (country.topInstitution) {
           const top = document.createElement('span');
           top.className = 'tt-top';
-          top.textContent = `Top consensus: ${country.topInstitution}`;
+          top.textContent = t(`Top consensus: ${country.topInstitution}`, `共识第一：${country.topInstitution}`);
           content.push(top);
         }
       } else {
         const empty = document.createElement('span');
         empty.className = 'tt-empty';
-        empty.textContent = 'Not in the current archive tables.';
+        empty.textContent = t('Not in the current archive tables.', '当前存档榜单中没有该地区。');
         content.push(empty);
       }
       tooltip.replaceChildren(...content);
@@ -406,7 +456,7 @@ const serialized = JSON.stringify({
       if (campus.consensusRank !== null) {
         const rank = document.createElement('span');
         rank.className = 'tt-top';
-        rank.textContent = `Consensus #${campus.consensusRank}`;
+        rank.textContent = t(`Consensus #${campus.consensusRank}`, `共识排名第 ${campus.consensusRank}`);
         content.push(rank);
       }
       tooltip.replaceChildren(...content);
@@ -439,8 +489,10 @@ const serialized = JSON.stringify({
       }
       if (caption) caption.textContent = metric.description;
       if (note)
-        note.textContent =
-          'Hover a country for its full metric profile. Countries absent from a provider table are shown in neutral grey, not zero. Small territories that the 110m basemap omits (for example Hong Kong, Singapore, Andorra) may not render even when present in the data.';
+        note.textContent = t(
+          'Hover a country for its full metric profile. Countries absent from a provider table are shown in neutral grey, not zero. Small territories that the 110m basemap omits (for example Hong Kong, Singapore, Andorra) may not render even when present in the data.',
+          '将鼠标悬停在国家上可查看全部指标。未出现在某家排名中的国家显示为中性灰色，而不是零。1:1.1 亿底图省略的小面积地区（如中国香港、新加坡、安道尔）即使在数据中存在，也可能无法显示。',
+        );
       paintMap(metric);
       renderLegend(metric);
       renderRankList(metric);
@@ -458,7 +510,9 @@ const serialized = JSON.stringify({
         campusLayer.style.display = campusesVisible ? '' : 'none';
         campusToggle.classList.toggle('active', campusesVisible);
         campusToggle.setAttribute('aria-pressed', campusesVisible ? 'true' : 'false');
-        campusToggle.textContent = campusesVisible ? 'Hide consensus campuses' : 'Show consensus campuses';
+        campusToggle.textContent = campusesVisible
+          ? t('Hide consensus campuses', '隐藏共识院校位置')
+          : t('Show consensus campuses', '显示共识院校位置');
       });
     }
 

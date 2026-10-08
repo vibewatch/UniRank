@@ -1,25 +1,27 @@
 ---
 import type { NatureCountryShift } from '../data/schema';
-import { decimal, number, signedPercent } from '../lib/format';
+import { pageI18n } from '../i18n/page';
 
 interface Props {
   items: NatureCountryShift[];
 }
 
 const { items } = Astro.props;
+const { t, fmt, country } = pageI18n(Astro.url);
+const { decimal, number, signedPercent } = fmt;
 const max = Math.max(...items.map((item) => item.share2025));
 ---
 
 <div class="shift-chart surface">
   <div class="legend">
-    <span><i class="early"></i>2015 output</span>
-    <span><i class="latest"></i>2025 output</span>
+    <span><i class="early"></i>{t('2015 output', '2015 年产出')}</span>
+    <span><i class="latest"></i>{t('2025 output', '2025 年产出')}</span>
   </div>
   <ol>
     {items.map((item) => (
       <li>
         <div class="country">
-          <strong>{item.country}</strong>
+          <strong>{country(item.country, item.countryCode)}</strong>
           <span class:list={{ positive: item.shareChange >= 0, negative: item.shareChange < 0 }}>
             {signedPercent(item.shareChangePercent)}
           </span>
@@ -32,7 +34,7 @@ const max = Math.max(...items.map((item) => item.share2025));
             <i></i><b>{decimal.format(item.share2025)}</b>
           </span>
         </div>
-        <span class="institutions mono">{number.format(item.institutions2025)} in table</span>
+        <span class="institutions mono">{t(`${number.format(item.institutions2025)} in table`, `${number.format(item.institutions2025)} 所上榜`)}</span>
       </li>
     ))}
   </ol>

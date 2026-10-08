@@ -1,37 +1,44 @@
 ---
 import type { NatureSubject } from '../data/schema';
+import { pageI18n } from '../i18n/page';
 import CustomSelect from './CustomSelect.astro';
 
 interface Props {
   subjects: NatureSubject[];
 }
 
-const { subjects } = Astro.props;
+const { t, country, subject: subjectName } = pageI18n(Astro.url);
+// Country names only exist as English labels here, so localize them before handing the tables to the client.
+const subjects = Astro.props.subjects.map((subject) => ({
+  ...subject,
+  label: subjectName(subject.label),
+  leaders: subject.leaders.map((leader) => ({ ...leader, country: country(leader.country) })),
+}));
 const initial = subjects[0];
 const pageSize = 20;
-const serialized = JSON.stringify(subjects).replaceAll('<', '\u003c');
+const serialized = JSON.stringify(subjects).replaceAll('<', '\\u003c');
 ---
 
 <div class="nature-browser" data-nature-browser>
   <div class="nature-controls">
     <label>
-      <span>Academic discipline</span>
-      <CustomSelect data-nature-subject aria-label="Choose a Nature Index academic discipline">
+      <span>{t('Academic discipline', '学术学科')}</span>
+      <CustomSelect data-nature-subject aria-label={t('Choose a Nature Index academic discipline', '选择自然指数学术学科')}>
         {subjects.map((subject, index) => (
           <option value={subject.subject} selected={index === 0}>{subject.label}</option>
         ))}
       </CustomSelect>
     </label>
     <div class="nature-summary" data-nature-summary aria-live="polite">
-      <span>Complete published table</span>
-      <strong>{initial?.leaders.length ?? 0} institutions</strong>
+      <span>{t('Complete published table', '完整发布榜单')}</span>
+      <strong>{t(`${initial?.leaders.length ?? 0} institutions`, `${initial?.leaders.length ?? 0} 所院校`)}</strong>
     </div>
   </div>
 
   <div class="nature-list-head" aria-hidden="true">
-    <span>Rank</span>
-    <span>Institution</span>
-    <span>Research output</span>
+    <span>{t('Rank', '排名')}</span>
+    <span>{t('Institution', '院校')}</span>
+    <span>{t('Research output', '科研产出')}</span>
   </div>
   <ol class="nature-results" data-nature-results>
     {initial?.leaders.slice(0, pageSize).map((leader) => (
@@ -42,23 +49,30 @@ const serialized = JSON.stringify(subjects).replaceAll('<', '\u003c');
           <small>{leader.country}</small>
         </span>
         <span class="nature-metrics">
-          <span><small>Share</small><b>{leader.share}</b></span>
-          <span><small>Count</small><b>{leader.count}</b></span>
+          <span><small>{t('Share', '份额')}</small><b>{leader.share}</b></span>
+          <span><small>{t('Count', '计数')}</small><b>{leader.count}</b></span>
         </span>
       </li>
     ))}
   </ol>
 
-  <nav class="nature-pagination" data-nature-pagination aria-label="Nature Index leaderboard pages">
-    <button type="button" data-nature-previous>Previous</button>
-    <span data-nature-page>1–{Math.min(pageSize, initial?.leaders.length ?? 0)} of {initial?.leaders.length ?? 0}</span>
-    <button type="button" data-nature-next>Next</button>
+  <nav class="nature-pagination" data-nature-pagination aria-label={t('Nature Index leaderboard pages', '自然指数排行榜分页')}>
+    <button type="button" data-nature-previous>{t('Previous', '上一页')}</button>
+    <span data-nature-page>
+      {t(
+        `1–${Math.min(pageSize, initial?.leaders.length ?? 0)} of ${initial?.leaders.length ?? 0}`,
+        `第 1–${Math.min(pageSize, initial?.leaders.length ?? 0)} 所，共 ${initial?.leaders.length ?? 0} 所`,
+      )}
+    </span>
+    <button type="button" data-nature-next>{t('Next', '下一页')}</button>
   </nav>
 
   <script type="application/json" is:inline data-nature-data set:html={serialized}></script>
 </div>
 
 <script>
+  import { documentLocale, LOCALE_META, translator } from '../i18n';
+
   interface NatureLeader {
     rank: number;
     name: string;
@@ -74,10 +88,11 @@ const serialized = JSON.stringify(subjects).replaceAll('<', '\u003c');
   }
 
   const NATURE_PAGE_SIZE = 20;
-  const natureNumber = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
-
   const initializeNatureBrowser = (root: HTMLElement): void => {
     if (root.dataset.initialized === 'true') return;
+    const locale = documentLocale();
+    const t = translator(locale);
+    const natureNumber = new Intl.NumberFormat(LOCALE_META[locale].intl, { maximumFractionDigits: 2 });
     const dataElement = root.querySelector<HTMLScriptElement>('[data-nature-data]');
     if (!dataElement) return;
     root.dataset.initialized = 'true';
@@ -118,13 +133,13 @@ const serialized = JSON.stringify(subjects).replaceAll('<', '\u003c');
         metrics.className = 'nature-metrics';
         const share = document.createElement('span');
         const shareLabel = document.createElement('small');
-        shareLabel.textContent = 'Share';
+        shareLabel.textContent = t('Share', '份额');
         const shareValue = document.createElement('b');
         shareValue.textContent = natureNumber.format(leader.share);
         share.append(shareLabel, shareValue);
         const count = document.createElement('span');
         const countLabel = document.createElement('small');
-        countLabel.textContent = 'Count';
+        countLabel.textContent = t('Count', '计数');
         const countValue = document.createElement('b');
         countValue.textContent = natureNumber.format(leader.count);
         count.append(countLabel, countValue);
@@ -135,12 +150,18 @@ const serialized = JSON.stringify(subjects).replaceAll('<', '\u003c');
 
       if (summary) {
         const label = document.createElement('span');
-        label.textContent = 'Complete published table';
+        label.textContent = t('Complete published table', '完整发布榜单');
         const total = document.createElement('strong');
-        total.textContent = `${natureNumber.format(subject.leaders.length)} institutions`;
+        total.textContent = t(`${natureNumber.format(subject.leaders.length)} institutions`, `${natureNumber.format(subject.leaders.length)} 所院校`);
         summary.replaceChildren(label, total);
       }
-      if (pageLabel) pageLabel.textContent = `${start + 1}–${Math.min(start + NATURE_PAGE_SIZE, subject.leaders.length)} of ${subject.leaders.length}`;
+      if (pageLabel) {
+        const last = Math.min(start + NATURE_PAGE_SIZE, subject.leaders.length);
+        pageLabel.textContent = t(
+          `${start + 1}–${last} of ${subject.leaders.length}`,
+          `第 ${start + 1}–${last} 所，共 ${subject.leaders.length} 所`,
+        );
+      }
       if (previous) previous.disabled = page === 0;
       if (next) next.disabled = page >= pages - 1;
     };

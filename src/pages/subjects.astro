@@ -5,8 +5,11 @@ import SubjectExplorer from '../components/SubjectExplorer.astro';
 import SubjectMatrix from '../components/SubjectMatrix.astro';
 import NatureLeaderboards from '../components/NatureLeaderboards.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { pageI18n } from '../i18n/page';
 import { insights } from '../lib/data';
-import { number } from '../lib/format';
+
+const { t, fmt, country } = pageI18n(Astro.url);
+const { number } = fmt;
 
 const subjectLeaderCountries = insights.natureSubjects.map(
   (subject) => subject.leaders[0]?.country,
@@ -26,28 +29,39 @@ const natureLeaderCount = insights.natureSubjects.reduce(
   (total, subject) => total + subject.leaders.length,
   0,
 );
-const subjectNote = `Subject tables from ${subjectProviderCount} rankings: QS, ShanghaiRanking (GRAS), U.S. News, Times Higher Education, NTU, SCImago research areas, and Leiden. The chart summarizes the eight largest country groups; the country menu and paginated school list use every institution with a resolved country in the selected source table. Providers differ in method—publisher rankings weight reputation and surveys while NTU, SCImago, and Leiden are bibliometric—so read each as its own lens, not a shared scale. Banded ranks use their lower bound.`;
+const subjectNote = t(
+  `Subject tables from ${subjectProviderCount} rankings: QS, ShanghaiRanking (GRAS), U.S. News, Times Higher Education, NTU, SCImago research areas, and Leiden. The chart summarizes the eight largest country groups; the country menu and paginated school list use every institution with a resolved country in the selected source table. Providers differ in method—publisher rankings weight reputation and surveys while NTU, SCImago, and Leiden are bibliometric—so read each as its own lens, not a shared scale. Banded ranks use their lower bound.`,
+  `学科榜单来自 ${subjectProviderCount} 家排名：QS、软科（GRAS）、U.S. News、泰晤士高等教育、NTU、SCImago 研究领域和莱顿。图表汇总了上榜院校最多的八个国家和地区；国家菜单和分页学校列表则涵盖所选榜单中所有能确定国家的院校。各家方法不同——发布方排名侧重声誉与调查，而 NTU、SCImago 和莱顿属于文献计量排名——请把每家当作独立视角，而非同一把尺子。区间名次按其下限计。`,
+);
+const leaderSplit = split
+  .slice(0, 2)
+  .map(([name, count]) => t(`${name} (${count})`, `${country(name)}（${count}）`))
+  .join(t(' and ', '和'));
 ---
 
 <BaseLayout
-  title="Study"
-  description="Compare specialist subject strengths across seven rankings—QS, ShanghaiRanking GRAS, U.S. News, Times, NTU, SCImago research areas, and Leiden—plus Nature Index academic tables, with transparent limits on what subject rankings can tell you."
+  title={t('Study', '选专业')}
+  description={t(
+    'Compare specialist subject strengths across seven rankings—QS, ShanghaiRanking GRAS, U.S. News, Times, NTU, SCImago research areas, and Leiden—plus Nature Index academic tables, with transparent limits on what subject rankings can tell you.',
+    '比较七家排名（QS、软科 GRAS、U.S. News、泰晤士、NTU、SCImago 研究领域和莱顿）以及自然指数学术榜单中的学科实力，并清楚说明学科排名能告诉你什么、不能告诉你什么。',
+  )}
 >
   <section class="page-hero subject-hero">
     <div class="shell hero-grid">
       <div>
-        <p class="eyebrow">Program-level evidence</p>
-        <h1>The broad table can hide the field that fits.</h1>
+        <p class="eyebrow">{t('Program-level evidence', '专业层面的证据')}</p>
+        <h1>{t('The broad table can hide the field that fits.', '综合榜单可能掩盖适合你的专业。')}</h1>
         <p class="lede">
-          Specialist institutions often disappear inside an overall ranking—or
-          never enter it at all. Subject tables reveal where focused research
-          communities outperform their broad institutional position.
+          {t(
+            'Specialist institutions often disappear inside an overall ranking—or never enter it at all. Subject tables reveal where focused research communities outperform their broad institutional position.',
+            '专精型院校在综合排名中往往默默无闻，甚至根本不上榜。学科榜单能揭示哪些专注的研究群体，表现远超其院校整体排名。',
+          )}
         </p>
       </div>
       <aside class="subject-stamp">
-        <span class="mono">ARCHIVED VIEWS</span>
+        <span class="mono">{t('ARCHIVED VIEWS', '存档视图')}</span>
         <strong>{number.format(insights.meta.subjectViews)}</strong>
-        <p>provider-specific subjects and fields across the archive</p>
+        <p>{t('provider-specific subjects and fields across the archive', '存档中各排名机构的学科与领域榜单')}</p>
       </aside>
     </div>
   </section>
@@ -55,15 +69,19 @@ const subjectNote = `Subject tables from ${subjectProviderCount} rankings: QS, S
   <section class="section">
     <div class="shell">
       <SectionHeading
-        eyebrow="Hidden strengths"
-        title="A specialist can lead its field without appearing broadly elite."
-        description={`All ${number.format(insights.qsSubjectOutperformers.length)} qualifying QS ${insights.qsSubjectYear} placements are shown across ${outperformerSubjectCount} subjects. Each placement is one university’s result in one subject and meets the same reproducible rule: subject top 25, plus an overall position of #300 or worse—or no overall listing. Subjects with no qualifying institution do not appear.`}
+        eyebrow={t('Hidden strengths', '隐藏的实力')}
+        title={t('A specialist can lead its field without appearing broadly elite.', '专精院校可以领跑本领域，却不在综合排名前列。')}
+        description={t(
+          `All ${number.format(insights.qsSubjectOutperformers.length)} qualifying QS ${insights.qsSubjectYear} placements are shown across ${outperformerSubjectCount} subjects. Each placement is one university’s result in one subject and meets the same reproducible rule: subject top 25, plus an overall position of #300 or worse—or no overall listing. Subjects with no qualifying institution do not appear.`,
+          `这里列出 QS ${insights.qsSubjectYear} 全部 ${number.format(insights.qsSubjectOutperformers.length)} 条符合条件的上榜记录，涉及 ${outperformerSubjectCount} 个学科。每条记录是一所大学在一个学科中的成绩，并满足同一条可复现的规则：学科排名前 25，且综合排名在第 300 名或以后（或未进入综合榜单）。没有符合条件院校的学科不会显示。`,
+        )}
       />
       <SpecialistExamples items={insights.qsSubjectOutperformers} />
       <p class="fine-print selection-note">
-        This is the complete set of placements matching the rule above, not a
-        new “most underrated” ranking. A university can appear in more than one
-        subject because each subject-table result is a separate observation.
+        {t(
+          'This is the complete set of placements matching the rule above, not a new “most underrated” ranking. A university can appear in more than one subject because each subject-table result is a separate observation.',
+          '这是符合上述规则的全部记录，而不是一份新的“最被低估”排名。同一所大学可能出现在多个学科中，因为每个学科榜单结果都是一条独立的观测。',
+        )}
       </p>
     </div>
   </section>
@@ -71,9 +89,15 @@ const subjectNote = `Subject tables from ${subjectProviderCount} rankings: QS, S
   <section class="section explorer-section">
     <div class="shell">
       <SectionHeading
-        eyebrow="Find schools by what you want to study"
-        title="Pick your subject, then see the top schools—and narrow to a country you’d actually consider."
-        description="Choose a discipline to reveal its highest-ranked universities, then filter the leaderboard to a single country to build a realistic list (for example, the best computer-science schools in Canada). The bars show which countries supply the most ranked programs in that field, so you can also let strength point you toward a destination."
+        eyebrow={t('Find schools by what you want to study', '按想学的专业找学校')}
+        title={t(
+          'Pick your subject, then see the top schools—and narrow to a country you’d actually consider.',
+          '选好专业，查看顶尖学校——再缩小到你真正考虑的国家。',
+        )}
+        description={t(
+          'Choose a discipline to reveal its highest-ranked universities, then filter the leaderboard to a single country to build a realistic list (for example, the best computer-science schools in Canada). The bars show which countries supply the most ranked programs in that field, so you can also let strength point you toward a destination.',
+          '选择一个学科，查看排名最高的大学；再把榜单筛选到单个国家，列出切实可行的名单（例如加拿大最好的计算机科学院校）。条形图显示该领域上榜项目最多的国家，你也可以据此反过来选择留学目的地。',
+        )}
       />
       <SubjectExplorer
         boards={insights.subjectBoards}
@@ -86,17 +110,19 @@ const subjectNote = `Subject tables from ${subjectProviderCount} rankings: QS, S
   <section class="section nature-section">
     <div class="shell">
       <SectionHeading
-        eyebrow="Nature Index 2026"
-        title="Academic discipline leaders split across research systems."
-        description={`All eight latest academic discipline tables are included, with ${number.format(natureLeaderCount)} published entries in total. Their #1 positions are led primarily by ${split.slice(0, 2).map(([country, count]) => `${country} (${count})`).join(' and ')}. Browse one complete table at a time below.`}
+        eyebrow={t('Nature Index 2026', '自然指数 2026')}
+        title={t('Academic discipline leaders split across research systems.', '各学术学科的领先者分布在不同科研体系中。')}
+        description={t(
+          `All eight latest academic discipline tables are included, with ${number.format(natureLeaderCount)} published entries in total. Their #1 positions are led primarily by ${leaderSplit}. Browse one complete table at a time below.`,
+          `收录全部八个最新学术学科榜单，共 ${number.format(natureLeaderCount)} 条已发布记录。各榜第 1 名主要来自${leaderSplit}。可在下方逐一浏览完整榜单。`,
+        )}
       />
       <NatureLeaderboards subjects={insights.natureSubjects} />
       <p class="fine-print nature-note">
-        These are all entries in the eight Nature Index 2026 academic discipline
-        tables in the archive (500 per discipline; Social sciences has 548).
-        Share is a fractional publication contribution; Count is not used in
-        the displayed rank. Nature Index covers a selected journal set and
-        should not be generalized to teaching, access, or all scholarly fields.
+        {t(
+          'These are all entries in the eight Nature Index 2026 academic discipline tables in the archive (500 per discipline; Social sciences has 548). Share is a fractional publication contribution; Count is not used in the displayed rank. Nature Index covers a selected journal set and should not be generalized to teaching, access, or all scholarly fields.',
+          '以上是存档中自然指数 2026 八个学术学科榜单的全部记录（每个学科 500 条，社会科学为 548 条）。Share（份额）是按作者比例分配的论文贡献；Count（计数）不用于所示排名。自然指数只覆盖一组精选期刊，不应推及教学、入学机会或所有学术领域。',
+        )}
       </p>
     </div>
   </section>
@@ -104,9 +130,12 @@ const subjectNote = `Subject tables from ${subjectProviderCount} rankings: QS, S
   <section class="section">
     <div class="shell">
       <SectionHeading
-        eyebrow="Multi-field profile"
-        title="Broad consensus does not imply uniform subject strength."
-        description="Nature academic ranks for the leading multi-provider consensus cohort. A dash means the institution is outside that published subject table or could not be matched safely—not rank zero."
+        eyebrow={t('Multi-field profile', '多领域画像')}
+        title={t('Broad consensus does not imply uniform subject strength.', '综合共识并不意味着各学科同样强。')}
+        description={t(
+          'Nature academic ranks for the leading multi-provider consensus cohort. A dash means the institution is outside that published subject table or could not be matched safely—not rank zero.',
+          '跨排名共识领先院校在自然指数学术学科榜单中的名次。短横线表示该院校不在该学科榜单内，或无法可靠匹配——并非排名为零。',
+        )}
       />
       <SubjectMatrix subjects={insights.natureSubjects} rows={insights.subjectMatrix} />
     </div>
@@ -115,29 +144,29 @@ const subjectNote = `Subject tables from ${subjectProviderCount} rankings: QS, S
   <section class="section decision-section">
     <div class="shell">
       <SectionHeading
-        eyebrow="How to use a subject table"
-        title="Turn a field rank into better questions."
+        eyebrow={t('How to use a subject table', '如何使用学科榜单')}
+        title={t('Turn a field rank into better questions.', '把学科排名变成更好的问题。')}
       />
       <div class="decision-grid">
         <article>
           <span class="mono">01</span>
-          <h3>Check the unit</h3>
-          <p>A university-wide subject score is not a guarantee about every department, degree, or campus.</p>
+          <h3>{t('Check the unit', '确认评估单位')}</h3>
+          <p>{t('A university-wide subject score is not a guarantee about every department, degree, or campus.', '全校层面的学科得分，并不能保证每个院系、学位或校区的水平。')}</p>
         </article>
         <article>
           <span class="mono">02</span>
-          <h3>Inspect the metric</h3>
-          <p>Publication Share, reputation, citations, and employer surveys answer different questions.</p>
+          <h3>{t('Inspect the metric', '审视指标')}</h3>
+          <p>{t('Publication Share, reputation, citations, and employer surveys answer different questions.', '论文份额、声誉、引用和雇主调查回答的是不同的问题。')}</p>
         </article>
         <article>
           <span class="mono">03</span>
-          <h3>Verify the program</h3>
-          <p>Compare faculty, curriculum, facilities, placement, accreditation, cost, and admissions directly.</p>
+          <h3>{t('Verify the program', '核实具体项目')}</h3>
+          <p>{t('Compare faculty, curriculum, facilities, placement, accreditation, cost, and admissions directly.', '直接比较师资、课程、设施、就业、认证、费用和录取要求。')}</p>
         </article>
         <article>
           <span class="mono">04</span>
-          <h3>Look for durability</h3>
-          <p>Prefer recurring strength across years and methods to a single unusually favorable edition.</p>
+          <h3>{t('Look for durability', '看重持续性')}</h3>
+          <p>{t('Prefer recurring strength across years and methods to a single unusually favorable edition.', '优先看跨年份、跨方法反复出现的实力，而不是某一版异常有利的名次。')}</p>
         </article>
       </div>
     </div>

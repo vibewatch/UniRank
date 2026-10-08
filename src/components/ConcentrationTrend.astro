@@ -1,12 +1,14 @@
 ---
 import type { ArwuConcentrationTrend } from '../data/schema';
-import { decimal } from '../lib/format';
+import { pageI18n } from '../i18n/page';
 
 interface Props {
   trend: ArwuConcentrationTrend;
 }
 
 const { trend } = Astro.props;
+const { t, fmt, country: countryName } = pageI18n(Astro.url);
+const { decimal } = fmt;
 const width = 900;
 const height = 390;
 const margin = { left: 46, right: 120, top: 24, bottom: 46 };
@@ -32,7 +34,11 @@ const xTicks = [minYear, 2008, 2013, 2019, maxYear];
 const line = (points: Array<{ year: number; share: number }>) =>
   points.map((point, index) => `${index ? 'L' : 'M'} ${x(point.year)} ${y(point.share)}`).join(' ');
 const charted = trend.countries
-  .map((country) => ({ ...country, color: colors[country.countryCode] ?? '#647078' }))
+  .map((country) => ({
+    ...country,
+    country: countryName(country.country, country.countryCode),
+    color: colors[country.countryCode] ?? '#647078',
+  }))
   .sort((a, b) => b.points[b.points.length - 1].share - a.points[a.points.length - 1].share);
 const hhiFirst = trend.points[0].countryHhi;
 const hhiLast = trend.points[trend.points.length - 1].countryHhi;
@@ -49,10 +55,17 @@ const hhiLast = trend.points[trend.points.length - 1].countryHhi;
   </div>
   <div class="chart-scroll">
     <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-labelledby="arwu-trend-title arwu-trend-desc">
-      <title id="arwu-trend-title">Share of the ARWU world top 100 by country, {trend.firstYear} to {trend.lastYear}</title>
+      <title id="arwu-trend-title">
+        {t(
+          `Share of the ARWU world top 100 by country, ${trend.firstYear} to ${trend.lastYear}`,
+          `各国在 ARWU 世界前 100 名中的占比，${trend.firstYear} 至 ${trend.lastYear} 年`,
+        )}
+      </title>
       <desc id="arwu-trend-desc">
-        Percentage of the ShanghaiRanking ARWU top 100 held by each leading country across every
-        available edition. The 2018 overall edition was not published, so the line connects 2017 to 2019.
+        {t(
+          'Percentage of the ShanghaiRanking ARWU top 100 held by each leading country across every available edition. The 2018 overall edition was not published, so the line connects 2017 to 2019.',
+          '各主要国家在软科 ARWU 前 100 名中所占的比例，涵盖所有可获得的版本。2018 年综合榜未发布，因此曲线从 2017 年直接连到 2019 年。',
+        )}
       </desc>
       {ticks.map((tick) => (
         <g>
@@ -72,7 +85,12 @@ const hhiLast = trend.points[trend.points.length - 1].countryHhi;
             r="4"
             style={`--country:${country.color}`}
           >
-            <title>{`${country.country}: ${decimal.format(country.points[country.points.length - 1].share)}% of the ${maxYear} top 100`}</title>
+            <title>
+              {t(
+                `${country.country}: ${decimal.format(country.points[country.points.length - 1].share)}% of the ${maxYear} top 100`,
+                `${country.country}：占 ${maxYear} 年前 100 名的 ${decimal.format(country.points[country.points.length - 1].share)}%`,
+              )}
+            </title>
           </circle>
           <text
             x={x(country.points[country.points.length - 1].year) + 9}
@@ -82,14 +100,14 @@ const hhiLast = trend.points[trend.points.length - 1].countryHhi;
           >{country.countryCode}</text>
         </g>
       ))}
-      <text x={margin.left} y={14} class="axis-label">% of top 100</text>
+      <text x={margin.left} y={14} class="axis-label">{t('% of top 100', '前 100 名占比（%）')}</text>
     </svg>
   </div>
   <p>
-    Country concentration (Herfindahl–Hirschman index of top-100 seats) fell from
-    {` ${hhiFirst.toFixed(3)} `}in {minYear} to {hhiLast.toFixed(3)} in {maxYear} — a more
-    distributed field. Hong Kong is counted separately from mainland China. The 2018 overall
-    edition was unavailable, so it is omitted from the line.
+    {t(
+      `Country concentration (Herfindahl–Hirschman index of top-100 seats) fell from ${hhiFirst.toFixed(3)} in ${minYear} to ${hhiLast.toFixed(3)} in ${maxYear} — a more distributed field. Hong Kong is counted separately from mainland China. The 2018 overall edition was unavailable, so it is omitted from the line.`,
+      `国家集中度（前 100 名席位的赫芬达尔–赫希曼指数）从 ${minYear} 年的 ${hhiFirst.toFixed(3)} 降至 ${maxYear} 年的 ${hhiLast.toFixed(3)}——分布更加分散。中国香港与中国内地分开统计。2018 年综合榜无法获得，因此未纳入曲线。`,
+    )}
   </p>
 </div>
 

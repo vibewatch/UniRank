@@ -1,5 +1,6 @@
 ---
 import type { SubjectLeaderBoard } from '../data/schema';
+import { pageI18n } from '../i18n/page';
 import CustomSelect from './CustomSelect.astro';
 
 interface Props {
@@ -10,6 +11,7 @@ interface Props {
 }
 
 const { boards, note, defaultSubject, multiProvider = false } = Astro.props;
+const { t, provider, subject } = pageI18n(Astro.url);
 const preferredSubject = defaultSubject ?? 'computer-science-information-systems';
 const providerOrder: { provider: string; providerLabel: string }[] = [];
 const seenProviders = new Set<string>();
@@ -26,9 +28,13 @@ const initialBoards = showProvider
 const preferred = initialBoards.findIndex((board) => board.subject === preferredSubject);
 const defaultIndex = preferred >= 0 ? preferred : 0;
 const serialized = JSON.stringify(boards).replaceAll('<', '\\u003c');
+const qsYear = boards.find((board) => board.provider === 'qs')?.year ?? '';
 const fineNote =
   note ??
-  `QS ${boards.find((board) => board.provider === 'qs')?.year ?? ''} subject tables. Bars count how many ranked institutions each country contributes to this field (top eight shown); the leaderboard lists the highest-placed institutions. Banded ranks use their lower bound, and a country's presence reflects listing counts, not per-program quality.`;
+  t(
+    `QS ${qsYear} subject tables. Bars count how many ranked institutions each country contributes to this field (top eight shown); the leaderboard lists the highest-placed institutions. Banded ranks use their lower bound, and a country's presence reflects listing counts, not per-program quality.`,
+    `QS ${qsYear} 学科榜单。条形图统计各国在该领域上榜的院校数量（显示前八）；排行榜列出名次最高的院校。区间名次按其下限计；一个国家的上榜数量反映的是上榜院校数，而非各专业的质量。`,
+  );
 ---
 
 <section class="subject-explorer surface" data-subject-explorer>
@@ -36,30 +42,30 @@ const fineNote =
     <div class="control-fields">
       {showProvider && (
         <label>
-          <span>Ranking source</span>
-          <CustomSelect data-provider aria-label="Choose a ranking source">
+          <span>{t('Ranking source', '排名来源')}</span>
+          <CustomSelect data-provider aria-label={t('Choose a ranking source', '选择排名来源')}>
             {providerOrder.map((entry, index) => (
               <option value={entry.provider} selected={index === 0}>
-                {entry.providerLabel}
+                {provider(entry.provider, entry.providerLabel)}
               </option>
             ))}
           </CustomSelect>
         </label>
       )}
       <label>
-        <span>Subject table</span>
-        <CustomSelect data-subject aria-label="Choose a subject table">
+        <span>{t('Subject table', '学科榜单')}</span>
+        <CustomSelect data-subject aria-label={t('Choose a subject table', '选择学科榜单')}>
           {initialBoards.map((board, index) => (
             <option value={board.subject} selected={index === defaultIndex}>
-              {board.label}
+              {subject(board.label)}
             </option>
           ))}
         </CustomSelect>
       </label>
       <label>
-        <span>Country</span>
-        <CustomSelect data-subject-country aria-label="Filter the leaderboard by country">
-          <option value="">All countries</option>
+        <span>{t('Country', '国家/地区')}</span>
+        <CustomSelect data-subject-country aria-label={t('Filter the leaderboard by country', '按国家/地区筛选排行榜')}>
+          <option value="">{t('All countries', '全部国家/地区')}</option>
         </CustomSelect>
       </label>
     </div>
@@ -67,24 +73,24 @@ const fineNote =
   </div>
   <div class="explorer-grid">
     <figure class="chart-block">
-      <figcaption data-chart-caption>Ranked institutions by home system</figcaption>
+      <figcaption data-chart-caption>{t('Ranked institutions by home system', '各国家/地区上榜院校数')}</figcaption>
       <div class="chart-frame">
         <svg
           data-chart
           viewBox="0 0 900 360"
           role="img"
-          aria-label="Ranked institutions by country"
+          aria-label={t('Ranked institutions by country', '各国家/地区上榜院校数')}
         ></svg>
       </div>
     </figure>
     <div class="leaders-block">
-      <p class="leaders-title" data-leaders-title>Top institutions</p>
+      <p class="leaders-title" data-leaders-title>{t('Top institutions', '顶尖院校')}</p>
       <ol data-institutions class="leaders"></ol>
       <p class="leaders-empty" data-leaders-empty hidden></p>
-      <nav class="leaders-pagination" data-leaders-pagination aria-label="Subject leaderboard pages" hidden>
-        <button type="button" data-leaders-previous>Previous</button>
+      <nav class="leaders-pagination" data-leaders-pagination aria-label={t('Subject leaderboard pages', '学科排行榜分页')} hidden>
+        <button type="button" data-leaders-previous>{t('Previous', '上一页')}</button>
         <span data-leaders-page></span>
-        <button type="button" data-leaders-next>Next</button>
+        <button type="button" data-leaders-next>{t('Next', '下一页')}</button>
       </nav>
     </div>
   </div>
@@ -99,6 +105,14 @@ const fineNote =
 
 <script>
   import { scaleLinear } from 'd3-scale';
+  import {
+    countryNameForCode,
+    documentLocale,
+    formatters,
+    providerLabel,
+    subjectLabel,
+    translator,
+  } from '../i18n';
   import { decodeSubjectDetail } from '../lib/subject-detail';
 
   interface LeaderInstitution {
@@ -146,7 +160,13 @@ const fineNote =
     const leadersPrevious = root.querySelector<HTMLButtonElement>('[data-leaders-previous]');
     const leadersNext = root.querySelector<HTMLButtonElement>('[data-leaders-next]');
     const svgNamespace = 'http://www.w3.org/2000/svg';
-    const number = new Intl.NumberFormat('en-US');
+    const locale = documentLocale();
+    const t = translator(locale);
+    const number = formatters(locale).number;
+    const boardLabel = (board: Board) => subjectLabel(board.label, locale);
+    const sourceLabel = (board: Board) => providerLabel(board.provider, board.providerLabel, locale);
+    const placeName = (place: { countryCode: string | null; country: string }) =>
+      countryNameForCode(place.countryCode, place.country, locale);
     const pageSize = 10;
     const detailCache = new Map<string, Promise<Board>>();
     let activeBoard: Board | null = null;
@@ -215,7 +235,7 @@ const fineNote =
       const x = scaleLinear().domain([0, maxCount]).range([0, innerWidth]).nice();
 
       const title = svgElement('title', {});
-      title.textContent = `${board.label}: ranked institutions by country`;
+      title.textContent = t(`${board.label}: ranked institutions by country`, `${boardLabel(board)}：各国家/地区上榜院校数`);
       chart.append(title);
 
       for (const tick of x.ticks(5)) {
@@ -267,7 +287,7 @@ const fineNote =
           fill: highlightCode && countryKey(row) === highlightCode ? '#ef6146' : index === 0 ? '#0f766e' : '#17a085',
         });
         const barTitle = svgElement('title', {});
-        barTitle.textContent = `${row.country}: ${number.format(row.count)} ranked`;
+        barTitle.textContent = t(`${row.country}: ${number.format(row.count)} ranked`, `${placeName(row)}：${number.format(row.count)} 所上榜`);
         bar.append(barTitle);
         chart.append(bar);
 
@@ -280,7 +300,7 @@ const fineNote =
           'font-size': 13,
           'font-weight': 600,
         });
-        name.textContent = row.country;
+        name.textContent = placeName(row);
         chart.append(name);
 
         const value = svgElement('text', {
@@ -304,12 +324,12 @@ const fineNote =
       const options: HTMLOptionElement[] = [];
       const all = document.createElement('option');
       all.value = '';
-      all.textContent = 'All countries';
+      all.textContent = t('All countries', '全部国家/地区');
       options.push(all);
       for (const country of board.countries) {
         const option = document.createElement('option');
         option.value = countryKey(country);
-        option.textContent = `${country.country} (${country.count})`;
+        option.textContent = `${placeName(country)} (${country.count})`;
         options.push(option);
       }
       countrySelect.replaceChildren(...options);
@@ -321,23 +341,29 @@ const fineNote =
       const selectedCountry = countrySelect?.value ?? '';
 
       if (caption) {
-        caption.textContent = `Ranked institutions by home system · ${board.providerLabel} ${board.year}`;
+        caption.textContent = t(
+          `Ranked institutions by home system · ${board.providerLabel} ${board.year}`,
+          `各国家/地区上榜院校数 · ${sourceLabel(board)} ${board.year}`,
+        );
       }
       if (chart) {
-        chart.setAttribute('aria-label', `${board.label}: ranked institutions by country`);
+        chart.setAttribute('aria-label', t(`${board.label}: ranked institutions by country`, `${boardLabel(board)}：各国家/地区上榜院校数`));
       }
 
       const leadCountry = board.countries[0];
       const summaryField = document.createElement('span');
-      summaryField.textContent = `${board.providerLabel} ${board.year}`;
+      summaryField.textContent = `${sourceLabel(board)} ${board.year}`;
       const summaryTotal = document.createElement('strong');
       const totalValue = document.createElement('b');
       totalValue.textContent = number.format(board.totalRanked);
-      summaryTotal.append(totalValue, ' ranked institutions');
+      summaryTotal.append(totalValue, t(' ranked institutions', ' 所上榜院校'));
       const summaryLead = document.createElement('small');
       summaryLead.textContent = leadCountry
-        ? `Led by ${leadCountry.country} (${number.format(leadCountry.count)} listed)`
-        : 'No country breakdown available';
+        ? t(
+            `Led by ${leadCountry.country} (${number.format(leadCountry.count)} listed)`,
+            `${placeName(leadCountry)}居首（${number.format(leadCountry.count)} 所上榜）`,
+          )
+        : t('No country breakdown available', '暂无国家/地区分布');
       summary.replaceChildren(summaryField, summaryTotal, summaryLead);
 
       renderChart(board, selectedCountry);
@@ -351,10 +377,11 @@ const fineNote =
       const shown = filtered.slice(pageStart, pageStart + pageSize);
 
       if (leadersTitle) {
-        const countryName = board.countries.find((country) => countryKey(country) === selectedCountry)?.country ?? '';
+        const selected = board.countries.find((country) => countryKey(country) === selectedCountry);
+        const countryName = selected ? placeName(selected) : '';
         leadersTitle.textContent = selectedCountry
-          ? `Top ${countryName} institutions in ${board.label}`
-          : `Top institutions in ${board.label}`;
+          ? t(`Top ${countryName} institutions in ${board.label}`, `${boardLabel(board)}：${countryName}顶尖院校`)
+          : t(`Top institutions in ${board.label}`, `${boardLabel(board)}：顶尖院校`);
       }
 
       institutions.replaceChildren(
@@ -368,7 +395,7 @@ const fineNote =
           const name = document.createElement('strong');
           name.textContent = institution.name;
           const country = document.createElement('small');
-          country.textContent = institution.country;
+          country.textContent = placeName(institution);
           identity.append(name, country);
           item.append(rank, identity);
           return item;
@@ -380,14 +407,20 @@ const fineNote =
         leadersEmpty.hidden = !empty;
         institutions.hidden = empty;
         if (empty) {
-          leadersEmpty.textContent = `No institution from this country appears in the top ${board.institutions.length} of ${board.label}.`;
+          leadersEmpty.textContent = t(
+            `No institution from this country appears in the top ${board.institutions.length} of ${board.label}.`,
+            `该国家/地区没有院校进入${boardLabel(board)}前 ${board.institutions.length} 名。`,
+          );
         }
       }
       if (leadersPagination) leadersPagination.hidden = filtered.length <= pageSize;
       if (leadersPage) {
         const first = filtered.length ? pageStart + 1 : 0;
         const last = Math.min(pageStart + pageSize, filtered.length);
-        leadersPage.textContent = `${first}–${last} of ${number.format(filtered.length)}`;
+        leadersPage.textContent = t(
+          `${first}–${last} of ${number.format(filtered.length)}`,
+          `第 ${first}–${last} 所，共 ${number.format(filtered.length)} 所`,
+        );
       }
       if (leadersPrevious) leadersPrevious.disabled = leaderPage === 0;
       if (leadersNext) leadersNext.disabled = leaderPage >= pageCount - 1;
@@ -417,7 +450,7 @@ const fineNote =
         ...scoped.map((board) => {
           const option = document.createElement('option');
           option.value = board.subject;
-          option.textContent = board.label;
+          option.textContent = boardLabel(board);
           return option;
         }),
       );

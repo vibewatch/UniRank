@@ -1,5 +1,7 @@
 ---
 import type { DirectoryFacets, SubjectLeaderBoard } from '../data/schema';
+import { LOCALE_META } from '../i18n';
+import { pageI18n } from '../i18n/page';
 import CustomSelect from './CustomSelect.astro';
 
 interface Props {
@@ -18,11 +20,13 @@ interface SubjectBoardMeta {
 }
 
 const { directory, subjectBoards } = Astro.props;
+const { locale, t, country: countryName, provider: providerName, subject: subjectName } = pageI18n(Astro.url);
+// Labels are localized here so the client script can display them as-is.
 const boards: SubjectBoardMeta[] = subjectBoards.map((board) => ({
   subject: board.subject,
-  label: board.label,
+  label: subjectName(board.label),
   provider: board.provider,
-  providerLabel: board.providerLabel,
+  providerLabel: providerName(board.provider, board.providerLabel),
   year: board.year,
   totalRanked: board.totalRanked,
   detailPath: board.detailPath,
@@ -44,39 +48,43 @@ const initialSubject =
   initialBoards.find((board) => board.subject === 'computer-science-information-systems')?.subject ??
   initialBoards[0]?.subject ??
   '';
-const serializedBoards = JSON.stringify(boards).replaceAll('<', '\u003c');
+const serializedBoards = JSON.stringify(boards).replaceAll('<', '\\u003c');
+// Option values stay the English directory labels the client filters on.
+const countryOptions = directory.countries
+  .map((name) => ({ value: name, label: countryName(name) }))
+  .sort((a, b) => a.label.localeCompare(b.label, LOCALE_META[locale].intl));
 ---
 
 <div class="university-finder" data-university-finder data-view="subject">
   <div class="finder-panel surface">
     <div class="mode-row">
-      <div class="mode-switch" role="group" aria-label="Choose how to find universities">
+      <div class="mode-switch" role="group" aria-label={t('Choose how to find universities', '选择查找大学的方式')}>
         <button type="button" data-view-button="subject" aria-pressed="true">
-          Subject rankings
+          {t('Subject rankings', '学科排名')}
         </button>
         <button type="button" data-view-button="overall" aria-pressed="false">
-          Overall directory
+          {t('Overall directory', '综合目录')}
         </button>
       </div>
       <p data-view-note>
-        Choose one publisher’s subject table; results follow that table’s published order.
+        {t('Choose one publisher’s subject table; results follow that table’s published order.', '选择一家发布方的学科榜单；结果按该榜单公布的顺序排列。')}
       </p>
     </div>
 
     <div class="finder-controls">
       <label class="search-control">
-        <span>Search institution or country</span>
+        <span>{t('Search institution or country', '搜索院校或国家/地区')}</span>
         <input
           type="search"
-          placeholder="Try Toronto, mining, Singapore…"
+          placeholder={t('Try Toronto, mining, Singapore…', '试试 Toronto、mining、新加坡…')}
           data-search
           autocomplete="off"
         />
       </label>
 
       <label class="subject-country-control" data-subject-control>
-        <span>Ranking source</span>
-        <CustomSelect data-subject-source aria-label="Choose a subject-ranking source">
+        <span>{t('Ranking source', '排名来源')}</span>
+        <CustomSelect data-subject-source aria-label={t('Choose a subject-ranking source', '选择学科排名来源')}>
           {providers.map((provider) => (
             <option value={provider.id} selected={provider.id === initialProvider}>
               {provider.label} ({provider.count})
@@ -86,8 +94,8 @@ const serializedBoards = JSON.stringify(boards).replaceAll('<', '\u003c');
       </label>
 
       <label data-subject-control>
-        <span>Subject table</span>
-        <CustomSelect data-subject-table aria-label="Choose a subject-ranking table">
+        <span>{t('Subject table', '学科榜单')}</span>
+        <CustomSelect data-subject-table aria-label={t('Choose a subject-ranking table', '选择学科排名榜单')}>
           {initialBoards.map((board) => (
             <option value={board.subject} selected={board.subject === initialSubject}>
               {board.label}
@@ -97,24 +105,24 @@ const serializedBoards = JSON.stringify(boards).replaceAll('<', '\u003c');
       </label>
 
       <label data-subject-control>
-        <span>Country</span>
-        <CustomSelect data-subject-country aria-label="Filter subject rankings by country">
-          <option value="">All countries</option>
+        <span>{t('Country', '国家/地区')}</span>
+        <CustomSelect data-subject-country aria-label={t('Filter subject rankings by country', '按国家/地区筛选学科排名')}>
+          <option value="">{t('All countries', '全部国家/地区')}</option>
         </CustomSelect>
       </label>
 
       <label data-overall-control hidden>
-        <span>Country</span>
-        <CustomSelect data-overall-country aria-label="Filter the overall directory by country">
-          <option value="">All countries</option>
-          {directory.countries.map((country) => <option value={country}>{country}</option>)}
+        <span>{t('Country', '国家/地区')}</span>
+        <CustomSelect data-overall-country aria-label={t('Filter the overall directory by country', '按国家/地区筛选综合目录')}>
+          <option value="">{t('All countries', '全部国家/地区')}</option>
+          {countryOptions.map((country) => <option value={country.value}>{country.label}</option>)}
         </CustomSelect>
       </label>
     </div>
   </div>
 
   <div class="finder-status">
-    <p data-result-count aria-live="polite">Loading subject rankings…</p>
+    <p data-result-count aria-live="polite">{t('Loading subject rankings…', '正在加载学科排名…')}</p>
     <p class="fine-print" data-result-note></p>
   </div>
 
@@ -122,25 +130,26 @@ const serializedBoards = JSON.stringify(boards).replaceAll('<', '\u003c');
     <table class="results-table" data-results-table data-view="subject">
       <thead data-results-head>
         <tr>
-          <th scope="col">Subject rank</th>
-          <th scope="col">Institution</th>
+          <th scope="col">{t('Subject rank', '学科排名')}</th>
+          <th scope="col">{t('Institution', '院校')}</th>
         </tr>
       </thead>
       <tbody data-results></tbody>
     </table>
-    <p class="empty" data-empty hidden>No institution matches these filters.</p>
+    <p class="empty" data-empty hidden>{t('No institution matches these filters.', '没有符合这些筛选条件的院校。')}</p>
   </div>
 
-  <nav class="result-pagination" data-pagination aria-label="Finder result pages" hidden>
-    <button type="button" data-previous>Previous</button>
+  <nav class="result-pagination" data-pagination aria-label={t('Finder result pages', '查询结果分页')} hidden>
+    <button type="button" data-previous>{t('Previous', '上一页')}</button>
     <span data-page-status></span>
-    <button type="button" data-next>Next</button>
+    <button type="button" data-next>{t('Next', '下一页')}</button>
   </nav>
 
   <script type="application/json" is:inline data-subject-boards set:html={serializedBoards}></script>
 </div>
 
 <script>
+  import { countryNameForCode, documentLocale, formatters, providerLabel, translator } from '../i18n';
   import { onPageLeave } from '../lib/client-lifecycle';
   import {
     decodeSubjectDetail,
@@ -208,7 +217,6 @@ const serializedBoards = JSON.stringify(boards).replaceAll('<', '\u003c');
     usnews: 'USN', times: 'THE', qs: 'QS', cwur: 'CWUR', ntu: 'NTU',
     arwu: 'ARWU', scimago: 'SCI', nature: 'NAT', openalex: 'OA', leiden: 'LEI',
   };
-  const resultNumber = new Intl.NumberFormat('en-US');
   const asciiFold = (value: string): string =>
     value.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
   const searchTokens = (value: string): string[] =>
@@ -221,6 +229,20 @@ const serializedBoards = JSON.stringify(boards).replaceAll('<', '\u003c');
     const boardsElement = root.querySelector<HTMLScriptElement>('[data-subject-boards]');
     if (!boardsElement) return;
     root.dataset.initialized = 'true';
+
+    const locale = documentLocale();
+    const t = translator(locale);
+    const resultNumber = formatters(locale).number;
+    const placeName = (place: { countryCode: string | null; country: string }): string =>
+      countryNameForCode(place.countryCode, place.country, locale);
+    const institutionsLabel = (total: number): string =>
+      t(`${resultNumber.format(total)} institution${total === 1 ? '' : 's'}`, `${resultNumber.format(total)} 所院校`);
+    const subjectHeader = [t('Subject rank', '学科排名'), t('Institution', '院校')];
+    const overallHeader = [t('Institution', '院校'), t('Coverage', '覆盖'), t('Provider ranks', '各家排名')];
+    const viewNoteText = (current: FinderView): string =>
+      current === 'subject'
+        ? t('Choose one publisher’s subject table; results follow that table’s published order.', '选择一家发布方的学科榜单；结果按该榜单公布的顺序排列。')
+        : t('Search the latest overall tables; results prioritize broad-ranking consensus and coverage.', '搜索最新综合榜单；结果优先按综合排名共识和覆盖数排列。');
 
     const boards = JSON.parse(boardsElement.textContent || '[]') as SubjectBoardMeta[];
     const search = root.querySelector<HTMLInputElement>('[data-search]');
@@ -301,9 +323,9 @@ const serializedBoards = JSON.stringify(boards).replaceAll('<', '\u003c');
       replaceOptions(
         subjectCountry,
         [
-          option('', `All countries (${resultNumber.format(detail.institutions.length)})`),
+          option('', `${t('All countries', '全部国家/地区')} (${resultNumber.format(detail.institutions.length)})`),
           ...detail.countries.map((country) =>
-            option(country.key, `${country.country} (${resultNumber.format(country.count)})`),
+            option(country.key, `${placeName(country)} (${resultNumber.format(country.count)})`),
           ),
         ],
         preferred,
@@ -340,7 +362,7 @@ const serializedBoards = JSON.stringify(boards).replaceAll('<', '\u003c');
       }).then((payload) => {
         for (const institution of payload.institutions) {
           institution._haystack = asciiFold(
-            `${institution.name} ${institution.country} ${institution.countryCode ?? ''}`,
+            `${institution.name} ${institution.country} ${institution.countryCode ?? ''} ${placeName(institution)}`,
           );
         }
         directory = payload;
@@ -370,9 +392,13 @@ const serializedBoards = JSON.stringify(boards).replaceAll('<', '\u003c');
         const chip = document.createElement('span');
         const previous = rank.length === 4 ? rank[3] : null;
         const change = previous === null ? 0 : previous - rank[0];
+        const label = providerLabel(provider.id, provider.label, locale);
         chip.title = previous === null || !provider.previousYear
-          ? `${provider.label} ${rank[2]}: ${rank[1]}`
-          : `${provider.label} ${rank[2]}: ${rank[1]} (#${previous} in ${provider.previousYear})`;
+          ? `${label} ${rank[2]}: ${rank[1]}`
+          : t(
+              `${label} ${rank[2]}: ${rank[1]} (#${previous} in ${provider.previousYear})`,
+              `${label} ${rank[2]}: ${rank[1]}（${provider.previousYear} 年为第 ${previous} 名）`,
+            );
         chip.style.setProperty('--chip', provider.color || 'var(--muted)');
         const abbreviation = document.createElement('b');
         abbreviation.textContent = PROVIDER_ABBR[provider.id] ?? provider.id.toUpperCase();
@@ -381,7 +407,12 @@ const serializedBoards = JSON.stringify(boards).replaceAll('<', '\u003c');
           const move = document.createElement('i');
           move.className = change > 0 ? 'up' : 'down';
           move.textContent = change > 0 ? `▲${change}` : `▼${-change}`;
-          move.setAttribute('aria-label', change > 0 ? `up ${change} since ${provider.previousYear}` : `down ${-change} since ${provider.previousYear}`);
+          move.setAttribute(
+            'aria-label',
+            change > 0
+              ? t(`up ${change} since ${provider.previousYear}`, `较 ${provider.previousYear} 年上升 ${change} 名`)
+              : t(`down ${-change} since ${provider.previousYear}`, `较 ${provider.previousYear} 年下降 ${-change} 名`),
+          );
           chip.append(move);
         }
         chips.append(chip);
@@ -401,7 +432,7 @@ const serializedBoards = JSON.stringify(boards).replaceAll('<', '\u003c');
       name.className = 'institution-name';
       name.textContent = institution.name;
       const country = document.createElement('small');
-      country.textContent = institution.country;
+      country.textContent = placeName(institution);
       identityCell.append(name, country);
       row.append(rankCell, identityCell);
       return row;
@@ -410,9 +441,9 @@ const serializedBoards = JSON.stringify(boards).replaceAll('<', '\u003c');
     const factsSummary = (facts: InstitutionFacts | null | undefined): string => {
       if (!facts) return '';
       const parts: string[] = [];
-      if (facts.foundedYear) parts.push(`Founded ${facts.foundedYear}`);
+      if (facts.foundedYear) parts.push(t(`Founded ${facts.foundedYear}`, `创建于 ${facts.foundedYear} 年`));
       if (facts.city) parts.push(facts.city);
-      if (facts.hIndex) parts.push(`h-index ${resultNumber.format(facts.hIndex)}`);
+      if (facts.hIndex) parts.push(t(`h-index ${resultNumber.format(facts.hIndex)}`, `h 指数 ${resultNumber.format(facts.hIndex)}`));
       return parts.join(' · ');
     };
 
@@ -432,7 +463,7 @@ const serializedBoards = JSON.stringify(boards).replaceAll('<', '\u003c');
         name.textContent = institution.name;
       }
       const country = document.createElement('small');
-      country.textContent = institution.country;
+      country.textContent = placeName(institution);
       identityCell.append(name, country);
       const facts = factsSummary(institution.facts);
       if (facts) {
@@ -444,7 +475,7 @@ const serializedBoards = JSON.stringify(boards).replaceAll('<', '\u003c');
       if (institution.consensusRank !== null) {
         const badge = document.createElement('span');
         badge.className = 'consensus-badge';
-        badge.textContent = `Consensus #${institution.consensusRank}`;
+        badge.textContent = t(`Consensus #${institution.consensusRank}`, `共识第 ${institution.consensusRank} 名`);
         identityCell.append(badge);
       }
 
@@ -453,7 +484,7 @@ const serializedBoards = JSON.stringify(boards).replaceAll('<', '\u003c');
       coverage.className = 'coverage';
       coverage.textContent = String(institution.providerCount);
       const coverageLabel = document.createElement('small');
-      coverageLabel.textContent = `of ${directory?.providers.length ?? 0} providers`;
+      coverageLabel.textContent = t(`of ${directory?.providers.length ?? 0} providers`, `/ ${directory?.providers.length ?? 0} 家排名`);
       coverageCell.append(coverage, coverageLabel);
 
       const rankCell = document.createElement('td');
@@ -470,7 +501,12 @@ const serializedBoards = JSON.stringify(boards).replaceAll('<', '\u003c');
       if (pagination) pagination.hidden = total <= PAGE_SIZE;
       if (previous) previous.disabled = page === 0;
       if (next) next.disabled = page >= pages - 1;
-      if (pageStatus) pageStatus.textContent = `${total ? start + 1 : 0}–${end} of ${resultNumber.format(total)}`;
+      if (pageStatus) {
+        pageStatus.textContent = t(
+          `${total ? start + 1 : 0}–${end} of ${resultNumber.format(total)}`,
+          `第 ${total ? start + 1 : 0}–${end} 所，共 ${resultNumber.format(total)} 所`,
+        );
+      }
       return { start, end };
     };
 
@@ -479,8 +515,13 @@ const serializedBoards = JSON.stringify(boards).replaceAll('<', '\u003c');
       body.replaceChildren(...subjectResults.slice(start, end).map(subjectRow));
       if (empty) empty.hidden = subjectResults.length !== 0;
       if (!activeBoard) return;
-      count.textContent = `${resultNumber.format(subjectResults.length)} institution${subjectResults.length === 1 ? '' : 's'} · ${activeBoard.providerLabel} ${activeBoard.year}`;
-      if (note) note.textContent = `${activeBoard.label}. Published rank order; ties and rank bands are preserved.`;
+      count.textContent = `${institutionsLabel(subjectResults.length)} · ${activeBoard.providerLabel} ${activeBoard.year}`;
+      if (note) {
+        note.textContent = t(
+          `${activeBoard.label}. Published rank order; ties and rank bands are preserved.`,
+          `${activeBoard.label}。按公布的名次排序；并列名次和区间名次均予保留。`,
+        );
+      }
       wrap.removeAttribute('aria-busy');
     };
 
@@ -488,8 +529,13 @@ const serializedBoards = JSON.stringify(boards).replaceAll('<', '\u003c');
       const { start, end } = setPagination(overallResults.length);
       body.replaceChildren(...overallResults.slice(start, end).map(overallRow));
       if (empty) empty.hidden = overallResults.length !== 0;
-      count.textContent = `${resultNumber.format(overallResults.length)} institution${overallResults.length === 1 ? '' : 's'}`;
-      if (note) note.textContent = 'Ordered by the broad-ranking consensus signal, then coverage; each provider’s published rank remains visible separately. ▲/▼ marks the move since that provider’s previous edition when both ranks are exact.';
+      count.textContent = institutionsLabel(overallResults.length);
+      if (note) {
+        note.textContent = t(
+          'Ordered by the broad-ranking consensus signal, then coverage; each provider’s published rank remains visible separately. ▲/▼ marks the move since that provider’s previous edition when both ranks are exact.',
+          '先按综合排名共识信号、再按覆盖数排序；各排名机构公布的名次仍分别显示。当前后两版均为确切名次时，▲/▼ 表示相对该机构上一版的变动。',
+        );
+      }
       wrap.removeAttribute('aria-busy');
     };
 
@@ -504,7 +550,7 @@ const serializedBoards = JSON.stringify(boards).replaceAll('<', '\u003c');
         const country = subjectCountry.value;
         subjectResults = detail.institutions.filter((institution) => {
           if (country && institution.countryKey !== country) return false;
-          return matchesTokens(asciiFold(`${institution.name} ${institution.country}`), tokens);
+          return matchesTokens(asciiFold(`${institution.name} ${institution.country} ${placeName(institution)}`), tokens);
         });
         if (resetPage) page = 0;
         renderSubjectPage();
@@ -517,7 +563,7 @@ const serializedBoards = JSON.stringify(boards).replaceAll('<', '\u003c');
       const version = ++requestVersion;
       activeBoard = board;
       page = 0;
-      count.textContent = `Loading ${board.providerLabel} ${board.label}…`;
+      count.textContent = t(`Loading ${board.providerLabel} ${board.label}…`, `正在加载${board.providerLabel}「${board.label}」…`);
       if (note) note.textContent = '';
       wrap.setAttribute('aria-busy', 'true');
       try {
@@ -527,8 +573,8 @@ const serializedBoards = JSON.stringify(boards).replaceAll('<', '\u003c');
         filterActiveSubject(true);
       } catch {
         if (lifecycle.signal.aborted || version !== requestVersion) return;
-        count.textContent = 'This subject table could not be loaded.';
-        if (note) note.textContent = 'Please try another source or refresh the page.';
+        count.textContent = t('This subject table could not be loaded.', '无法加载该学科榜单。');
+        if (note) note.textContent = t('Please try another source or refresh the page.', '请尝试其他来源或刷新页面。');
         body.replaceChildren();
         if (empty) empty.hidden = false;
         wrap.removeAttribute('aria-busy');
@@ -537,7 +583,7 @@ const serializedBoards = JSON.stringify(boards).replaceAll('<', '\u003c');
 
     const renderOverall = async (resetPage = true): Promise<void> => {
       const version = ++requestVersion;
-      count.textContent = 'Loading the overall directory…';
+      count.textContent = t('Loading the overall directory…', '正在加载综合目录…');
       if (note) note.textContent = '';
       wrap.setAttribute('aria-busy', 'true');
       try {
@@ -553,8 +599,8 @@ const serializedBoards = JSON.stringify(boards).replaceAll('<', '\u003c');
         renderOverallPage();
       } catch {
         if (lifecycle.signal.aborted || version !== requestVersion) return;
-        count.textContent = 'The overall directory could not be loaded.';
-        if (note) note.textContent = 'Please refresh the page and try again.';
+        count.textContent = t('The overall directory could not be loaded.', '无法加载综合目录。');
+        if (note) note.textContent = t('Please refresh the page and try again.', '请刷新页面后重试。');
         body.replaceChildren();
         if (empty) empty.hidden = false;
         wrap.removeAttribute('aria-busy');
@@ -571,12 +617,8 @@ const serializedBoards = JSON.stringify(boards).replaceAll('<', '\u003c');
       viewButtons.forEach((button) => {
         button.setAttribute('aria-pressed', String(button.dataset.viewButton === view));
       });
-      if (viewNote) {
-        viewNote.textContent = view === 'subject'
-          ? 'Choose one publisher’s subject table; results follow that table’s published order.'
-          : 'Search the latest overall tables; results prioritize broad-ranking consensus and coverage.';
-      }
-      setHeader(view === 'subject' ? ['Subject rank', 'Institution'] : ['Institution', 'Coverage', 'Provider ranks']);
+      if (viewNote) viewNote.textContent = viewNoteText(view);
+      setHeader(view === 'subject' ? subjectHeader : overallHeader);
       if (view === 'subject') void activateSubject(subjectCountry.value);
       else void renderOverall(true);
     };
@@ -627,12 +669,8 @@ const serializedBoards = JSON.stringify(boards).replaceAll('<', '\u003c');
       subjectControls.forEach((control) => { control.hidden = view !== 'subject'; });
       if (overallControl) overallControl.hidden = view !== 'overall';
       viewButtons.forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.viewButton === view)));
-      if (viewNote) {
-        viewNote.textContent = view === 'subject'
-          ? 'Choose one publisher’s subject table; results follow that table’s published order.'
-          : 'Search the latest overall tables; results prioritize broad-ranking consensus and coverage.';
-      }
-      setHeader(view === 'subject' ? ['Subject rank', 'Institution'] : ['Institution', 'Coverage', 'Provider ranks']);
+      if (viewNote) viewNote.textContent = viewNoteText(view);
+      setHeader(view === 'subject' ? subjectHeader : overallHeader);
       if (view === 'subject') void activateSubject(params.get('country') ?? '');
       else void renderOverall(true);
     };

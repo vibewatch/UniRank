@@ -5,9 +5,11 @@ import MetricCard from '../components/MetricCard.astro';
 import ProviderTimeline from '../components/ProviderTimeline.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { pageI18n } from '../i18n/page';
 import { insights } from '../lib/data';
-import { decimal, number, signedPercent } from '../lib/format';
 
+const { t, href, fmt, country, provider } = pageI18n(Astro.url);
+const { decimal, number, signedPercent } = fmt;
 const chinaShift = insights.natureCountryShift.find((item) => item.countryCode === 'CN');
 const usShift = insights.natureCountryShift.find((item) => item.countryCode === 'US');
 const subjectLeaderCountries = insights.natureSubjects.map(
@@ -28,49 +30,52 @@ const freshProviders = insights.providers.filter(
 const leaderFor = (id: string) =>
   insights.editionMovers.providers.find((board) => board.provider === id)?.top10[0]?.name ??
   (id === 'webometrics' ? insights.webVisibility.latestEdition?.leaders[0]?.name : undefined);
-const retrievalDate = new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' })
-  .format(new Date(insights.meta.latestRetrieval));
+const retrievalDate = fmt.date(insights.meta.latestRetrieval);
+const chinaReach = insights.countryFootprint.find((item) => item.countryCode === 'CN')?.providerCount ?? 0;
 ---
 
 <BaseLayout
-  title="Overview"
-  description="Explore university rankings with transparent cross-provider consensus, research momentum, subject strength, and geographic trend analysis."
+  title={t('Overview', '总览')}
+  description={t(
+    'Explore university rankings with transparent cross-provider consensus, research momentum, subject strength, and geographic trend analysis.',
+    '透过跨排名共识、科研势头、学科实力与地理趋势分析，透明地解读大学排名。',
+  )}
 >
   <section class="page-hero home-hero">
     <div class="shell hero-grid">
       <div>
-        <p class="eyebrow">For students &amp; families</p>
-        <h1>See past the rank to the right fit.</h1>
+        <p class="eyebrow">{t('For students & families', '写给学生与家长')}</p>
+        <h1>{t('See past the rank to the right fit.', '越过名次，找到真正适合的大学。')}</h1>
         <p class="lede">
-          One league table gives a position. This connects reputation, research
-          scale, citation impact, subject strength, and web visibility—so you
-          can shortlist by what you want to study and where, not by a single
-          number.
+          {t(
+            'One league table gives a position. This connects reputation, research scale, citation impact, subject strength, and web visibility—so you can shortlist by what you want to study and where, not by a single number.',
+            '一张排行榜只给出一个名次。这里把声誉、科研规模、引用影响力、学科实力和网络可见度联系起来——让你按想学的专业和想去的地方建立候选名单，而不是只看一个数字。',
+          )}
         </p>
         <div class="button-row">
-          <a class="button" href="/finder/">Find a university <span aria-hidden="true">→</span></a>
-          <a class="button secondary" href="/subjects/">Explore by subject</a>
+          <a class="button" href={href('/finder/')}>{t('Find a university', '查找大学')} <span aria-hidden="true">→</span></a>
+          <a class="button secondary" href={href('/subjects/')}>{t('Explore by subject', '按专业探索')}</a>
         </div>
       </div>
-      <aside class="signal-panel surface" aria-label="Leading multi-provider signals">
+      <aside class="signal-panel surface" aria-label={t('Leading multi-provider signals', '多家排名的领先信号')}>
         <div class="panel-top">
-          <span class="mono">LATEST BROAD EDITIONS</span>
-          <span>6 sources</span>
+          <span class="mono">{t('LATEST BROAD EDITIONS', '最新综合榜单')}</span>
+          <span>{t('6 sources', '6 个来源')}</span>
         </div>
-        <p>Cross-provider signal</p>
+        <p>{t('Cross-provider signal', '跨排名综合信号')}</p>
         <ol>
           {insights.consensus.slice(0, 6).map((institution) => (
             <li>
               <span class="rank mono">{String(institution.consensusRank).padStart(2, '0')}</span>
               <span class="institution">
                 <strong>{institution.name}</strong>
-                <small>{institution.country}</small>
+                <small>{country(institution.country, institution.countryCode)}</small>
               </span>
               <span class="score">{institution.score.toFixed(1)}</span>
             </li>
           ))}
         </ol>
-        <a href="/methodology/#consensus">How the signal is calculated <span aria-hidden="true">↗</span></a>
+        <a href={href('/methodology/#consensus')}>{t('How the signal is calculated', '综合信号如何计算')} <span aria-hidden="true">↗</span></a>
       </aside>
     </div>
   </section>
@@ -78,28 +83,31 @@ const retrievalDate = new Intl.DateTimeFormat('en-US', { year: 'numeric', month:
   <section class="section start-section">
     <div class="shell">
       <SectionHeading
-        eyebrow="Start here"
-        title="Three ways to use the data."
-        description="Every path leads back to the same evidence. Pick the question that matches where you are in the decision."
+        eyebrow={t('Start here', '从这里开始')}
+        title={t('Three ways to use the data.', '三种使用数据的方式。')}
+        description={t(
+          'Every path leads back to the same evidence. Pick the question that matches where you are in the decision.',
+          '每条路径都指向同一份证据。选择与你当前决策阶段相符的问题。',
+        )}
       />
       <div class="grid three start-grid">
-        <a class="start-card surface" href="/subjects/">
-          <span class="start-index mono">01 / STUDY</span>
-          <strong>Discover schools by major</strong>
-          <p>See the best universities for a subject, then narrow to a single country.</p>
-          <span class="start-go">Explore by subject →</span>
+        <a class="start-card surface" href={href('/subjects/')}>
+          <span class="start-index mono">{t('01 / STUDY', '01 / 选专业')}</span>
+          <strong>{t('Discover schools by major', '按专业发现学校')}</strong>
+          <p>{t('See the best universities for a subject, then narrow to a single country.', '查看某一学科的顶尖大学，再缩小到单个国家。')}</p>
+          <span class="start-go">{t('Explore by subject →', '按专业探索 →')}</span>
         </a>
-        <a class="start-card surface" href="/atlas/">
-          <span class="start-index mono">02 / DESTINATIONS</span>
-          <strong>Choose where to study</strong>
-          <p>Use the world map to compare countries, then open one for its top schools.</p>
-          <span class="start-go">Open the map →</span>
+        <a class="start-card surface" href={href('/atlas/')}>
+          <span class="start-index mono">{t('02 / DESTINATIONS', '02 / 选国家')}</span>
+          <strong>{t('Choose where to study', '选择留学目的地')}</strong>
+          <p>{t('Use the world map to compare countries, then open one for its top schools.', '用世界地图比较各国，再打开某个国家查看其顶尖学校。')}</p>
+          <span class="start-go">{t('Open the map →', '打开地图 →')}</span>
         </a>
-        <a class="start-card surface" href="/finder/">
-          <span class="start-index mono">03 / FIND</span>
-          <strong>Look up any university</strong>
-          <p>Search every ranked institution and read the provider ranks behind it.</p>
-          <span class="start-go">Search all schools →</span>
+        <a class="start-card surface" href={href('/finder/')}>
+          <span class="start-index mono">{t('03 / FIND', '03 / 查大学')}</span>
+          <strong>{t('Look up any university', '查询任意大学')}</strong>
+          <p>{t('Search every ranked institution and read the provider ranks behind it.', '搜索每一所上榜院校，查看其背后的各家排名。')}</p>
+          <span class="start-go">{t('Search all schools →', '搜索全部学校 →')}</span>
         </a>
       </div>
     </div>
@@ -109,36 +117,36 @@ const retrievalDate = new Intl.DateTimeFormat('en-US', { year: 'numeric', month:
     <div class="shell">
       <div class="grid two metric-grid">
         <MetricCard
-          label="Time horizon"
+          label={t('Time horizon', '时间跨度')}
           value={`${insights.meta.firstYear}—${insights.meta.lastYear}`}
-          detail="Historical and current editions, each preserved as its source published it."
+          detail={t('Historical and current editions, each preserved as its source published it.', '历年与当前榜单，均按来源发布时的原样保存。')}
           tone="violet"
           index="01"
         />
         <MetricCard
-          label="Country coverage"
+          label={t('Country coverage', '覆盖国家和地区')}
           value={String(insights.meta.countries)}
-          detail="Home systems represented across the ranking tables."
+          detail={t('Home systems represented across the ranking tables.', '各排名表中出现的国家和地区高教体系。')}
           tone="yellow"
           index="02"
         />
       </div>
       {freshProviders.length > 0 && (
-        <aside class="fresh-strip surface" aria-label="Newest editions in the archive">
-          <span class="mono">NEW IN THE ARCHIVE · {retrievalDate.toUpperCase()}</span>
+        <aside class="fresh-strip surface" aria-label={t('Newest editions in the archive', '存档中的最新榜单')}>
+          <span class="mono">{t(`NEW IN THE ARCHIVE · ${retrievalDate.toUpperCase()}`, `存档新增 · ${retrievalDate}`)}</span>
           <ul>
-            {freshProviders.map((provider) => {
-              const leader = leaderFor(provider.id);
+            {freshProviders.map((item) => {
+              const leader = leaderFor(item.id);
               return (
-                <li style={`--provider:${provider.color}`}>
+                <li style={`--provider:${item.color}`}>
                   <i></i>
-                  <strong>{provider.label} {provider.lastYear}</strong>
-                  {leader && <small>#1 {leader}</small>}
+                  <strong>{provider(item.id, item.label)} {item.lastYear}</strong>
+                  {leader && <small>{t('#1', '第 1 名')} {leader}</small>}
                 </li>
               );
             })}
           </ul>
-          <a href="/trends/#latest-editions">See what moved <span aria-hidden="true">→</span></a>
+          <a href={href('/trends/#latest-editions')}>{t('See what moved', '查看排名变动')} <span aria-hidden="true">→</span></a>
         </aside>
       )}
     </div>
@@ -147,45 +155,54 @@ const retrievalDate = new Intl.DateTimeFormat('en-US', { year: 'numeric', month:
   <section class="section insight-section">
     <div class="shell">
       <SectionHeading
-        eyebrow="What the archive suggests"
-        title="Three signals worth investigating."
-        description="These are prompts for deeper comparison—not causal claims. Each card links a pattern to the source that produced it."
+        eyebrow={t('What the archive suggests', '存档数据的启示')}
+        title={t('Three signals worth investigating.', '三个值得深究的信号。')}
+        description={t(
+          'These are prompts for deeper comparison—not causal claims. Each card links a pattern to the source that produced it.',
+          '这些是引导深入比较的线索，并非因果结论。每张卡片都把一个规律链接到产生它的数据来源。',
+        )}
       />
       <div class="grid three insight-grid">
         <article class="insight-card dark">
-          <span class="card-index mono">01 / RESEARCH GEOGRAPHY</span>
+          <span class="card-index mono">{t('01 / RESEARCH GEOGRAPHY', '01 / 科研地理')}</span>
           <strong>{signedPercent(chinaShift?.shareChangePercent ?? null)}</strong>
-          <h3>China’s represented Nature Index Share expanded sharply.</h3>
+          <h3>{t('China’s represented Nature Index Share expanded sharply.', '中国在自然指数中的贡献份额大幅扩张。')}</h3>
           <p>
-            Across the published academic table, Share moved from
-            {` ${decimal.format(chinaShift?.share2015 ?? 0)} `}in 2015 output to
-            {` ${decimal.format(chinaShift?.share2025 ?? 0)} `}in 2025 output.
-            Journal-set and coverage changes mean this is directional, not a
-            pure growth rate.
+            {t(
+              `Across the published academic table, Share moved from ${decimal.format(chinaShift?.share2015 ?? 0)} in 2015 output to ${decimal.format(chinaShift?.share2025 ?? 0)} in 2025 output. Journal-set and coverage changes mean this is directional, not a pure growth rate.`,
+              `在已发布的学术机构榜单中，份额从 2015 年产出的 ${decimal.format(chinaShift?.share2015 ?? 0)} 变为 2025 年产出的 ${decimal.format(chinaShift?.share2025 ?? 0)}。期刊集合与覆盖范围有所变化，因此这只反映方向，并非单纯的增长率。`,
+            )}
           </p>
-          <a href="/trends/#geography">Inspect the country shift →</a>
+          <a href={href('/trends/#geography')}>{t('Inspect the country shift →', '查看国家变化 →')}</a>
         </article>
         <article class="insight-card light">
-          <span class="card-index mono">02 / DURABLE CONSENSUS</span>
+          <span class="card-index mono">{t('02 / DURABLE CONSENSUS', '02 / 稳定共识')}</span>
           <strong>{insights.consensus[0].providerCount}/6</strong>
-          <h3>{insights.consensus[0].name} appears at the top across methods.</h3>
+          <h3>{t(`${insights.consensus[0].name} appears at the top across methods.`, `${insights.consensus[0].name} 在各种方法下都名列前茅。`)}</h3>
           <p>
-            The leading signal averages within-table percentiles across six
-            broad publisher rankings. The top five all have evidence from every
-            included source.
+            {t(
+              'The leading signal averages within-table percentiles across six broad publisher rankings. The top five all have evidence from every included source.',
+              '领先信号取六个综合排名中各表内百分位的平均值。前五名在每个纳入的来源中都有数据。',
+            )}
           </p>
-          <a href="/finder/">Compare provider evidence →</a>
+          <a href={href('/finder/')}>{t('Compare provider evidence →', '比较各家排名证据 →')}</a>
         </article>
         <article class="insight-card color">
-          <span class="card-index mono">03 / SUBJECT FIT</span>
+          <span class="card-index mono">{t('03 / SUBJECT FIT', '03 / 学科匹配')}</span>
           <strong>{dominantSubjectCountry?.[1] ?? 0}/8</strong>
-          <h3>{dominantSubjectCountry?.[0]} institutions lead most Nature subject views.</h3>
+          <h3>
+            {t(
+              `${dominantSubjectCountry?.[0]} institutions lead most Nature subject views.`,
+              `${dominantSubjectCountry ? country(dominantSubjectCountry[0]) : ''}院校在多数自然指数学科视图中领先。`,
+            )}
+          </h3>
           <p>
-            Overall strength hides specialization. Biology and health point to
-            different leaders than chemistry, applied science, or the physical
-            sciences.
+            {t(
+              'Overall strength hides specialization. Biology and health point to different leaders than chemistry, applied science, or the physical sciences.',
+              '整体实力会掩盖专业特长。生物与健康领域的领先者，与化学、应用科学或物理科学并不相同。',
+            )}
           </p>
-          <a href="/subjects/">Open the subject lens →</a>
+          <a href={href('/subjects/')}>{t('Open the subject lens →', '打开学科视角 →')}</a>
         </article>
       </div>
     </div>
@@ -194,15 +211,18 @@ const retrievalDate = new Intl.DateTimeFormat('en-US', { year: 'numeric', month:
   <section class="section">
     <div class="shell">
       <SectionHeading
-        eyebrow="Consensus, not certainty"
-        title="Where independent broad rankings overlap."
-        description="Institutions must appear in at least four of six latest broad editions. The score is the mean within-table percentile, so it measures agreement—not educational fit."
-        href="/finder/"
-        linkLabel={`Search all ${number.format(insights.consensus.length)} signals`}
+        eyebrow={t('Consensus, not certainty', '是共识，不是定论')}
+        title={t('Where independent broad rankings overlap.', '独立综合排名的重合之处。')}
+        description={t(
+          'Institutions must appear in at least four of six latest broad editions. The score is the mean within-table percentile, so it measures agreement—not educational fit.',
+          '院校须出现在六个最新综合榜单中的至少四个。分数是表内百分位的平均值，衡量的是一致程度，而非教育上的适配度。',
+        )}
+        href={href('/finder/')}
+        linkLabel={t(`Search all ${number.format(insights.consensus.length)} signals`, `搜索全部 ${number.format(insights.consensus.length)} 所院校`)}
       />
       <ConsensusTable institutions={insights.consensus} limit={10} />
       <p class="fine-print table-note">
-        Latest editions differ by source: {insights.methodology.consensusProviders.map((item) => `${item.label} ${item.year}`).join(' · ')}.
+        {t('Latest editions differ by source:', '各来源的最新版本不同：')} {insights.methodology.consensusProviders.map((item) => `${provider(item.id, item.label)} ${item.year}`).join(' · ')}{t('.', '。')}
       </p>
     </div>
   </section>
@@ -211,38 +231,40 @@ const retrievalDate = new Intl.DateTimeFormat('en-US', { year: 'numeric', month:
     <div class="shell country-grid">
       <div>
         <SectionHeading
-          eyebrow="Global footprint"
-          title="Top-100 placements remain concentrated."
-          description="Count of institutions placed at rank 100 or better across the six broad publisher tables. One institution can contribute once per provider."
-          href="/trends/#geography"
-          linkLabel="See research geography"
+          eyebrow={t('Global footprint', '全球分布')}
+          title={t('Top-100 placements remain concentrated.', '前 100 名席位依然高度集中。')}
+          description={t(
+            'Count of institutions placed at rank 100 or better across the six broad publisher tables. One institution can contribute once per provider.',
+            '六个综合排名中位列前 100 名的院校数量。同一院校在每家排名中最多计一次。',
+          )}
+          href={href('/trends/#geography')}
+          linkLabel={t('See research geography', '查看科研地理')}
         />
         <div class="chart-card surface">
           <BarChart
             items={insights.countryFootprint.slice(0, 12).map((item) => ({
-              label: item.country,
+              label: country(item.country, item.countryCode),
               value: item.placements,
-              detail: `${item.providerCount}/6 sources`,
+              detail: t(`${item.providerCount}/6 sources`, `${item.providerCount}/6 个来源`),
             }))}
             color="var(--coral)"
           />
         </div>
       </div>
       <aside class="context-card">
-        <p class="eyebrow">Read with context</p>
+        <p class="eyebrow">{t('Read with context', '结合背景解读')}</p>
         <strong>{number.format(insights.countryFootprint[0].placements)}</strong>
-        <h3>U.S. top-100 placements across six tables</h3>
+        <h3>{t('U.S. top-100 placements across six tables', '美国在六个榜单中的前 100 名席位')}</h3>
         <p>
-          This reflects system depth and table methodology, not the quality of
-          every institution in a country. China appears in
-          {` ${insights.countryFootprint.find((item) => item.countryCode === 'CN')?.providerCount ?? 0} `}
-          of the six top-100 lists; the United States and United Kingdom appear
-          in all six.
+          {t(
+            `This reflects system depth and table methodology, not the quality of every institution in a country. China appears in ${chinaReach} of the six top-100 lists; the United States and United Kingdom appear in all six.`,
+            `这反映的是高教体系的厚度和榜单方法，而不是一个国家每所院校的质量。中国出现在六个前 100 名榜单中的 ${chinaReach} 个；美国和英国则全部出现。`,
+          )}
         </p>
         <div class="comparison">
-          <span>Nature academic Share, 2015→2025</span>
-          <div><b>China</b><strong>{signedPercent(chinaShift?.shareChangePercent ?? null)}</strong></div>
-          <div><b>United States</b><strong>{signedPercent(usShift?.shareChangePercent ?? null)}</strong></div>
+          <span>{t('Nature academic Share, 2015→2025', '自然指数学术份额，2015→2025')}</span>
+          <div><b>{t('China', '中国')}</b><strong>{signedPercent(chinaShift?.shareChangePercent ?? null)}</strong></div>
+          <div><b>{t('United States', '美国')}</b><strong>{signedPercent(usShift?.shareChangePercent ?? null)}</strong></div>
         </div>
       </aside>
     </div>
@@ -251,11 +273,14 @@ const retrievalDate = new Intl.DateTimeFormat('en-US', { year: 'numeric', month:
   <section class="section">
     <div class="shell">
       <SectionHeading
-        eyebrow="Coverage map"
-        title="Every lens defines “best” differently."
-        description="Time depth and subject coverage vary by source. Long bars show each ranking’s historical continuity across editions."
-        href="/methodology/#providers"
-        linkLabel="Read provider notes"
+        eyebrow={t('Coverage map', '覆盖地图')}
+        title={t('Every lens defines “best” differently.', '每种视角对“最好”的定义都不同。')}
+        description={t(
+          'Time depth and subject coverage vary by source. Long bars show each ranking’s historical continuity across editions.',
+          '各来源的时间跨度和学科覆盖各不相同。长条表示每个排名历年版本的连续性。',
+        )}
+        href={href('/methodology/#providers')}
+        linkLabel={t('Read provider notes', '阅读排名说明')}
       />
       <ProviderTimeline providers={insights.providers} />
     </div>
@@ -264,27 +289,32 @@ const retrievalDate = new Intl.DateTimeFormat('en-US', { year: 'numeric', month:
   <section class="section guidance-section">
     <div class="shell">
       <SectionHeading
-        eyebrow="From ranking to decision"
-        title="Use the data as a funnel, not a verdict."
+        eyebrow={t('From ranking to decision', '从排名到决策')}
+        title={t('Use the data as a funnel, not a verdict.', '把数据当作漏斗，而非裁决。')}
       />
       <div class="guidance-flow">
         <article>
           <span class="step mono">01</span>
-          <h3>Shortlist on durable signal</h3>
-          <p>Look for repeated strength across methods and years, not a one-edition jump.</p>
-          <a href="/finder/">Start with consensus</a>
+          <h3>{t('Shortlist on durable signal', '依据稳定信号建立候选名单')}</h3>
+          <p>{t('Look for repeated strength across methods and years, not a one-edition jump.', '寻找在不同方法和年份中反复出现的实力，而不是某一版的跃升。')}</p>
+          <a href={href('/finder/')}>{t('Start with consensus', '从共识开始')}</a>
         </article>
         <article>
           <span class="step mono">02</span>
-          <h3>Match the subject</h3>
-          <p>Compare field-specific research position; the broad table can hide the program you care about.</p>
-          <a href="/subjects/">Compare disciplines</a>
+          <h3>{t('Match the subject', '匹配专业')}</h3>
+          <p>{t('Compare field-specific research position; the broad table can hide the program you care about.', '比较具体领域的科研位置；综合榜单可能掩盖你关心的专业。')}</p>
+          <a href={href('/subjects/')}>{t('Compare disciplines', '比较学科')}</a>
         </article>
         <article>
           <span class="step mono">03</span>
-          <h3>Add your constraints</h3>
-          <p>Cost, admissions, teaching model, and career outcomes are not resolved by this archive. The finder shows a founding year, city, and research-output scale where available, but that is not a substitute for a campus visit.</p>
-          <a href="/methodology/#guidance">Use the decision checklist</a>
+          <h3>{t('Add your constraints', '加入你的限制条件')}</h3>
+          <p>
+            {t(
+              'Cost, admissions, teaching model, and career outcomes are not resolved by this archive. The finder shows a founding year, city, and research-output scale where available, but that is not a substitute for a campus visit.',
+              '费用、录取、教学模式和就业结果，都不是这份存档能回答的。查大学页面会在有数据时显示建校年份、城市和科研产出规模，但这不能代替实地参观校园。',
+            )}
+          </p>
+          <a href={href('/methodology/#guidance')}>{t('Use the decision checklist', '使用决策清单')}</a>
         </article>
       </div>
     </div>

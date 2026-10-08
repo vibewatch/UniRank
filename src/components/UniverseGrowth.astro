@@ -1,12 +1,14 @@
 ---
 import type { RankingUniverse } from '../data/schema';
-import { number, signedPercent } from '../lib/format';
+import { pageI18n } from '../i18n/page';
 
 interface Props {
   series: RankingUniverse[];
 }
 
 const { series } = Astro.props;
+const { t, fmt, provider } = pageI18n(Astro.url);
+const { number, signedPercent } = fmt;
 const width = 280;
 const height = 96;
 const margin = 8;
@@ -27,23 +29,27 @@ const margin = 8;
       .map((point, index) => `${index === 0 ? 'M' : 'L'} ${x(point.year)} ${y(point.size)}`)
       .join(' ');
     const growth = (latest.size / first.size - 1) * 100;
+    const label = provider(item.provider, item.label);
     return (
       <article class="surface" style={`--series:${item.color}`}>
         <header>
           <div>
-            <span>{item.label}</span>
+            <span>{label}</span>
             <strong>{number.format(latest.size)}</strong>
           </div>
           <b>{signedPercent(growth)}</b>
         </header>
         <svg viewBox={`0 0 ${width} ${height}`} role="img">
           <title>
-            {`${item.label} overall table size grew from ${number.format(first.size)} in ${first.year} to ${number.format(latest.size)} in ${latest.year}`}
+            {t(
+              `${item.label} overall table size grew from ${number.format(first.size)} in ${first.year} to ${number.format(latest.size)} in ${latest.year}`,
+              `${label}综合榜规模从 ${first.year} 年的 ${number.format(first.size)} 所增至 ${latest.year} 年的 ${number.format(latest.size)} 所`,
+            )}
           </title>
           <path d={path} />
           {item.points.map((point) => (
             <circle cx={x(point.year)} cy={y(point.size)} r="2.3">
-              <title>{`${point.year}: ${number.format(point.size)} records`}</title>
+              <title>{t(`${point.year}: ${number.format(point.size)} records`, `${point.year}：${number.format(point.size)} 条`)}</title>
             </circle>
           ))}
         </svg>
@@ -51,7 +57,7 @@ const margin = 8;
           <span><b>{first.year}</b>{number.format(first.size)}</span>
           {latest.unranked > 0 && (
             <span class="reporters">
-              <b>{number.format(latest.unranked)}</b>reporters
+              <b>{number.format(latest.unranked)}</b>{t('reporters', '仅报送')}
             </span>
           )}
           <span><b>{latest.year}</b>{number.format(latest.size)}</span>

@@ -1,6 +1,6 @@
 ---
 import type { EditionMove, EditionMovers } from '../data/schema';
-import { decimal, number } from '../lib/format';
+import { pageI18n } from '../i18n/page';
 
 interface Props {
   movers: EditionMovers;
@@ -9,52 +9,72 @@ interface Props {
 }
 
 const { movers, latestRetrieval } = Astro.props;
+const { t, fmt, country, provider } = pageI18n(Astro.url);
+const { decimal, number } = fmt;
 const FRESH_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
 const newest = Date.parse(latestRetrieval);
 const isFresh = (retrievedAt: string | null) =>
   retrievedAt !== null && Number.isFinite(newest) && newest - Date.parse(retrievedAt) <= FRESH_WINDOW_MS;
-const retrievedLabel = (retrievedAt: string | null) => (retrievedAt ? retrievedAt.slice(0, 10) : 'unknown date');
+const retrievedLabel = (retrievedAt: string | null) => (retrievedAt ? retrievedAt.slice(0, 10) : t('unknown date', '日期不详'));
 
 // Tied displays already carry a marker ("=42"), so only plain ranks get a "#".
 const place = (display: string | null) => (display === null ? '—' : display.startsWith('=') ? display : `#${display}`);
 const moveLabel = (move: EditionMove) => {
-  if (move.change === null) return move.previousDisplay === null ? 'new' : '';
+  if (move.change === null) return move.previousDisplay === null ? t('new', '新') : '';
   if (move.change === 0) return '=';
   return move.change > 0 ? `▲${number.format(move.change)}` : `▼${number.format(-move.change)}`;
 };
 const moveClass = (move: EditionMove) =>
   move.change === null ? 'flat' : move.change > 0 ? 'up' : move.change < 0 ? 'down' : 'flat';
-const moveTitle = (move: EditionMove, previousYear: number, year: number) =>
-  `${move.name}: ${place(move.previousDisplay)} in ${previousYear}, ${move.rankDisplay === null ? 'not listed' : place(move.rankDisplay)} in ${year}`;
+const moveTitle = (move: EditionMove, previousYear: number, year: number) => {
+  const now = move.rankDisplay === null ? t('not listed', '未上榜') : place(move.rankDisplay);
+  return t(
+    `${move.name}: ${place(move.previousDisplay)} in ${previousYear}, ${now} in ${year}`,
+    `${move.name}：${previousYear} 年 ${place(move.previousDisplay)}，${year} 年 ${now}`,
+  );
+};
+const unlisted = t('unlisted', '未上榜');
 ---
 
 <div class="movers-grid">
   {movers.providers.map((board) => {
     const lists = [
-      { title: 'Biggest risers', items: board.risers.slice(0, 3), empty: 'No exact-rank gains inside the window.' },
-      { title: 'Biggest fallers', items: board.fallers.slice(0, 3), empty: 'No exact-rank drops inside the window.' },
-      { title: `New to the top ${movers.window}`, items: board.entrants.slice(0, 3), empty: 'The same institutions as last edition.' },
+      {
+        title: t('Biggest risers', '上升最多'),
+        items: board.risers.slice(0, 3),
+        empty: t('No exact-rank gains inside the window.', '窗口内没有确切名次的上升。'),
+      },
+      {
+        title: t('Biggest fallers', '下降最多'),
+        items: board.fallers.slice(0, 3),
+        empty: t('No exact-rank drops inside the window.', '窗口内没有确切名次的下降。'),
+      },
+      {
+        title: t(`New to the top ${movers.window}`, `新进前 ${movers.window}`),
+        items: board.entrants.slice(0, 3),
+        empty: t('The same institutions as last edition.', '与上一版院校相同。'),
+      },
     ];
     return (
       <article class="mover-card surface" style={`--provider:${board.color}`}>
         <header>
           <div>
-            <strong>{board.label}</strong>
+            <strong>{provider(board.provider, board.label)}</strong>
             <span class="mono">{board.previousYear} → {board.year}</span>
           </div>
-          {isFresh(board.retrievedAt) && <b class="fresh mono">New edition</b>}
+          {isFresh(board.retrievedAt) && <b class="fresh mono">{t('New edition', '新版')}</b>}
         </header>
         <dl class="mover-stats">
           <div>
-            <dt>Mean move</dt>
-            <dd>{board.meanAbsoluteMove === null ? '—' : decimal.format(board.meanAbsoluteMove)}<small> places</small></dd>
+            <dt>{t('Mean move', '平均变动')}</dt>
+            <dd>{board.meanAbsoluteMove === null ? '—' : decimal.format(board.meanAbsoluteMove)}<small>{t(' places', ' 位')}</small></dd>
           </div>
           <div>
-            <dt>Unchanged</dt>
-            <dd>{number.format(board.unchanged)}<small> of {number.format(board.stayed)}</small></dd>
+            <dt>{t('Unchanged', '名次不变')}</dt>
+            <dd>{number.format(board.unchanged)}<small>{t(` of ${number.format(board.stayed)}`, ` / ${number.format(board.stayed)}`)}</small></dd>
           </div>
           <div>
-            <dt>Entered / left</dt>
+            <dt>{t('Entered / left', '进入 / 退出')}</dt>
             <dd>{number.format(board.entrantCount)}<small> / {number.format(board.exitCount)}</small></dd>
           </div>
         </dl>
@@ -67,7 +87,7 @@ const moveTitle = (move: EditionMove, previousYear: number, year: number) =>
                   <li title={moveTitle(move, board.previousYear, board.year)}>
                     <span class="identity">
                       <span class="name">{move.name}</span>
-                      <span class="meta">{move.country}</span>
+                      <span class="meta">{country(move.country, move.countryCode)}</span>
                     </span>
                     <span class="places mono">{place(move.previousDisplay)} → {place(move.rankDisplay)}</span>
                     <span class={`move mono ${moveClass(move)}`}>{moveLabel(move)}</span>
@@ -80,8 +100,8 @@ const moveTitle = (move: EditionMove, previousYear: number, year: number) =>
           </section>
         ))}
         <details>
-          <summary>Top 10 and every window change</summary>
-          <h4 class="mono">Top 10, {board.year}</h4>
+          <summary>{t('Top 10 and every window change', '前 10 名及窗口内全部进出变动')}</summary>
+          <h4 class="mono">{t(`Top 10, ${board.year}`, `${board.year} 年前 10 名`)}</h4>
           <ol class="compact">
             {board.top10.map((move) => (
               <li title={moveTitle(move, board.previousYear, board.year)}>
@@ -93,13 +113,13 @@ const moveTitle = (move: EditionMove, previousYear: number, year: number) =>
           </ol>
           {board.entrants.length > 0 && (
             <>
-              <h4 class="mono">Entered the top {movers.window}</h4>
+              <h4 class="mono">{t(`Entered the top ${movers.window}`, `进入前 ${movers.window}`)}</h4>
               <ol class="compact">
                 {board.entrants.map((move) => (
                   <li title={moveTitle(move, board.previousYear, board.year)}>
                     <span class="places mono">{place(move.rankDisplay)}</span>
                     <span class="name">{move.name}</span>
-                    <span class="move mono flat">was {move.previousDisplay === null ? 'unlisted' : place(move.previousDisplay)}</span>
+                    <span class="move mono flat">{t('was', '原')} {move.previousDisplay === null ? unlisted : place(move.previousDisplay)}</span>
                   </li>
                 ))}
               </ol>
@@ -107,31 +127,29 @@ const moveTitle = (move: EditionMove, previousYear: number, year: number) =>
           )}
           {board.exits.length > 0 && (
             <>
-              <h4 class="mono">Left the top {movers.window}</h4>
+              <h4 class="mono">{t(`Left the top ${movers.window}`, `退出前 ${movers.window}`)}</h4>
               <ol class="compact">
                 {board.exits.map((move) => (
                   <li title={moveTitle(move, board.previousYear, board.year)}>
                     <span class="places mono">{place(move.previousDisplay)}</span>
                     <span class="name">{move.name}</span>
-                    <span class="move mono flat">now {move.rankDisplay === null ? 'unlisted' : place(move.rankDisplay)}</span>
+                    <span class="move mono flat">{t('now', '现')} {move.rankDisplay === null ? unlisted : place(move.rankDisplay)}</span>
                   </li>
                 ))}
               </ol>
             </>
           )}
-          <p class="retrieved">Archived {retrievedLabel(board.retrievedAt)}.</p>
+          <p class="retrieved">{t(`Archived ${retrievedLabel(board.retrievedAt)}.`, `存档于 ${retrievedLabel(board.retrievedAt)}。`)}</p>
         </details>
       </article>
     );
   })}
 </div>
 <p class="fine-print">
-  Each card compares a publisher’s latest overall edition with the previous one it
-  published, matching institutions by normalized name and country. Moves are only
-  computed when both placements are exact; banded placements (such as 101–150) still
-  count toward entries and exits, which are listed separately from risers and fallers. “Unlisted” means no matching row in that edition—often
-  a rename, merger, or an institution that did not submit data—so treat it as a prompt to
-  check, not as a verdict.
+  {t(
+    'Each card compares a publisher’s latest overall edition with the previous one it published, matching institutions by normalized name and country. Moves are only computed when both placements are exact; banded placements (such as 101–150) still count toward entries and exits, which are listed separately from risers and fallers. “Unlisted” means no matching row in that edition—often a rename, merger, or an institution that did not submit data—so treat it as a prompt to check, not as a verdict.',
+    '每张卡片将发布方最新一版综合榜单与其上一版比较，按规范化的校名和国家匹配院校。只有两版名次都确切时才计算变动；区间名次（如 101–150）仍计入进入和退出，并与上升、下降分开列出。“未上榜”表示该版中没有匹配的条目——常见原因是更名、合并或院校未提交数据——请把它当作需要核实的提示，而非定论。',
+  )}
 </p>
 
 <style>

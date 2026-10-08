@@ -3,6 +3,14 @@ import assert from "node:assert/strict";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
+import {
+  countryNameForCode,
+  localeFromPath,
+  localizePath,
+  providerLabel,
+  stripLocale,
+  subjectLabel,
+} from "../src/i18n/index.ts";
 import { onPageLeave } from "../src/lib/client-lifecycle.ts";
 
 test("page cleanup runs once when Astro swaps the document", () => {
@@ -63,7 +71,7 @@ test("specialist copy distinguishes qualifying subjects from placement rows", ()
   assert.match(page, /Each placement is one university’s result in one subject/);
   assert.match(
     component,
-    /All \{subjects\.length\} qualifying subjects \(\{items\.length\} placements\)/,
+    /All \$\{subjects\.length\} qualifying subjects \(\$\{items\.length\} placements\)/,
   );
 });
 
@@ -125,7 +133,7 @@ test("edition years come from the data instead of hard-coded labels", () => {
   // The latest-editions movers section is wired into Trends and linked from the home strip.
   assert.match(trends, /<EditionMovers movers=\{insights\.editionMovers\}/);
   assert.match(trends, /id="latest-editions"/);
-  assert.match(readFileSync("src/pages/index.astro", "utf8"), /href="\/trends\/#latest-editions"/);
+  assert.match(readFileSync("src/pages/index.astro", "utf8"), /href=\{href\('\/trends\/#latest-editions'\)\}/);
 
   assert.doesNotMatch(layout, /Signals \/ \d{4}/);
   assert.doesNotMatch(timeline, /start = \d{4}|end = \d{4}|<span>20\d\d<\/span>/);
@@ -143,4 +151,59 @@ test("Google Analytics is validated, production-only, and configured by the depl
   assert.match(layout, /https:\/\/www\.googletagmanager\.com\/gtag\/js\?id=/);
   assert.match(layout, /gtag\('config','\$\{gaId\}'\)/);
   assert.match(workflow, /PUBLIC_GA_ID: \$\{\{ vars\.PUBLIC_GA_ID \}\}/);
+});
+
+test("locale paths map between the English root and the /zh/ mirror", () => {
+  assert.equal(localeFromPath("/"), "en");
+  assert.equal(localeFromPath("/zh/"), "zh");
+  assert.equal(localeFromPath("/zh"), "zh");
+  assert.equal(localeFromPath("/zhuhai/"), "en");
+  assert.equal(localizePath("/", "zh"), "/zh/");
+  assert.equal(localizePath("/trends/#latest-editions", "zh"), "/zh/trends/#latest-editions");
+  assert.equal(localizePath("/zh/finder/?q=x", "en"), "/finder/?q=x");
+  assert.equal(localizePath("/zh/finder/", "zh"), "/zh/finder/");
+  assert.equal(localizePath("https://example.com/", "zh"), "https://example.com/");
+  assert.equal(stripLocale("/zh/atlas/"), "/atlas/");
+  assert.equal(stripLocale("/zh"), "/");
+});
+
+test("Chinese labels cover countries, providers, and publisher subject variants", () => {
+  assert.equal(countryNameForCode("CN", "China", "zh"), "中国");
+  assert.equal(countryNameForCode("HK", "Hong Kong", "zh"), "中国香港");
+  assert.equal(countryNameForCode("US", "United States", "en"), "United States");
+  assert.equal(countryNameForCode(null, "Northern Cyprus", "zh"), "北塞浦路斯");
+  assert.equal(providerLabel("arwu", "ShanghaiRanking", "zh"), "软科");
+  assert.equal(providerLabel("arwu", "ShanghaiRanking", "en"), "ShanghaiRanking");
+  assert.equal(subjectLabel("Arts & humanities", "zh"), "艺术与人文");
+  assert.equal(subjectLabel("Arts And Humanities", "zh"), subjectLabel("Arts Humanities", "zh"));
+  assert.equal(subjectLabel("Computer Science Information Systems", "en"), "Computer Science Information Systems");
+
+  // Every subject label the site renders has a Chinese name.
+  const insights = JSON.parse(readFileSync("src/data/insights.json", "utf8"));
+  const labels = new Set<string>([
+    ...insights.subjectBoards.map((board: { label: string }) => board.label),
+    ...insights.natureSubjects.map((subject: { label: string }) => subject.label),
+    ...insights.qsSubjectOutperformers.map((item: { subjectLabel: string }) => item.subjectLabel),
+  ]);
+  const missing = [...labels].filter((label) => subjectLabel(label, "zh") === label);
+  assert.deepEqual(missing, []);
+});
+
+test("every page has a Simplified Chinese mirror and a header language switch", () => {
+  const english = readdirSync("src/pages").filter((name) => name.endsWith(".astro")).sort();
+  const chinese = readdirSync("src/pages/zh").filter((name) => name.endsWith(".astro")).sort();
+  assert.deepEqual(chinese, english);
+  for (const name of chinese) {
+    assert.match(readFileSync(join("src/pages/zh", name), "utf8"), new RegExp(`import Page from '\\.\\./${name.replace(".", "\\.")}'`));
+  }
+
+  const config = readFileSync("astro.config.mjs", "utf8");
+  assert.match(config, /locales: \['en', 'zh'\]/);
+  assert.match(config, /prefixDefaultLocale: false/);
+
+  const layout = readFileSync("src/layouts/BaseLayout.astro", "utf8");
+  assert.match(layout, /<html lang=\{lang\}>/);
+  assert.match(layout, /class="locale-switch"/);
+  assert.match(layout, /data-locale-link/);
+  assert.match(layout, /hreflang="x-default"/);
 });

@@ -2,33 +2,66 @@
 import ProviderTimeline from '../components/ProviderTimeline.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { pageI18n } from '../i18n/page';
 import { insights } from '../lib/data';
 
+const { locale, t, fmt, provider: providerName, kind } = pageI18n(Astro.url);
 const restrictedProviders = new Set(['usnews', 'times', 'qs', 'cwur', 'ntu', 'arwu', 'scimago']);
-const formatDate = new Intl.DateTimeFormat('en-US', {
-  year: 'numeric',
-  month: 'short',
-  day: 'numeric',
-  timeZone: 'UTC',
-});
+const formatDate = (value: string) => fmt.date(value);
+const years = (text: string) => text.match(/\b(?:19|20)\d{2}\b/g) ?? [];
+
+// Chinese renderings of the generator's English methodology strings; edition
+// years are read back out of the English text so they follow the data.
+const ZH_COVERAGE: Record<string, (english: string) => string> = {
+  usnews: () => '当前全球及学科排名',
+  times: () => '综合与学科榜单',
+  qs: () => '综合与宽口径学科榜单',
+  leiden: () => '论文规模与领域归一化影响力',
+  openalex: () => '基于 CC0 数据重建的年度论著产出',
+  cwur: () => '综合榜单',
+  ntu: () => '综合、领域与学科榜单',
+  arwu: () => 'ARWU 综合榜与 GRAS 学科榜',
+  scimago: (english) => `综合榜与 ${english.match(/\d+(?= research areas)/)?.[0] ?? ''} 个研究领域`,
+  nature: () => '全部门与学术机构年度榜单',
+  webometrics: (english) => {
+    const [year] = years(english);
+    return year ? `综合榜单；${year} 年 7 月版只列出每个国家的前 15 名` : '综合榜单';
+  },
+};
+const coverage = (id: string, english: string) => (locale === 'zh' && ZH_COVERAGE[id] ? ZH_COVERAGE[id](english) : english);
+const consensusDefinition = t(
+  insights.methodology.consensusDefinition,
+  '取最新可得的各综合榜单中表内百分位的平均值；这是一个分析指数，而不是一个新的排名。',
+);
+const [natureFrom = '', natureFromOutput = '', natureTo = '', natureToOutput = ''] = years(insights.methodology.natureWindow);
+const natureWindow = t(
+  insights.methodology.natureWindow,
+  `${natureFrom} 版（${natureFromOutput} 年产出）至 ${natureTo} 版（${natureToOutput} 年产出）`,
+);
+const [openAlexFrom = '', openAlexTo = ''] = years(insights.methodology.openAlexWindow);
+const openAlexWindow = t(insights.methodology.openAlexWindow, `发表年份 ${openAlexFrom}–${openAlexTo}`);
 ---
 
 <BaseLayout
-  title="Methodology"
-  description="Review data provenance, consensus construction, rank semantics, entity matching, metric definitions, licensing, and responsible-use guidance for University Signals."
+  title={t('Methodology', '方法')}
+  description={t(
+    'Review data provenance, consensus construction, rank semantics, entity matching, metric definitions, licensing, and responsible-use guidance for University Signals.',
+    '了解 University Signals 的数据来源、共识构建、名次语义、实体匹配、指标定义、许可协议与负责任使用指南。',
+  )}
 >
   <section class="page-hero methodology-hero">
     <div class="shell">
-      <p class="eyebrow">Methods before conclusions</p>
-      <h1>Every signal keeps its source attached.</h1>
+      <p class="eyebrow">{t('Methods before conclusions', '先讲方法，再下结论')}</p>
+      <h1>{t('Every signal keeps its source attached.', '每个信号都标明来源。')}</h1>
       <p class="lede">
-        This site reduces a large multi-provider ranking archive into a small
-        analytical layer. It does not erase provider definitions, measurement
-        windows, ties, missingness, or reuse restrictions.
+        {t(
+          'This site reduces a large multi-provider ranking archive into a small analytical layer. It does not erase provider definitions, measurement windows, ties, missingness, or reuse restrictions.',
+          '本站把一份庞大的多来源排名存档提炼成精简的分析层，同时不抹去各排名机构的定义、统计窗口、并列名次、缺失情况或再利用限制。',
+        )}
       </p>
       <dl class="provenance-strip">
-        <div><dt>Coverage</dt><dd>{insights.meta.firstYear}—{insights.meta.lastYear}</dd></div>
-        <div><dt>Latest retrieval</dt><dd>{formatDate.format(new Date(insights.meta.latestRetrieval))}</dd></div>
+        <div><dt>{t('Coverage', '覆盖范围')}</dt><dd>{insights.meta.firstYear}—{insights.meta.lastYear}</dd></div>
+        <div><dt>{t('Latest retrieval', '最近采集')}</dt><dd>{formatDate(insights.meta.latestRetrieval)}</dd></div>
       </dl>
     </div>
   </section>
@@ -37,34 +70,51 @@ const formatDate = new Intl.DateTimeFormat('en-US', {
     <div class="shell method-grid">
       <div>
         <SectionHeading
-          eyebrow="Analytical consensus"
-          title="An overlap index, not a seventh ranking."
-          description={insights.methodology.consensusDefinition}
+          eyebrow={t('Analytical consensus', '分析共识')}
+          title={t('An overlap index, not a seventh ranking.', '这是重合度指数，不是第七个排名。')}
+          description={consensusDefinition}
         />
         <div class="formula surface">
-          <span class="mono">FOR EACH PROVIDER</span>
-          <code>percentile = 100 × (1 − (rank − 1) / (ranked entries − 1))</code>
+          <span class="mono">{t('FOR EACH PROVIDER', '对每家排名')}</span>
+          <code>{t('percentile = 100 × (1 − (rank − 1) / (ranked entries − 1))', '百分位 = 100 × (1 − (名次 − 1) / (上榜数 − 1))')}</code>
           <span class="operator">↓</span>
-          <span class="mono">FOR EACH INSTITUTION</span>
-          <code>signal = mean(provider percentiles)</code>
+          <span class="mono">{t('FOR EACH INSTITUTION', '对每所院校')}</span>
+          <code>{t('signal = mean(provider percentiles)', '信号 = 平均值(各家百分位)')}</code>
         </div>
       </div>
       <aside class="method-steps">
         <article>
           <span>01</span>
-          <div><h3>Latest broad editions</h3><p>U.S. News, THE, QS, CWUR, NTU, and ARWU contribute one overall table each.</p></div>
+          <div>
+            <h3>{t('Latest broad editions', '最新综合榜单')}</h3>
+            <p>{t('U.S. News, THE, QS, CWUR, NTU, and ARWU contribute one overall table each.', 'U.S. News、泰晤士、QS、CWUR、NTU 和软科 ARWU 各提供一份综合榜单。')}</p>
+          </div>
         </article>
         <article>
           <span>02</span>
-          <div><h3>Four-source minimum</h3><p>An institution needs evidence from at least {insights.methodology.consensusMinimumProviders} independent sources. Missing sources are not imputed.</p></div>
+          <div>
+            <h3>{t('Four-source minimum', '至少四个来源')}</h3>
+            <p>
+              {t(
+                `An institution needs evidence from at least ${insights.methodology.consensusMinimumProviders} independent sources. Missing sources are not imputed.`,
+                `院校须在至少 ${insights.methodology.consensusMinimumProviders} 个独立来源中有数据。缺失的来源不做插补。`,
+              )}
+            </p>
+          </div>
         </article>
         <article>
           <span>03</span>
-          <div><h3>Equal source weight</h3><p>Provider scores are not mixed. Only displayed rank position within each ranked universe is normalized.</p></div>
+          <div>
+            <h3>{t('Equal source weight', '各来源权重相同')}</h3>
+            <p>{t('Provider scores are not mixed. Only displayed rank position within each ranked universe is normalized.', '不混合各家的分数，只对每个榜单内显示的名次位置做归一化。')}</p>
+          </div>
         </article>
         <article>
           <span>04</span>
-          <div><h3>Read the chips</h3><p>The provider ranks and coverage count are more informative than tenths between tightly clustered elite percentiles.</p></div>
+          <div>
+            <h3>{t('Read the chips', '看名次标签')}</h3>
+            <p>{t('The provider ranks and coverage count are more informative than tenths between tightly clustered elite percentiles.', '各家名次和覆盖数，比顶尖院校之间相差零点几的百分位更有参考价值。')}</p>
+          </div>
         </article>
       </aside>
     </div>
@@ -73,38 +123,41 @@ const formatDate = new Intl.DateTimeFormat('en-US', {
   <section class="section" id="providers">
     <div class="shell">
       <SectionHeading
-        eyebrow="Source inventory"
-        title="Different providers, different questions."
-        description="Each provider publishes on its own schedule, scope, and license. The table lists what each one contributes and how its data may be reused."
+        eyebrow={t('Source inventory', '来源清单')}
+        title={t('Different providers, different questions.', '不同的排名机构，回答不同的问题。')}
+        description={t(
+          'Each provider publishes on its own schedule, scope, and license. The table lists what each one contributes and how its data may be reused.',
+          '每家机构都有自己的发布周期、范围和许可协议。下表列出每家提供的内容及其数据的再利用方式。',
+        )}
       />
       <ProviderTimeline providers={insights.providers} />
       <div class="provider-table table-wrap">
         <table>
           <thead>
             <tr>
-              <th>Provider</th>
-              <th>Lens</th>
-              <th>Coverage</th>
-              <th>Latest edition</th>
-              <th>Reuse status</th>
+              <th>{t('Provider', '排名机构')}</th>
+              <th>{t('Lens', '类型')}</th>
+              <th>{t('Coverage', '覆盖范围')}</th>
+              <th>{t('Latest edition', '最新版本')}</th>
+              <th>{t('Reuse status', '再利用状态')}</th>
             </tr>
           </thead>
           <tbody>
             {insights.providers.map((provider) => (
               <tr>
-                <td><strong>{provider.label}</strong></td>
-                <td>{provider.kind}</td>
+                <td><strong>{providerName(provider.id, provider.label)}</strong></td>
+                <td>{kind(provider.kind)}</td>
                 <td>
-                  {provider.firstYear === provider.lastYear ? provider.lastYear : `${provider.firstYear}—${provider.lastYear}`} · {provider.editions} {provider.editions === 1 ? 'edition' : 'editions'}{provider.subjectViews > 0 && ` · ${provider.subjectViews} subject views`}
-                  <small>{provider.coverage}</small>
+                  {provider.firstYear === provider.lastYear ? provider.lastYear : `${provider.firstYear}—${provider.lastYear}`} · {t(`${provider.editions} ${provider.editions === 1 ? 'edition' : 'editions'}`, `${provider.editions} 个版本`)}{provider.subjectViews > 0 && t(` · ${provider.subjectViews} subject views`, ` · ${provider.subjectViews} 个学科视图`)}
+                  <small>{coverage(provider.id, provider.coverage)}</small>
                 </td>
                 <td>
                   <strong>{provider.lastYear}</strong>
-                  {provider.latestRetrieved && <small>Archived {formatDate.format(new Date(provider.latestRetrieved))}</small>}
+                  {provider.latestRetrieved && <small>{t('Archived', '存档于')} {formatDate(provider.latestRetrieved)}</small>}
                 </td>
                 <td>
                   <span class:list={{ restricted: restrictedProviders.has(provider.id), open: !restrictedProviders.has(provider.id) }}>
-                    {restrictedProviders.has(provider.id) ? 'Provider-controlled' : provider.license}
+                    {restrictedProviders.has(provider.id) ? t('Provider-controlled', '机构管控') : provider.license}
                   </span>
                 </td>
               </tr>
@@ -113,15 +166,10 @@ const formatDate = new Intl.DateTimeFormat('en-US', {
         </table>
       </div>
       <p class="fine-print">
-        Provider-controlled snapshots are included under separately confirmed
-        permission. That permission does not replace publisher terms or
-        automatically grant downstream redistribution rights. OpenAlex and
-        Leiden are CC0; Webometrics is CC BY 4.0; Nature Index numerical data is
-        CC BY-NC-SA 4.0. Edition years follow each publisher’s own label, so a
-        “2027” QS table and a “2026” ARWU table can be released in the same summer.
-        Publishers occasionally trim a release: Webometrics’ July 2026 edition lists
-        only each country’s top 15, so web-visibility comparisons use the most
-        recent complete edition.
+        {t(
+          'Provider-controlled snapshots are included under separately confirmed permission. That permission does not replace publisher terms or automatically grant downstream redistribution rights. OpenAlex and Leiden are CC0; Webometrics is CC BY 4.0; Nature Index numerical data is CC BY-NC-SA 4.0. Edition years follow each publisher’s own label, so a “2027” QS table and a “2026” ARWU table can be released in the same summer. Publishers occasionally trim a release: Webometrics’ July 2026 edition lists only each country’s top 15, so web-visibility comparisons use the most recent complete edition.',
+          '机构管控的快照经另行确认的许可收录。该许可不能取代发布方条款，也不会自动授予下游再分发权利。OpenAlex 和莱顿为 CC0；Webometrics 为 CC BY 4.0；自然指数数值数据为 CC BY-NC-SA 4.0。版本年份沿用各发布方自己的标注，因此“2027”版 QS 榜单和“2026”版 ARWU 榜单可能在同一个夏天发布。发布方偶尔会缩减发布内容：Webometrics 2026 年 7 月版只列出每个国家的前 15 名，因此网络可见度对比使用最近一个完整版本。',
+        )}
       </p>
     </div>
   </section>
@@ -129,30 +177,33 @@ const formatDate = new Intl.DateTimeFormat('en-US', {
   <section class="section semantics-section">
     <div class="shell">
       <SectionHeading
-        eyebrow="Rank semantics"
-        title="Ties, bands, and non-ranks stay distinct."
-        description="The site preserves publisher display values and uses a band’s lower bound only when a numeric position is required for plotting or percentile conversion."
+        eyebrow={t('Rank semantics', '名次语义')}
+        title={t('Ties, bands, and non-ranks stay distinct.', '并列、区间和无名次，彼此区分。')}
+        description={t(
+          'The site preserves publisher display values and uses a band’s lower bound only when a numeric position is required for plotting or percentile conversion.',
+          '本站保留发布方的原始显示值，只有在绘图或换算百分位需要数值位置时，才使用区间的下限。',
+        )}
       />
       <div class="semantics-grid">
         <article>
           <strong>=42</strong>
-          <h3>Tied rank</h3>
-          <p>Several institutions may share a position. Top-100 tables can therefore contain more than 100 entries.</p>
+          <h3>{t('Tied rank', '并列名次')}</h3>
+          <p>{t('Several institutions may share a position. Top-100 tables can therefore contain more than 100 entries.', '多所院校可能并列同一名次，因此前 100 名榜单可能超过 100 条。')}</p>
         </article>
         <article>
           <strong>601–800</strong>
-          <h3>Rank band</h3>
-          <p>The display stays a band. A trajectory uses 601 as a documented plotting convention, not as a precise rank.</p>
+          <h3>{t('Rank band', '名次区间')}</h3>
+          <p>{t('The display stays a band. A trajectory uses 601 as a documented plotting convention, not as a precise rank.', '显示时保持区间。轨迹图按约定用 601 绘制，而不是把它当作确切名次。')}</p>
         </article>
         <article>
-          <strong>Reporter</strong>
-          <h3>Unranked status</h3>
-          <p>THE reporters are counted in table coverage but excluded from ranked universes and consensus calculations.</p>
+          <strong>{t('Reporter', '仅报送')}</strong>
+          <h3>{t('Unranked status', '未排名状态')}</h3>
+          <p>{t('THE reporters are counted in table coverage but excluded from ranked universes and consensus calculations.', '泰晤士的“仅报送”院校计入榜单覆盖，但不计入排名总体和共识计算。')}</p>
         </article>
         <article>
           <strong>—</strong>
-          <h3>Not listed or unmatched</h3>
-          <p>Absence is not zero. It may mean outside the published table, not eligible, not collected, or not safely matched.</p>
+          <h3>{t('Not listed or unmatched', '未上榜或未匹配')}</h3>
+          <p>{t('Absence is not zero. It may mean outside the published table, not eligible, not collected, or not safely matched.', '缺失不等于零。可能表示不在已发布榜单内、不符合资格、未被收集，或无法可靠匹配。')}</p>
         </article>
       </div>
     </div>
@@ -161,33 +212,51 @@ const formatDate = new Intl.DateTimeFormat('en-US', {
   <section class="section" id="research-metrics">
     <div class="shell">
       <SectionHeading
-        eyebrow="Research metrics"
-        title="Output, impact, and selected-journal Share are not synonyms."
+        eyebrow={t('Research metrics', '科研指标')}
+        title={t('Output, impact, and selected-journal Share are not synonyms.', '产出、影响力和精选期刊份额并不是同义词。')}
       />
       <div class="definition-grid">
         <article class="surface">
-          <span class="source-tag">LEIDEN OPEN EDITION</span>
-          <h3>Fractional publications</h3>
-          <p><code>p</code> allocates multi-institution papers fractionally. The site’s scale rank is derived from this value within the selected field.</p>
-          <dl><div><dt>Window</dt><dd>2020–2023 in edition 2025</dd></div><div><dt>License</dt><dd>CC0</dd></div></dl>
+          <span class="source-tag">{t('LEIDEN OPEN EDITION', '莱顿开放版')}</span>
+          <h3>{t('Fractional publications', '分数式论文计数')}</h3>
+          <p>
+            <code>p</code>
+            {t(
+              ' allocates multi-institution papers fractionally. The site’s scale rank is derived from this value within the selected field.',
+              ' 将多机构合作论文按比例分配。本站的规模排名由所选领域内的这一数值得出。',
+            )}
+          </p>
+          <dl>
+            <div><dt>{t('Window', '统计窗口')}</dt><dd>{t('2020–2023 in edition 2025', '2025 版为 2020–2023 年')}</dd></div>
+            <div><dt>{t('License', '许可')}</dt><dd>CC0</dd></div>
+          </dl>
         </article>
         <article class="surface">
-          <span class="source-tag">LEIDEN OPEN EDITION</span>
-          <h3>MNCS and top-10% share</h3>
-          <p>MNCS normalizes citation impact by field and year. Top-10% share measures the fraction of work among highly cited papers.</p>
-          <dl><div><dt>Scale correlation</dt><dd>{insights.leidenSummary.scaleImpactSpearman.toFixed(3)}</dd></div><div><dt>Top-100 overlap</dt><dd>{insights.leidenSummary.scaleImpactTop100Overlap}</dd></div></dl>
+          <span class="source-tag">{t('LEIDEN OPEN EDITION', '莱顿开放版')}</span>
+          <h3>{t('MNCS and top-10% share', 'MNCS 与前 10% 论文占比')}</h3>
+          <p>{t('MNCS normalizes citation impact by field and year. Top-10% share measures the fraction of work among highly cited papers.', 'MNCS 按领域和年份对引用影响力做归一化。前 10% 论文占比衡量的是高被引论文所占的比例。')}</p>
+          <dl>
+            <div><dt>{t('Scale correlation', '与规模的相关性')}</dt><dd>{insights.leidenSummary.scaleImpactSpearman.toFixed(3)}</dd></div>
+            <div><dt>{t('Top-100 overlap', '前 100 名重合')}</dt><dd>{insights.leidenSummary.scaleImpactTop100Overlap}</dd></div>
+          </dl>
         </article>
         <article class="surface">
           <span class="source-tag">OPENALEX</span>
-          <h3>Annual institution-work count</h3>
-          <p>Historical values are reconstructed from current institution snapshots. Counts are institution-work associations, not deduplicated global papers.</p>
-          <dl><div><dt>Site window</dt><dd>{insights.methodology.openAlexWindow}</dd></div><div><dt>License</dt><dd>CC0</dd></div></dl>
+          <h3>{t('Annual institution-work count', '年度机构论著数')}</h3>
+          <p>{t('Historical values are reconstructed from current institution snapshots. Counts are institution-work associations, not deduplicated global papers.', '历史数值由当前的机构快照重建。计数为机构与论著的关联数，而非全球去重后的论文数。')}</p>
+          <dl>
+            <div><dt>{t('Site window', '本站窗口')}</dt><dd>{openAlexWindow}</dd></div>
+            <div><dt>{t('License', '许可')}</dt><dd>CC0</dd></div>
+          </dl>
         </article>
         <article class="surface">
-          <span class="source-tag">NATURE INDEX</span>
-          <h3>Fractional Share</h3>
-          <p>Share covers contributions to a selected journal set. Edition 2026 represents 2025 output; journal and method changes limit causal comparisons.</p>
-          <dl><div><dt>Site comparison</dt><dd>{insights.methodology.natureWindow}</dd></div><div><dt>License</dt><dd>CC BY-NC-SA 4.0</dd></div></dl>
+          <span class="source-tag">{t('NATURE INDEX', '自然指数')}</span>
+          <h3>{t('Fractional Share', '分数式份额')}</h3>
+          <p>{t('Share covers contributions to a selected journal set. Edition 2026 represents 2025 output; journal and method changes limit causal comparisons.', '份额统计的是对一组精选期刊的贡献。2026 版代表 2025 年的产出；期刊和方法的变化限制了因果比较。')}</p>
+          <dl>
+            <div><dt>{t('Site comparison', '本站比较区间')}</dt><dd>{natureWindow}</dd></div>
+            <div><dt>{t('License', '许可')}</dt><dd>CC BY-NC-SA 4.0</dd></div>
+          </dl>
         </article>
       </div>
     </div>
@@ -197,24 +266,28 @@ const formatDate = new Intl.DateTimeFormat('en-US', {
     <div class="shell entity-grid">
       <div>
         <SectionHeading
-          eyebrow="Entity resolution"
-          title="Names are matched only inside country boundaries."
-          description="Institution names change, translate, abbreviate, and collide. Shared ROR or OpenAlex identifiers are preferred where available; publisher consensus otherwise uses exact normalized names, country blocks, and a small reviewed alias map."
+          eyebrow={t('Entity resolution', '实体识别')}
+          title={t('Names are matched only inside country boundaries.', '校名只在同一国家内匹配。')}
+          description={t(
+            'Institution names change, translate, abbreviate, and collide. Shared ROR or OpenAlex identifiers are preferred where available; publisher consensus otherwise uses exact normalized names, country blocks, and a small reviewed alias map.',
+            '院校名称会更改、翻译、缩写，也会重名。有共享的 ROR 或 OpenAlex 标识符时优先使用；否则，发布方共识采用规范化后的精确校名、按国家分组，以及一份经人工审核的小型别名表。',
+          )}
         />
         <ol class="entity-steps">
-          <li><span>1</span><p>Preserve every raw source name and country.</p></li>
-          <li><span>2</span><p>Preserve source-specific identifiers and use shared ROR or OpenAlex IDs where datasets expose them.</p></li>
-          <li><span>3</span><p>Normalize Unicode, case, punctuation, and whitespace only to generate candidates.</p></li>
-          <li><span>4</span><p>Require a harmonized country, apply reviewed aliases for known variants, and keep ambiguous matches separate.</p></li>
+          <li><span>1</span><p>{t('Preserve every raw source name and country.', '保留每个来源的原始校名和国家。')}</p></li>
+          <li><span>2</span><p>{t('Preserve source-specific identifiers and use shared ROR or OpenAlex IDs where datasets expose them.', '保留各来源特有的标识符；数据集提供时，使用共享的 ROR 或 OpenAlex ID。')}</p></li>
+          <li><span>3</span><p>{t('Normalize Unicode, case, punctuation, and whitespace only to generate candidates.', '仅为生成候选匹配，对 Unicode、大小写、标点和空白做规范化。')}</p></li>
+          <li><span>4</span><p>{t('Require a harmonized country, apply reviewed aliases for known variants, and keep ambiguous matches separate.', '要求国家一致，对已知变体使用审核过的别名，并把有歧义的匹配分开处理。')}</p></li>
         </ol>
       </div>
       <aside class="warning-card">
-        <span class="mono">DO NOT BLINDLY MERGE</span>
-        <h3>Campuses, systems, hospitals, and namesakes</h3>
+        <span class="mono">{t('DO NOT BLINDLY MERGE', '切勿盲目合并')}</span>
+        <h3>{t('Campuses, systems, hospitals, and namesakes', '分校、大学系统、附属医院与同名院校')}</h3>
         <p>
-          “Southeast University,” for example, can refer to institutions in
-          different countries. Removing location, parentheticals, or diacritics
-          without blocking by country and city can create false consensus.
+          {t(
+            '“Southeast University,” for example, can refer to institutions in different countries. Removing location, parentheticals, or diacritics without blocking by country and city can create false consensus.',
+            '例如，“Southeast University”可能指不同国家的院校。如果不按国家和城市分组就去掉地名、括号内容或变音符号，就可能制造虚假的共识。',
+          )}
         </p>
       </aside>
     </div>
@@ -223,16 +296,16 @@ const formatDate = new Intl.DateTimeFormat('en-US', {
   <section class="section guidance-section" id="guidance">
     <div class="shell">
       <SectionHeading
-        eyebrow="Responsible guidance"
-        title="A ranking can narrow a search. It cannot make the decision."
+        eyebrow={t('Responsible guidance', '负责任使用指南')}
+        title={t('A ranking can narrow a search. It cannot make the decision.', '排名可以缩小搜索范围，但不能替你做决定。')}
       />
       <div class="checklist">
-        <article><span>Signal</span><p>Look for recurring strength across methods and years.</p></article>
-        <article><span>Subject</span><p>Verify the exact department, program, faculty, and facilities.</p></article>
-        <article><span>Access</span><p>Compare admissions likelihood, cost, aid, visas, and prerequisites.</p></article>
-        <article><span>Experience</span><p>Inspect class model, support, location, culture, and student outcomes.</p></article>
-        <article><span>Evidence</span><p>Open the provider methodology and measurement period before interpreting movement.</p></article>
-        <article><span>Decision</span><p>Weight your constraints explicitly; do not substitute the consensus decimal.</p></article>
+        <article><span>{t('Signal', '信号')}</span><p>{t('Look for recurring strength across methods and years.', '寻找在不同方法和年份中反复出现的实力。')}</p></article>
+        <article><span>{t('Subject', '专业')}</span><p>{t('Verify the exact department, program, faculty, and facilities.', '核实具体的院系、项目、师资和设施。')}</p></article>
+        <article><span>{t('Access', '入学')}</span><p>{t('Compare admissions likelihood, cost, aid, visas, and prerequisites.', '比较录取可能性、费用、资助、签证和先修要求。')}</p></article>
+        <article><span>{t('Experience', '体验')}</span><p>{t('Inspect class model, support, location, culture, and student outcomes.', '了解授课模式、支持服务、地理位置、校园文化和学生去向。')}</p></article>
+        <article><span>{t('Evidence', '证据')}</span><p>{t('Open the provider methodology and measurement period before interpreting movement.', '解读名次变化之前，先查看排名机构的方法和统计期间。')}</p></article>
+        <article><span>{t('Decision', '决策')}</span><p>{t('Weight your constraints explicitly; do not substitute the consensus decimal.', '明确权衡你的限制条件；不要用共识分数的小数位来代替判断。')}</p></article>
       </div>
     </div>
   </section>

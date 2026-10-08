@@ -4,8 +4,11 @@ import SectionHeading from '../components/SectionHeading.astro';
 import UniversityFinder from '../components/UniversityFinder.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import facets from '../data/directory-facets.json';
+import { pageI18n } from '../i18n/page';
 import { insights } from '../lib/data';
 import type { DirectoryFacets } from '../data/schema';
+
+const { t, href, fmt, country } = pageI18n(Astro.url);
 
 const directory = facets as DirectoryFacets;
 const totalInstitutions = directory.meta.count;
@@ -20,31 +23,34 @@ const universalTop20 = insights.consensus.filter(
 ---
 
 <BaseLayout
-  title="Find"
-  description="Find universities by subject strength in one provider's published table, or search the overall directory across ten worldwide ranking sources."
+  title={t('Find', '查大学')}
+  description={t(
+    "Find universities by subject strength in one provider's published table, or search the overall directory across ten worldwide ranking sources.",
+    '在单一排名机构发布的学科榜单中按学科实力查找大学，或在汇集十个全球排名来源的综合目录中搜索。',
+  )}
 >
   <section class="page-hero finder-hero">
     <div class="shell">
-      <p class="eyebrow">Find a university</p>
-      <h1>Start with what you want to study.</h1>
+      <p class="eyebrow">{t('Find a university', '查找大学')}</p>
+      <h1>{t('Start with what you want to study.', '从你想学的专业开始。')}</h1>
       <p class="lede">
-        Choose a ranking source and subject to see that complete published table
-        in rank order—or switch to the overall directory to look up any school.
-        Sources stay separate because a QS subject rank and a bibliometric field
-        rank do not measure the same thing.
+        {t(
+          'Choose a ranking source and subject to see that complete published table in rank order—or switch to the overall directory to look up any school. Sources stay separate because a QS subject rank and a bibliometric field rank do not measure the same thing.',
+          '选择排名来源和学科，按名次查看完整的已发布榜单；或切换到综合目录查询任意学校。各来源分开呈现，因为 QS 学科排名和文献计量领域排名衡量的并不是同一回事。',
+        )}
       </p>
       <div class="grid two metric-grid">
         <MetricCard
-          label="Institutions indexed"
-          value={totalInstitutions.toLocaleString('en-US')}
-          detail="Every school in the latest overall or broad ranking tables, searchable in one place."
+          label={t('Institutions indexed', '收录院校')}
+          value={fmt.number.format(totalInstitutions)}
+          detail={t('Every school in the latest overall or broad ranking tables, searchable in one place.', '最新综合或宽口径排名中的每一所学校，可在一处搜索。')}
           tone="teal"
           index="01"
         />
         <MetricCard
-          label="Subject tables"
-          value={subjectTableCount.toLocaleString('en-US')}
-          detail="Complete provider-specific disciplines and fields, available on demand."
+          label={t('Subject tables', '学科榜单')}
+          value={fmt.number.format(subjectTableCount)}
+          detail={t('Complete provider-specific disciplines and fields, available on demand.', '各排名机构完整的学科与领域榜单，按需加载。')}
           tone="violet"
           index="02"
         />
@@ -55,11 +61,14 @@ const universalTop20 = insights.consensus.filter(
   <section class="section finder-section">
     <div class="shell">
       <SectionHeading
-        eyebrow="Live query"
-        title="Choose a subject table—or search the overall directory."
-        description="Subject mode is ordered by the selected provider's published rank and includes every institution in that table. Overall mode removes redundant ranking controls and simply prioritizes broad consensus, then coverage."
-        href="/methodology/#providers"
-        linkLabel="Why sources stay separate"
+        eyebrow={t('Live query', '实时查询')}
+        title={t('Choose a subject table—or search the overall directory.', '选择学科榜单，或搜索综合目录。')}
+        description={t(
+          "Subject mode is ordered by the selected provider's published rank and includes every institution in that table. Overall mode removes redundant ranking controls and simply prioritizes broad consensus, then coverage.",
+          '学科模式按所选排名机构公布的名次排序，并包含该榜单中的所有院校。综合模式去掉了多余的排序控件，先按综合共识、再按覆盖数排列。',
+        )}
+        href={href('/methodology/#providers')}
+        linkLabel={t('Why sources stay separate', '为什么各来源分开呈现')}
       />
 
       <UniversityFinder
@@ -72,11 +81,14 @@ const universalTop20 = insights.consensus.filter(
   <section class="section elite-section">
     <div class="shell">
       <SectionHeading
-        eyebrow="Not sure where to start?"
-        title="Schools every major broad ranking calls elite."
-        description="These institutions sit inside all six broad providers' displayed top 20 at once. It is a strict agreement test, not another weighted score—a safe anchor before you branch into subject and country fit."
-        href="/subjects/"
-        linkLabel="Then match your subject"
+        eyebrow={t('Not sure where to start?', '不知从何开始？')}
+        title={t('Schools every major broad ranking calls elite.', '各大综合排名一致公认的顶尖学校。')}
+        description={t(
+          "These institutions sit inside all six broad providers' displayed top 20 at once. It is a strict agreement test, not another weighted score—a safe anchor before you branch into subject and country fit.",
+          '这些院校同时位列六家综合排名的前 20 名。这是一项严格的一致性检验，而不是另一个加权分数——在深入考虑专业与国家匹配之前，它们是可靠的参照点。',
+        )}
+        href={href('/subjects/')}
+        linkLabel={t('Then match your subject', '再匹配你的专业')}
       />
       <div class="elite-cloud">
         {universalTop20.map((institution, index) => (
@@ -84,9 +96,9 @@ const universalTop20 = insights.consensus.filter(
             <span class="mono">{String(index + 1).padStart(2, '0')}</span>
             <div>
               <strong>{institution.name}</strong>
-              <small>{institution.country}</small>
+              <small>{country(institution.country, institution.countryCode)}</small>
             </div>
-            <span class="range" title="Best–worst rank across the six broad providers">
+            <span class="range" title={t('Best–worst rank across the six broad providers', '六家综合排名中的最好–最差名次')}>
               {`${Math.min(...institution.ranks.map((rank) => rank.rank))}–${Math.max(...institution.ranks.map((rank) => rank.rank))}`}
             </span>
           </article>
@@ -98,24 +110,24 @@ const universalTop20 = insights.consensus.filter(
   <section class="section">
     <div class="shell">
       <SectionHeading
-        eyebrow="Reading the results"
-        title="A subject rank answers one specific question."
+        eyebrow={t('Reading the results', '解读结果')}
+        title={t('A subject rank answers one specific question.', '学科排名只回答一个具体问题。')}
       />
       <div class="use-grid">
         <article class="good">
-          <span>Use it for</span>
-          <h3>Finding strength in your field</h3>
-          <p>Pick one source and discipline, then filter its full published table by country or institution name.</p>
+          <span>{t('Use it for', '适用于')}</span>
+          <h3>{t('Finding strength in your field', '寻找你所在领域的强校')}</h3>
+          <p>{t('Pick one source and discipline, then filter its full published table by country or institution name.', '选定一个来源和学科，再按国家或院校名称筛选完整的已发布榜单。')}</p>
         </article>
         <article class="good">
-          <span>Use it for</span>
-          <h3>Looking up any institution</h3>
-          <p>Switch to the overall directory to see every provider that ranks a school, without extra filter-and-sort duplication.</p>
+          <span>{t('Use it for', '适用于')}</span>
+          <h3>{t('Looking up any institution', '查询任意院校')}</h3>
+          <p>{t('Switch to the overall directory to see every provider that ranks a school, without extra filter-and-sort duplication.', '切换到综合目录，查看为某所学校排名的所有机构，无需重复筛选和排序。')}</p>
         </article>
         <article class="avoid">
-          <span>Do not read it as</span>
-          <h3>A cross-provider subject score</h3>
-          <p>Subject definitions, methods, and table sizes differ. Compare evidence, but do not average unlike ranks.</p>
+          <span>{t('Do not read it as', '不要理解为')}</span>
+          <h3>{t('A cross-provider subject score', '跨排名的学科总分')}</h3>
+          <p>{t('Subject definitions, methods, and table sizes differ. Compare evidence, but do not average unlike ranks.', '各家的学科定义、方法和榜单规模都不同。可以比较证据，但不要把不同口径的名次取平均。')}</p>
         </article>
       </div>
     </div>

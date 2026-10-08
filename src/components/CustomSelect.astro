@@ -338,7 +338,7 @@ const { class: className, placeholder, ...rest } = Astro.props;
         this.valueSpan.textContent = text;
         this.valueSpan.removeAttribute('data-placeholder');
       } else {
-        this.valueSpan.textContent = this.dataset.placeholder ?? 'Select…';
+        this.valueSpan.textContent = this.dataset.placeholder ?? (document.documentElement.lang.startsWith('zh') ? '请选择…' : 'Select…');
         this.valueSpan.setAttribute('data-placeholder', '');
       }
       this.items.forEach((item, index) =>

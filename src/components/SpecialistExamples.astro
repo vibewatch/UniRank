@@ -1,5 +1,7 @@
 ---
 import type { QsSubjectOutperformer } from '../data/schema';
+import { LOCALE_META } from '../i18n';
+import { pageI18n } from '../i18n/page';
 import CustomSelect from './CustomSelect.astro';
 
 interface Props {
@@ -7,61 +9,73 @@ interface Props {
 }
 
 const { items } = Astro.props;
-const subjects = [...new Map(items.map((item) => [item.subject, item.subjectLabel])).entries()]
+const { locale, t, country, subject: subjectName } = pageI18n(Astro.url);
+const subjects = [...new Map(items.map((item) => [item.subject, subjectName(item.subjectLabel)])).entries()]
   .map(([value, label]) => ({ value, label }))
-  .sort((a, b) => a.label.localeCompare(b.label));
+  .sort((a, b) => a.label.localeCompare(b.label, LOCALE_META[locale].intl));
 ---
 
 <div class="specialist-browser surface" data-specialist-browser>
   <div class="specialist-controls">
     <label>
-      <span>Filter by subject</span>
-      <CustomSelect data-specialist-subject aria-label="Filter specialist examples by subject">
-        <option value="">All {subjects.length} qualifying subjects ({items.length} placements)</option>
+      <span>{t('Filter by subject', '按学科筛选')}</span>
+      <CustomSelect data-specialist-subject aria-label={t('Filter specialist examples by subject', '按学科筛选专精院校示例')}>
+        <option value="">
+          {t(
+            `All ${subjects.length} qualifying subjects (${items.length} placements)`,
+            `全部 ${subjects.length} 个符合条件的学科（${items.length} 条记录）`,
+          )}
+        </option>
         {subjects.map((subject) => <option value={subject.value}>{subject.label}</option>)}
       </CustomSelect>
     </label>
     <p data-specialist-count aria-live="polite">
-      {items.length} placements across {subjects.length} qualifying subjects
+      {t(
+        `${items.length} placements across ${subjects.length} qualifying subjects`,
+        `${subjects.length} 个符合条件的学科，共 ${items.length} 条记录`,
+      )}
     </p>
   </div>
 
   <div class="specialist-list">
     {items.map((institution) => (
       <article class="specialist-row" data-specialist-item data-subject={institution.subject}>
-        <p class="specialist-subject">{institution.subjectLabel}</p>
+        <p class="specialist-subject">{subjectName(institution.subjectLabel)}</p>
         <div class="specialist-identity">
           <h3>{institution.name}</h3>
-          <small>{institution.country}</small>
+          <small>{country(institution.country, institution.countryCode)}</small>
         </div>
-        <div class="specialist-ranks" aria-label="Subject and overall ranks">
+        <div class="specialist-ranks" aria-label={t('Subject and overall ranks', '学科与综合排名')}>
           <span>
-            <small>Subject</small>
+            <small>{t('Subject', '学科')}</small>
             <strong>#{institution.subjectRankDisplay}</strong>
           </span>
           <i aria-hidden="true">→</i>
           <span>
-            <small>Overall</small>
-            <strong>{institution.overallRankDisplay ? `#${institution.overallRankDisplay}` : 'Not listed'}</strong>
+            <small>{t('Overall', '综合')}</small>
+            <strong>{institution.overallRankDisplay ? `#${institution.overallRankDisplay}` : t('Not listed', '未上榜')}</strong>
           </span>
         </div>
       </article>
     ))}
   </div>
 
-  <nav class="pagination" data-specialist-pagination aria-label="Specialist examples pages">
-    <button type="button" data-specialist-previous>Previous</button>
-    <span data-specialist-page>Page 1</span>
-    <button type="button" data-specialist-next>Next</button>
+  <nav class="pagination" data-specialist-pagination aria-label={t('Specialist examples pages', '专精院校示例分页')}>
+    <button type="button" data-specialist-previous>{t('Previous', '上一页')}</button>
+    <span data-specialist-page>{t('Page 1', '第 1 页')}</span>
+    <button type="button" data-specialist-next>{t('Next', '下一页')}</button>
   </nav>
 </div>
 
 <script>
+  import { documentLocale, translator } from '../i18n';
+
   const SPECIALIST_PAGE_SIZE = 12;
 
   const initializeSpecialistBrowser = (root: HTMLElement): void => {
     if (root.dataset.initialized === 'true') return;
     root.dataset.initialized = 'true';
+    const t = translator(documentLocale());
     const subject = root.querySelector<HTMLSelectElement>('[data-specialist-subject]');
     const count = root.querySelector<HTMLElement>('[data-specialist-count]');
     const pageLabel = root.querySelector<HTMLElement>('[data-specialist-page]');
@@ -82,8 +96,13 @@ const subjects = [...new Map(items.map((item) => [item.subject, item.subjectLabe
 
       const first = matches.length ? start + 1 : 0;
       const last = Math.min(start + SPECIALIST_PAGE_SIZE, matches.length);
-      if (count) count.textContent = `${first}–${last} of ${matches.length} matching placement${matches.length === 1 ? '' : 's'}`;
-      if (pageLabel) pageLabel.textContent = `Page ${page + 1} of ${pages}`;
+      if (count) {
+        count.textContent = t(
+          `${first}–${last} of ${matches.length} matching placement${matches.length === 1 ? '' : 's'}`,
+          `第 ${first}–${last} 条，共 ${matches.length} 条匹配记录`,
+        );
+      }
+      if (pageLabel) pageLabel.textContent = t(`Page ${page + 1} of ${pages}`, `第 ${page + 1} / ${pages} 页`);
       if (pagination) pagination.hidden = pages <= 1;
       if (previous) previous.disabled = page === 0;
       if (next) next.disabled = page >= pages - 1;

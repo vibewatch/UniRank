@@ -7,6 +7,8 @@ import interLatin from '@fontsource-variable/inter/files/inter-latin-wght-normal
 import spaceMonoLatin400 from '@fontsource/space-mono/files/space-mono-latin-400-normal.woff2?url';
 import spaceMonoLatin700 from '@fontsource/space-mono/files/space-mono-latin-700-normal.woff2?url';
 import { insights } from '../lib/data';
+import { LOCALE_META, LOCALES, localizePath, stripLocale } from '../i18n';
+import { pageI18n } from '../i18n/page';
 import '../styles/global.css';
 
 interface Props {
@@ -15,22 +17,29 @@ interface Props {
 }
 
 const { title, description } = Astro.props;
-const path = Astro.url.pathname;
+const { locale, lang, t, href } = pageI18n(Astro.url);
+// Locale-free path, used for active-nav matching and the language switch.
+const path = stripLocale(Astro.url.pathname);
 const nav = [
-  { href: '/', label: 'Overview' },
-  { href: '/subjects/', label: 'Study' },
-  { href: '/atlas/', label: 'Destinations' },
-  { href: '/finder/', label: 'Find' },
-  { href: '/trends/', label: 'Trends' },
-  { href: '/methodology/', label: 'Methodology' },
+  { href: '/', label: t('Overview', '总览') },
+  { href: '/subjects/', label: t('Study', '选专业') },
+  { href: '/atlas/', label: t('Destinations', '选国家') },
+  { href: '/finder/', label: t('Find', '查大学') },
+  { href: '/trends/', label: t('Trends', '趋势') },
+  { href: '/methodology/', label: t('Methodology', '方法') },
 ];
-const fullTitle = title === 'Overview' ? 'University Signals' : `${title} · University Signals`;
+const isHome = path === '/';
+const fullTitle = isHome ? t('University Signals', 'University Signals · 大学排名透视') : `${title} · University Signals`;
 
 // Absolute URLs for canonical + social cards. `Astro.site` comes from
 // astro.config's `site`; fall back to the production origin so a missing
 // config never throws at build time.
 const siteOrigin = Astro.site ?? new URL('https://unirank.genisisiq.com');
-const canonicalURL = new URL(path, siteOrigin);
+const canonicalURL = new URL(localizePath(path, locale), siteOrigin);
+const alternates = LOCALES.map((code) => ({
+  hreflang: LOCALE_META[code].htmlLang,
+  href: new URL(localizePath(path, code), siteOrigin),
+}));
 const socialImage = new URL('/og.png', siteOrigin);
 const rawGaId = import.meta.env.PUBLIC_GA_ID;
 const gaId = typeof rawGaId === 'string' && /^G-[A-Z0-9]+$/i.test(rawGaId.trim())
@@ -41,14 +50,17 @@ const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
   name: 'University Signals',
-  url: siteOrigin.href,
-  description:
+  url: new URL(localizePath('/', locale), siteOrigin).href,
+  inLanguage: lang,
+  description: t(
     'A transparent analytical layer over provider-published and open bibliometric university-ranking data.',
+    '基于各排名机构公开数据与开放文献计量数据的透明分析层。',
+  ),
 };
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={lang}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
@@ -56,6 +68,8 @@ const jsonLd = {
     <meta name="theme-color" content="#12171d" />
     <meta name="generator" content={Astro.generator} />
     <link rel="canonical" href={canonicalURL} />
+    {alternates.map((alternate) => <link rel="alternate" hreflang={alternate.hreflang} href={alternate.href} />)}
+    <link rel="alternate" hreflang="x-default" href={alternates[0].href} />
     <link rel="preload" href={interLatin} as="font" type="font/woff2" crossorigin="anonymous" />
     <link rel="preload" href={spaceMonoLatin400} as="font" type="font/woff2" crossorigin="anonymous" />
     <link rel="preload" href={spaceMonoLatin700} as="font" type="font/woff2" crossorigin="anonymous" />
@@ -65,11 +79,12 @@ const jsonLd = {
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
+    <meta property="og:locale" content={locale === 'zh' ? 'zh_CN' : 'en_US'} />
     <meta property="og:url" content={canonicalURL} />
     <meta property="og:image" content={socialImage} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="University Signals — a transparent analytical layer over university-ranking data" />
+    <meta property="og:image:alt" content={t('University Signals — a transparent analytical layer over university-ranking data', 'University Signals——大学排名数据的透明分析层')} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={fullTitle} />
     <meta name="twitter:description" content={description} />
@@ -84,10 +99,10 @@ const jsonLd = {
     <ClientRouter />
   </head>
   <body>
-    <a class="skip-link" href="#main">Skip to content</a>
+    <a class="skip-link" href="#main">{t('Skip to content', '跳到正文')}</a>
     <header class="site-header">
       <div class="shell header-inner">
-        <a class="brand" href="/" aria-label="University Signals home">
+        <a class="brand" href={href('/')} aria-label={t('University Signals home', 'University Signals 首页')}>
           <span class="brand-mark" aria-hidden="true">
             <i></i><i></i><i></i><i></i>
           </span>
@@ -96,23 +111,33 @@ const jsonLd = {
             <small>Signals / {insights.meta.firstYear}—{insights.meta.lastYear}</small>
           </span>
         </a>
-        <nav aria-label="Primary navigation">
-          {nav.map((item) => (
-            <a
-              href={item.href}
-              class:list={{
-                active: item.href === '/' ? path === '/' : path.startsWith(item.href),
-              }}
-              aria-current={
-                item.href === '/'
-                  ? path === '/' ? 'page' : undefined
-                  : path.startsWith(item.href) ? 'page' : undefined
-              }
-            >
-              {item.label}
-            </a>
-          ))}
-        </nav>
+        <div class="header-actions">
+          <nav aria-label={t('Primary navigation', '主导航')}>
+            {nav.map((item) => {
+              const active = item.href === '/' ? isHome : path.startsWith(item.href);
+              return (
+                <a href={href(item.href)} class:list={{ active }} aria-current={active ? 'page' : undefined}>
+                  {item.label}
+                </a>
+              );
+            })}
+          </nav>
+          <div class="locale-switch" role="group" aria-label={t('Language', '语言')}>
+            {LOCALES.map((code) => (
+              <a
+                href={localizePath(path, code)}
+                hreflang={LOCALE_META[code].htmlLang}
+                lang={LOCALE_META[code].htmlLang}
+                title={LOCALE_META[code].label}
+                class:list={{ active: code === locale }}
+                aria-current={code === locale ? 'true' : undefined}
+                data-locale-link
+              >
+                {LOCALE_META[code].short}
+              </a>
+            ))}
+          </div>
+        </div>
       </div>
     </header>
     <main id="main">
@@ -121,28 +146,48 @@ const jsonLd = {
     <footer>
       <div class="shell footer-grid">
         <div>
-          <a class="brand footer-brand" href="/">
+          <a class="brand footer-brand" href={href('/')}>
             <span class="brand-mark" aria-hidden="true">
               <i></i><i></i><i></i><i></i>
             </span>
             <span><strong>University Signals</strong></span>
           </a>
           <p>
-            A transparent analytical layer over provider-published and open
-            bibliometric data. Not a replacement for the source rankings.
+            {t(
+              'A transparent analytical layer over provider-published and open bibliometric data. Not a replacement for the source rankings.',
+              '基于各排名机构公开数据与开放文献计量数据的透明分析层，不能替代原始排名。',
+            )}
           </p>
         </div>
         <div>
-          <span class="footer-label">Coverage</span>
+          <span class="footer-label">{t('Coverage', '覆盖范围')}</span>
           <strong>{insights.meta.firstYear}—{insights.meta.lastYear}</strong>
-          <span>Worldwide and country rankings</span>
+          <span>{t('Worldwide and country rankings', '全球及各国排名')}</span>
         </div>
         <div>
-          <span class="footer-label">Navigate</span>
-          <a href="/methodology/">Methods & caveats</a>
-          <a href="/finder/">Find a university</a>
+          <span class="footer-label">{t('Navigate', '导航')}</span>
+          <a href={href('/methodology/')}>{t('Methods & caveats', '方法与注意事项')}</a>
+          <a href={href('/finder/')}>{t('Find a university', '查找大学')}</a>
         </div>
       </div>
     </footer>
   </body>
 </html>
+
+<script>
+  // Carry the current query and hash (finder search, map selection, section
+  // anchors) across when switching language. Capture phase so the href is
+  // updated before Astro's client router reads it.
+  document.addEventListener(
+    'click',
+    (event) => {
+      const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a[data-locale-link]') : null;
+      if (!link || link.getAttribute('aria-current')) return;
+      const target = new URL(link.href);
+      target.search = location.search;
+      target.hash = location.hash;
+      link.href = target.href;
+    },
+    true,
+  );
+</script>

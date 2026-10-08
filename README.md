@@ -40,6 +40,14 @@ trajectories, subject strengths, research geography, ranking-universe growth,
 publication-scale versus citation-impact analysis, and edition movers that
 compare each publisher's latest overall table with its previous one.
 
+The site is bilingual. English is served at the root and Simplified Chinese
+mirrors every page under `/zh/` (Astro i18n routing; `src/pages/zh/*.astro`
+re-render the shared pages). A header switch moves between the two while keeping
+the current query and anchor. Copy sits next to its markup as
+`t('English', '中文')` pairs; `src/i18n/` holds the locale helpers plus Chinese
+names for providers and subjects, and country names come from
+`Intl.DisplayNames`. Institution names stay as each publisher prints them.
+
 Edition years are read from the snapshots rather than hard-coded, so adding a
 new edition and running `npm run insights` updates the site's year labels,
 timelines, and movers. As of September 2026 the archive holds ARWU/GRAS 2026,

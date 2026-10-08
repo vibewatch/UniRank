@@ -1,26 +1,29 @@
 ---
 import type { NationalRankings } from '../data/schema';
-import { number } from '../lib/format';
+import { pageI18n } from '../i18n/page';
 
 interface Props {
   data: NationalRankings;
 }
 
 const { data } = Astro.props;
+const { t, fmt, country, provider: providerName } = pageI18n(Astro.url);
+const { number } = fmt;
 const leaders = data.consensus;
+const countryLabel = country(data.country);
 ---
 
-<section class="national-spotlight surface" aria-label={`${data.country} spotlight`}>
+<section class="national-spotlight surface" aria-label={t(`${data.country} spotlight`, `${countryLabel}聚焦`)}>
   <header class="national-head">
     <div>
-      <p class="mono">{data.country}</p>
-      <h3>How the two largest publisher rankings place U.S. universities.</h3>
+      <p class="mono">{countryLabel}</p>
+      <h3>{t('How the two largest publisher rankings place U.S. universities.', '两大发布方排名如何为美国大学排位。')}</h3>
     </div>
     <ul class="national-legend">
       {data.providers.map((provider) => (
         <li>
-          <strong>{provider.providerLabel}</strong>
-          <span>{number.format(provider.totalRanked)} U.S. listed · {provider.year}</span>
+          <strong>{providerName(provider.provider, provider.providerLabel)}</strong>
+          <span>{t(`${number.format(provider.totalRanked)} U.S. listed · ${provider.year}`, `${number.format(provider.totalRanked)} 所美国院校上榜 · ${provider.year}`)}</span>
         </li>
       ))}
     </ul>
@@ -34,12 +37,12 @@ const leaders = data.consensus;
           <strong>{institution.name}</strong>
           <span class="chips">
             {institution.ranks.map((rank) => (
-              <b class="chip">{rank.providerLabel} #{rank.rankDisplay}</b>
+              <b class="chip">{providerName(rank.provider, rank.providerLabel)} #{rank.rankDisplay}</b>
             ))}
           </span>
         </span>
-        <span class="mean" title="Mean of both providers' rank positions">
-          <small>Mean</small>
+        <span class="mean" title={t("Mean of both providers' rank positions", '两家排名名次的平均值')}>
+          <small>{t('Mean', '平均')}</small>
           <b class="mono">{institution.meanRank}</b>
         </span>
       </li>
@@ -47,10 +50,10 @@ const leaders = data.consensus;
   </ol>
 
   <p class="fine-print">
-    Ranks are each provider&rsquo;s global position restricted to U.S.
-    institutions; the order combines the two into a mean rank across the {data.consensus.length}
-    universities both rankings list near the top. It is a focused national lens
-    built from the collected U.S. tables, not a separate methodology.
+    {t(
+      `Ranks are each provider’s global position restricted to U.S. institutions; the order combines the two into a mean rank across the ${data.consensus.length} universities both rankings list near the top. It is a focused national lens built from the collected U.S. tables, not a separate methodology.`,
+      `名次为各家排名在美国院校范围内的全球位置；排序将两者合并为平均名次，涵盖两家排名都列于前列的 ${data.consensus.length} 所大学。这是基于所收集的美国榜单构建的国别视角，并非一套独立的方法。`,
+    )}
   </p>
 </section>
 

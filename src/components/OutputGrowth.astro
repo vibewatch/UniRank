@@ -1,31 +1,36 @@
 ---
 import type { OpenAlexGrowth } from '../data/schema';
-import { compact, decimal } from '../lib/format';
+import { pageI18n } from '../i18n/page';
 
 interface Props {
   items: OpenAlexGrowth[];
 }
 
 const { items } = Astro.props;
+const { t, fmt, country } = pageI18n(Astro.url);
+const { compact, decimal } = fmt;
 const max = Math.max(...items.map((item) => item.works2025));
 ---
 
 <div class="growth surface">
   <div class="legend">
-    <span><i class="from"></i>2016 works</span>
-    <span><i class="to"></i>2025 works</span>
+    <span><i class="from"></i>{t('2016 works', '2016 年论著')}</span>
+    <span><i class="to"></i>{t('2025 works', '2025 年论著')}</span>
   </div>
   <ol>
     {items.map((item) => (
       <li>
         <div class="head">
           <strong>{item.name}</strong>
-          <span class="country">{item.country}</span>
+          <span class="country">{country(item.country)}</span>
         </div>
         <div
           class="track"
           role="img"
-          aria-label={`${item.name}: ${compact.format(item.works2016)} works in 2016 rising to ${compact.format(item.works2025)} in 2025`}
+          aria-label={t(
+            `${item.name}: ${compact.format(item.works2016)} works in 2016 rising to ${compact.format(item.works2025)} in 2025`,
+            `${item.name}：论著从 2016 年的 ${compact.format(item.works2016)} 增至 2025 年的 ${compact.format(item.works2025)}`,
+          )}
         >
           <span
             class="range"
@@ -37,16 +42,16 @@ const max = Math.max(...items.map((item) => item.works2025));
         </div>
         <div class="values">
           <span class="mono">{compact.format(item.works2016)} → {compact.format(item.works2025)}</span>
-          <b>{decimal.format(item.cagr)}% CAGR</b>
+          <b>{t(`${decimal.format(item.cagr)}% CAGR`, `年复合增长 ${decimal.format(item.cagr)}%`)}</b>
         </div>
       </li>
     ))}
   </ol>
   <p>
-    Institution-work associations reconstructed from OpenAlex, not unique papers.
-    CAGR is the compound annual growth rate across the nine-year window; rank is
-    the 2025 output position. Recent OpenAlex years are less mature than earlier
-    ones, so treat late-window growth as indicative.
+    {t(
+      'Institution-work associations reconstructed from OpenAlex, not unique papers. CAGR is the compound annual growth rate across the nine-year window; rank is the 2025 output position. Recent OpenAlex years are less mature than earlier ones, so treat late-window growth as indicative.',
+      '基于 OpenAlex 重建的机构论著关联数，而非去重后的论文数。年复合增长率按九年窗口计算；排名为 2025 年的产出位次。OpenAlex 近年数据不如早年成熟，因此窗口末段的增长仅供参考。',
+    )}
   </p>
 </div>
 

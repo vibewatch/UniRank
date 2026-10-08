@@ -1,12 +1,14 @@
 ---
 import type { OpenAlexCountryMomentum } from '../data/schema';
-import { signedPercent } from '../lib/format';
+import { pageI18n } from '../i18n/page';
 
 interface Props {
   momentum: OpenAlexCountryMomentum;
 }
 
 const { momentum } = Astro.props;
+const { t, fmt, country: countryName } = pageI18n(Astro.url);
+const { signedPercent } = fmt;
 const width = 900;
 const height = 390;
 const margin = { left: 60, right: 24, top: 24, bottom: 46 };
@@ -24,6 +26,7 @@ const indexed = momentum.countries.map((country) => {
   const first = country.works[0].value;
   return {
     ...country,
+    country: countryName(country.country, country.countryCode),
     points: country.works.map((point) => ({
       ...point,
       index: point.value / first * 100,
@@ -61,10 +64,12 @@ const charted = indexed.map((country) => ({
   </div>
   <div class="chart-scroll">
     <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-labelledby="momentum-title momentum-desc">
-      <title id="momentum-title">Indexed OpenAlex institution-work output by country</title>
+      <title id="momentum-title">{t('Indexed OpenAlex institution-work output by country', '各国 OpenAlex 机构论著产出指数')}</title>
       <desc id="momentum-desc">
-        Country totals for institutions present in every annual snapshot, indexed to 100 in 2016.
-        Solid lines end at 2022; dashed lines show less mature publication years.
+        {t(
+          'Country totals for institutions present in every annual snapshot, indexed to 100 in 2016. Solid lines end at 2022; dashed lines show less mature publication years.',
+          '每个年度快照中都出现的院校按国家汇总，以 2016 年为 100。实线止于 2022 年；虚线表示数据尚不成熟的近年。',
+        )}
       </desc>
       {ticks.map((tick) => (
         <g>
@@ -99,21 +104,25 @@ const charted = indexed.map((country) => ({
               style={`--country:${country.color}`}
             >
               <title>
-                {`${country.country}: ${country.changePercent > 0 ? '+' : ''}${country.changePercent}% from 2016 to ${momentum.comparisonYear}`}
+                {t(
+                  `${country.country}: ${country.changePercent > 0 ? '+' : ''}${country.changePercent}% from 2016 to ${momentum.comparisonYear}`,
+                  `${country.country}：2016 至 ${momentum.comparisonYear} 年 ${country.changePercent > 0 ? '+' : ''}${country.changePercent}%`,
+                )}
               </title>
             </circle>
           </g>
       ))}
       <text x={margin.left} y={14} class="axis-label">2016 = 100</text>
       <text x={x(momentum.comparisonYear) + 7} y={margin.top + 12} class="cutoff-label">
-        comparison cutoff
+        {t('comparison cutoff', '比较截止')}
       </text>
     </svg>
   </div>
   <p>
-    Institution-work associations, not unique papers. The dashed 2023–2025 segment
-    is shown for continuity but is excluded from growth percentages because recent
-    OpenAlex years are less mature.
+    {t(
+      'Institution-work associations, not unique papers. The dashed 2023–2025 segment is shown for continuity but is excluded from growth percentages because recent OpenAlex years are less mature.',
+      '统计的是机构与论著的关联数，而非去重后的论文数。2023–2025 年的虚线段仅为保持连续而显示，不计入增长百分比，因为 OpenAlex 近年数据尚不成熟。',
+    )}
   </p>
 </div>
 

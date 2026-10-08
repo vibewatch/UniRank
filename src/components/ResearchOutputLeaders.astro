@@ -1,43 +1,53 @@
 ---
 import type { ResearchProfiles } from '../data/schema';
-import { compact, number } from '../lib/format';
+import { pageI18n } from '../i18n/page';
 
 interface Props {
   data: ResearchProfiles;
 }
 
 const { data } = Astro.props;
+const { t, fmt, country } = pageI18n(Astro.url);
+const { compact, number } = fmt;
 ---
 
-<section class="research-leaders surface" aria-label="Research output leaderboard">
+<section class="research-leaders surface" aria-label={t('Research output leaderboard', '科研产出排行榜')}>
   <ol class="rl-list">
     {data.leaders.map((leader, index) => (
       <li>
         <span class="rank mono">{String(index + 1).padStart(2, '0')}</span>
         <span class="identity">
           <strong>{leader.name}</strong>
-          <span class="meta">{leader.country}</span>
+          <span class="meta">{country(leader.country, leader.countryCode)}</span>
         </span>
         <span class="metrics">
-          <b class="chip" title="OpenAlex h-index across all recorded works">h-index {number.format(leader.hIndex)}</b>
+          <b class="chip" title={t('OpenAlex h-index across all recorded works', '基于 OpenAlex 全部收录论著的 h 指数')}>
+            {t('h-index', 'h 指数')} {number.format(leader.hIndex)}
+          </b>
           {leader.lifetimeWorks !== null && (
-            <b class="chip" title="Lifetime works recorded by OpenAlex">{compact.format(leader.lifetimeWorks)} works</b>
+            <b class="chip" title={t('Lifetime works recorded by OpenAlex', 'OpenAlex 记录的累计论著数')}>
+              {t(`${compact.format(leader.lifetimeWorks)} works`, `论著 ${compact.format(leader.lifetimeWorks)}`)}
+            </b>
           )}
           {leader.lifetimeCitations !== null && (
-            <b class="chip" title="Lifetime citations recorded by OpenAlex">{compact.format(leader.lifetimeCitations)} citations</b>
+            <b class="chip" title={t('Lifetime citations recorded by OpenAlex', 'OpenAlex 记录的累计被引次数')}>
+              {t(`${compact.format(leader.lifetimeCitations)} citations`, `被引 ${compact.format(leader.lifetimeCitations)}`)}
+            </b>
           )}
         </span>
         <span class="consensus">
-          {leader.consensusRank !== null ? `Consensus #${number.format(leader.consensusRank)}` : 'Outside consensus top 40'}
+          {leader.consensusRank !== null
+            ? t(`Consensus #${number.format(leader.consensusRank)}`, `共识第 ${number.format(leader.consensusRank)} 名`)
+            : t('Outside consensus top 40', '不在共识前 40 名内')}
         </span>
       </li>
     ))}
   </ol>
   <p class="fine-print">
-    Ranked by OpenAlex h-index across {number.format(data.institutionCount)} institutions with a
-    resolved research-output profile ({data.source}). This is a productivity signal, not a quality
-    ranking—large, long-established research universities accumulate high h-index scores over
-    decades regardless of where they land in any single-year table.
+    {t(
+      `Ranked by OpenAlex h-index across ${number.format(data.institutionCount)} institutions with a resolved research-output profile (${data.source}). This is a productivity signal, not a quality ranking—large, long-established research universities accumulate high h-index scores over decades regardless of where they land in any single-year table.`,
+      `按 OpenAlex h 指数为 ${number.format(data.institutionCount)} 所已确认科研产出档案的院校排序（${data.source}）。这是产出能力信号，而非质量排名——规模大、历史悠久的研究型大学经过数十年积累，h 指数自然较高，与其在任何单年榜单中的位置无关。`,
+    )}
   </p>
 </section>
 

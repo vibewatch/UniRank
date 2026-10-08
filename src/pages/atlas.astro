@@ -5,8 +5,12 @@ import NationalSpotlight from '../components/NationalSpotlight.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import WorldMap from '../components/WorldMap.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { pageI18n } from '../i18n/page';
 import { insights } from '../lib/data';
-import { decimal, number } from '../lib/format';
+
+const { t, fmt, country: countryName } = pageI18n(Astro.url);
+const { decimal, number } = fmt;
+const placeName = (country: { country: string; iso2: string }) => countryName(country.country, country.iso2);
 
 const atlas = insights.countryAtlas;
 const countries = atlas.countries;
@@ -28,28 +32,32 @@ const topGainer = gainers[0];
 ---
 
 <BaseLayout
-  title="Destinations"
-  description="Choose where to study. An interactive world map plus a country-by-country drill-down: top-100 placements, the strongest universities, and the fields each country is known for."
+  title={t('Destinations', '选国家')}
+  description={t(
+    'Choose where to study. An interactive world map plus a country-by-country drill-down: top-100 placements, the strongest universities, and the fields each country is known for.',
+    '选择留学目的地。交互式世界地图加逐国深入分析：前 100 名席位、最强的大学，以及各国擅长的领域。',
+  )}
 >
   <section class="page-hero">
     <div class="shell hero-grid">
       <div>
-        <p class="eyebrow">Choose where to study</p>
-        <h1>Start with the country, not the campus.</h1>
+        <p class="eyebrow">{t('Choose where to study', '选择留学目的地')}</p>
+        <h1>{t('Start with the country, not the campus.', '先选国家，再选校园。')}</h1>
         <p class="lede">
-          Where you study shapes cost, visas, language, and job markets long
-          before any single campus does. Switch the map between elite placements
-          and research output, then open any country to see its top universities
-          and the fields it is known for.
+          {t(
+            'Where you study shapes cost, visas, language, and job markets long before any single campus does. Switch the map between elite placements and research output, then open any country to see its top universities and the fields it is known for.',
+            '在哪里读书，远比选哪所学校更早决定了费用、签证、语言和就业市场。在地图上切换顶尖席位与科研产出，再打开任意国家，查看其顶尖大学和擅长的领域。',
+          )}
         </p>
       </div>
       <aside class="hero-note">
-        <span class="mono">CONSENSUS TOP-100 REACH</span>
+        <span class="mono">{t('CONSENSUS TOP-100 REACH', '共识前 100 覆盖')}</span>
         <strong>{placementCountries.length}</strong>
         <p>
-          countries place at least one institution inside a global top 100, yet
-          the top three hold {decimal.format(top3Share * 100)}% of all
-          {` ${number.format(totalPlacements)} `}placements.
+          {t(
+            `countries place at least one institution inside a global top 100, yet the top three hold ${decimal.format(top3Share * 100)}% of all ${number.format(totalPlacements)} placements.`,
+            `个国家和地区至少有一所院校进入全球前 100 名，但排名前三的国家占据了全部 ${number.format(totalPlacements)} 个席位中的 ${decimal.format(top3Share * 100)}%。`,
+          )}
         </p>
       </aside>
     </div>
@@ -58,9 +66,12 @@ const topGainer = gainers[0];
   <section class="section">
     <div class="shell">
       <SectionHeading
-        eyebrow="Interactive choropleth"
-        title="Switch the lens; watch the map redraw."
-        description="Each measure answers a different question. Elite placements reward a few dense systems; research-output measures spread wider; the Nature share shift exposes a decade of change that the static tables hide. Click any country to open its profile below."
+        eyebrow={t('Interactive choropleth', '交互式分级地图')}
+        title={t('Switch the lens; watch the map redraw.', '切换视角，看地图重新着色。')}
+        description={t(
+          'Each measure answers a different question. Elite placements reward a few dense systems; research-output measures spread wider; the Nature share shift exposes a decade of change that the static tables hide. Click any country to open its profile below.',
+          '每项指标回答不同的问题。顶尖席位集中于少数高教发达体系；科研产出指标分布更广；自然指数份额变化则揭示了静态榜单看不到的十年变迁。点击任意国家，在下方打开其概况。',
+        )}
       />
       <WorldMap atlas={atlas} />
     </div>
@@ -69,9 +80,12 @@ const topGainer = gainers[0];
   <section class="section country-detail-section">
     <div class="shell">
       <SectionHeading
-        eyebrow="Country profile"
-        title="Open a country; see where it is strong."
-        description="Pick a destination—or click it on the map—to compare its top-100 depth, read its highest-consensus universities, and see which fields it supplies to the world's subject tables."
+        eyebrow={t('Country profile', '国家概况')}
+        title={t('Open a country; see where it is strong.', '打开一个国家，看看它强在哪里。')}
+        description={t(
+          "Pick a destination—or click it on the map—to compare its top-100 depth, read its highest-consensus universities, and see which fields it supplies to the world's subject tables.",
+          '选择一个目的地（或在地图上点击），比较其前 100 名的深度，查看共识度最高的大学，以及它在全球学科榜单中贡献了哪些领域。',
+        )}
       />
       <CountryDetail atlas={atlas} consensus={insights.consensus} subjectBoards={insights.subjectBoards} />
     </div>
@@ -80,48 +94,53 @@ const topGainer = gainers[0];
   <section class="section concentration-section">
     <div class="shell">
       <SectionHeading
-        eyebrow="Concentration"
-        title="Elite placements sit in a short list of systems."
-        description="Institutions ranked in the top 100 across the six consensus providers' latest overall editions, counted once per provider. Detail shows how many of the six providers each country reaches."
+        eyebrow={t('Concentration', '集中度')}
+        title={t('Elite placements sit in a short list of systems.', '顶尖席位集中在少数几个体系。')}
+        description={t(
+          "Institutions ranked in the top 100 across the six consensus providers' latest overall editions, counted once per provider. Detail shows how many of the six providers each country reaches.",
+          '六家共识排名最新综合榜单中进入前 100 名的院校，每家排名各计一次。附注显示每个国家进入了六家中的几家。',
+        )}
       />
       <div class="concentration-grid">
         <BarChart
           items={topByConsensus.map((country) => ({
-            label: country.country,
+            label: placeName(country),
             value: country.values.consensusTop100,
-            detail: `${country.values.providerReach}/6 providers`,
+            detail: t(`${country.values.providerReach}/6 providers`, `${country.values.providerReach}/6 家排名`),
           }))}
           color="var(--violet)"
         />
         <aside class="mover-panel">
-          <span class="mono">NATURE SHARE SHIFT · 2016 → 2026</span>
+          <span class="mono">{t('NATURE SHARE SHIFT · 2016 → 2026', '自然指数份额变化 · 2016 → 2026')}</span>
           <p class="mover-lede">
-            Largest rises in Nature Index academic Share. The basket of journals
-            is fixed, so direction is meaningful while magnitude is not a growth
-            rate.
+            {t(
+              'Largest rises in Nature Index academic Share. The basket of journals is fixed, so direction is meaningful while magnitude is not a growth rate.',
+              '自然指数学术份额增幅最大的国家。期刊篮子是固定的，因此变化方向有意义，但幅度并不是增长率。',
+            )}
           </p>
           <ol class="mover-list">
             {gainers.map((country) => (
               <li>
-                <span>{country.country}</span>
+                <span>{placeName(country)}</span>
                 <b class="positive">+{number.format(Math.round(country.values.natureShareShift))}</b>
               </li>
             ))}
           </ol>
           {topGainer && (
             <small>
-              {topGainer.country} alone added about
-              {` ${number.format(Math.round(topGainer.values.natureShareShift))} `}
-              of fractional share—more than any other system in the window.
+              {t(
+                `${topGainer.country} alone added about ${number.format(Math.round(topGainer.values.natureShareShift))} of fractional share—more than any other system in the window.`,
+                `仅${placeName(topGainer)}一国就增加了约 ${number.format(Math.round(topGainer.values.natureShareShift))} 的份额，超过此期间其他任何体系。`,
+              )}
             </small>
           )}
         </aside>
       </div>
       <p class="fine-print">
-        Placements are not shares of national systems, and the six measures are
-        not directly comparable. Hong Kong and Macau remain separate from
-        mainland China; the 110m basemap cannot draw every small territory even
-        when it is present in the underlying data.
+        {t(
+          'Placements are not shares of national systems, and the six measures are not directly comparable. Hong Kong and Macau remain separate from mainland China; the 110m basemap cannot draw every small territory even when it is present in the underlying data.',
+          '席位数不等于国家高教体系的占比，六项指标之间也不能直接比较。中国香港和中国澳门与中国内地分开统计；1:1.1 亿比例的底图无法绘出所有小面积地区，即使底层数据中包含它们。',
+        )}
       </p>
     </div>
   </section>
@@ -129,9 +148,12 @@ const topGainer = gainers[0];
   <section class="section">
     <div class="shell">
       <SectionHeading
-        eyebrow="National lens"
-        title="Inside one system: the United States up close."
-        description="The global map blends methods worldwide. Here the two largest publisher rankings are restricted to U.S. institutions and combined into a mean rank—an example of reading a single system without the noise of cross-border comparison."
+        eyebrow={t('National lens', '国别视角')}
+        title={t('Inside one system: the United States up close.', '深入一个体系：近看美国。')}
+        description={t(
+          'The global map blends methods worldwide. Here the two largest publisher rankings are restricted to U.S. institutions and combined into a mean rank—an example of reading a single system without the noise of cross-border comparison.',
+          '全球地图融合了世界各地的不同方法。这里把两大发布方排名限定在美国院校，并合并为平均名次——示范如何在没有跨国比较噪音的情况下解读单一体系。',
+        )}
       />
       <NationalSpotlight data={insights.nationalRankings} />
     </div>
